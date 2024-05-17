@@ -3,22 +3,24 @@ declare(strict_types=1);
 
 namespace App\Tests\Application;
 
-use App\Repository\UserRepository;
-use App\Tests\Fixtures\AppFixtures;
+use App\DataFixtures\AppFixtures;
+use App\Tests\SessionHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 class LoginControllerTest extends WebTestCase
 {
+    use SessionHelper;
 
     public function testSuccessfulLoginRequest(): void
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-        $security = $client->getContainer()->get(Security::class);
-        $userRepository = $client->getContainer()->get(UserRepository::class);
+
+        $session = $this->getSession($client);
+        $session->set('auth_request_params', ['client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER]);
+        $session->save();
 
         $client->request(
             'POST',
@@ -34,18 +36,19 @@ class LoginControllerTest extends WebTestCase
 
         $response = $client->getResponse();
 
-        list($user) = $userRepository->findBy(['username' => AppFixtures::USER_IDENTIFIER]);
-        $this->assertSame($security->getUser()->getUserIdentifier(), $user->getId());
-
         $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame($response->headers->get('Location'), $router->generate('oauth2_auth'));
+        $this->assertSame($response->headers->get('Location'),
+            $router->generate('oauth2_auth', ['client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER]));
     }
-
 
     public function testBadCredentialsLoginRequest(): void
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
+
+        $session = $this->getSession($client);
+        $session->set('auth_request_params', ['client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER]);
+        $session->save();
 
         $client->request(
             'POST',

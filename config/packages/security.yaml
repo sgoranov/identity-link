@@ -5,16 +5,11 @@ security:
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
         app_user_provider:
-            id: App\Security\UserProvider
+            id: App\Service\OAuth2\UserService
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-
-        api:
-            pattern: ^/api
-            custom_authenticators:
-              - App\Security\ApiAuthenticator
 
         secured:
             pattern: ^/
@@ -27,9 +22,9 @@ security:
          - { path: ^/oauth2/token, roles: PUBLIC_ACCESS }
          - { path: ^/login, roles: PUBLIC_ACCESS }
          - { path: ^/google-authenticate, roles: PUBLIC_ACCESS }
+         - { path: ^/jwks, roles: PUBLIC_ACCESS }
 
-         - { path: ^/api, roles: ROLE_API }
-         - { path: ^/, roles: ROLE_USER }
+         - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
 
 #when@test:
 #    security:

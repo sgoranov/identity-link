@@ -28,11 +28,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Application;
 
+use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
+use App\Model\OAuth2\UserModel;
 use App\Repository\AuthCodeRepository;
-use App\Repository\UserRepository;
-use App\Security\User;
-use App\Tests\Fixtures\AppFixtures;
 use App\Tests\TestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
@@ -44,9 +43,10 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $userRepository = $client->getContainer()->get(UserRepository::class);
-        list($user) = $userRepository->findBy(['username' => AppFixtures::USER_IDENTIFIER]);
-        $client->loginUser(new User($user->getId(), ['ROLE_USER']), 'secured');
+        $user = new UserModel();
+        $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
+        $user->setRoles([]);
+        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',
@@ -78,9 +78,10 @@ class AuthorizationControllerTest extends WebTestCase
         $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
         $testHelper = $client->getContainer()->get(TestHelper::class);
 
-        $userRepository = $client->getContainer()->get(UserRepository::class);
-        list($user) = $userRepository->findBy(['username' => AppFixtures::USER_IDENTIFIER]);
-        $client->loginUser(new User($user->getId(), ['ROLE_USER']), 'secured');
+        $user = new UserModel();
+        $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
+        $user->setRoles([]);
+        $client->loginUser($user, 'secured');
 
         $state = bin2hex(random_bytes(20));
         $codeVerifier = bin2hex(random_bytes(64));
@@ -135,9 +136,10 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $userRepository = $client->getContainer()->get(UserRepository::class);
-        list($user) = $userRepository->findBy(['username' => AppFixtures::USER_IDENTIFIER]);
-        $client->loginUser(new User($user->getId(), ['ROLE_USER']), 'secured');
+        $user = new UserModel();
+        $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
+        $user->setRoles([]);
+        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',
@@ -168,9 +170,10 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $userRepository = $client->getContainer()->get(UserRepository::class);
-        list($user) = $userRepository->findBy(['username' => AppFixtures::USER_IDENTIFIER]);
-        $client->loginUser(new User($user->getId(), ['ROLE_USER']), 'secured');
+        $user = new UserModel();
+        $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
+        $user->setRoles([]);
+        $client->loginUser($user, 'secured');
 
         $state = bin2hex(random_bytes(20));
         $codeVerifier = bin2hex(random_bytes(32));
@@ -208,9 +211,10 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $userRepository = $client->getContainer()->get(UserRepository::class);
-        list($user) = $userRepository->findBy(['username' => AppFixtures::USER_IDENTIFIER]);
-        $client->loginUser(new User($user->getId(), ['ROLE_USER']), 'secured');
+        $user = new UserModel();
+        $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
+        $user->setRoles([]);
+        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',
@@ -272,9 +276,10 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $userRepository = $client->getContainer()->get(UserRepository::class);
-        list($user) = $userRepository->findBy(['username' => AppFixtures::USER_IDENTIFIER]);
-        $client->loginUser(new User($user->getId(), ['ROLE_USER']), 'secured');
+        $user = new UserModel();
+        $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
+        $user->setRoles([]);
+        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',
@@ -303,9 +308,10 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $userRepository = $client->getContainer()->get(UserRepository::class);
-        list($user) = $userRepository->findBy(['username' => AppFixtures::USER_IDENTIFIER]);
-        $client->loginUser(new User($user->getId(), ['ROLE_USER']), 'secured');
+        $user = new UserModel();
+        $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
+        $user->setRoles([]);
+        $client->loginUser($user, 'secured');
         
         $client->request(
             'GET',

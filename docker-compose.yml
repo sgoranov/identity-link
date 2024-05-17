@@ -1,8 +1,8 @@
 version: '3.5'
 services:
 
-  php-identity-link:
-    container_name: php-identity-link
+  core:
+    container_name: core
     privileged: true
     build:
       context: ${PHP_IDENTITY_LINK_SOURCE_DIR}

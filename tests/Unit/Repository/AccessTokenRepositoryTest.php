@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Repository;
 
+use App\DataFixtures\AppFixtures;
 use App\Service\OAuth2\AccessTokenService;
 use App\Service\OAuth2\ClientService;
-use App\Tests\Fixtures\AppFixtures;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class AccessTokenRepositoryTest extends KernelTestCase

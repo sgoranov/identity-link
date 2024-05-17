@@ -23,7 +23,7 @@ class ScopeModel implements ScopeEntityInterface
         ];
     }
 
-    public static function convertFromString(array $scopes)
+    public static function convertFromString(array $scopes): array
     {
         $result = [];
         foreach ($scopes as $scope) {

@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Repository;
 
+use App\DataFixtures\AppFixtures;
 use App\Model\OAuth2\ClientModel;
 use App\Model\OAuth2\GrantTypeModel;
 use App\Model\OAuth2\ScopeModel;
 use App\Service\OAuth2\ClientService;
 use App\Service\OAuth2\ScopeService;
-use App\Tests\Fixtures\AppFixtures;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class ScopeRepositoryTest extends KernelTestCase

@@ -1,14 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Tests\Fixtures;
+namespace App\DataFixtures;
 
 use App\Entity\AccessToken;
 use App\Entity\AuthCode;
 use App\Entity\Client;
 use App\Entity\ClientSecret;
 use App\Entity\RefreshToken;
-use App\Entity\User;
 use App\Model\OAuth2\GrantTypeModel;
 use App\Model\OAuth2\ScopeModel;
 use App\Service\PasswordHashGenerator;
@@ -29,7 +28,7 @@ class AppFixtures extends Fixture
     const PRIVATE_CLIENT_NAME = 'fb85b097-d07a-42fd-b0e5-f701a81082a3';
     const PRIVATE_CLIENT_REDIRECT_URI = 'http://localhost';
 
-    const AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER = '000d19bd-4be7-4ce6-ba52-ab7575ffd840';
+    const AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER = '000d19bd-4be7-4ce6-ba52f-ab7575ffd840';
 
     const AUTH_CODE_PUBLIC_CLIENT_IDENTIFIER = '000d19bd-4be7-4ce6-ba52-ab7575ffd841';
 
@@ -41,12 +40,6 @@ class AppFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
-        // User
-        $user = new User();
-        $user->setPassword(PasswordHashGenerator::create(self::USER_PASSWORD));
-        $user->setUsername(self::USER_IDENTIFIER);
-        $manager->persist($user);
-
         // public client
         $client = new Client();
         $client->setName('client_public');

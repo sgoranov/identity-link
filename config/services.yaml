@@ -4,13 +4,18 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
-    private_key: 'file://%kernel.project_dir%/var/private.key'
+    user_auth_endpoint: 'http://host.docker.internal:9001/api/v1/auth'
+    user_fetch_endpoint: 'http://host.docker.internal:9001/api/v1/user/{id}'
+    jwt_key:
+        kid: '5eda9b41-085c-403f-85e7-50d3b4131082'
+        public: 'file://%kernel.project_dir%/var/public.key'
+        private: 'file://%kernel.project_dir%/var/private.key'
     encryption_key: '%kernel.project_dir%/var/encryption.key'
     access_token_ttl: PT1H
     refresh_token_ttl: P1M
     auth_code_ttl: PT1M
     enable_client_credentials_grant: true
-    enable_password_grant: false
+    enable_password_grant: true
     enable_refresh_token_grant: true
     enable_auth_code_grant: true
     enable_implicit_grant: false
@@ -32,9 +37,19 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Service\Api\UserConnectorInterface:
+        class: App\Service\Api\UserConnector
+        calls:
+            - setUserAuthEndpoint: [ '%user_auth_endpoint%' ]
+            - setUserFetchEndpoint: [ '%user_fetch_endpoint%' ]
+
+    App\Service\JwtTokenGenerator:
+        arguments:
+            - '%jwt_key%'
+
     App\OAuth\AuthorizationServerFactory:
         calls:
-            - setPrivateKey: ['%private_key%']
+            - setJwtKey: ['%jwt_key%']
             - setEncryptionKey: ['%encryption_key%']
             - setAccessTokenTtl: ['%access_token_ttl%']
             - setRefreshTokenTtl: ['%refresh_token_ttl%']
@@ -61,6 +76,3 @@ services:
         class: League\Event\Emitter
         calls:
             - useListenerProvider: ['@App\Service\SymfonyLeagueEventListenerProvider']
-
-    App\Tests\Fixtures\:
-        resource: '%kernel.project_dir%/tests/Fixtures/'

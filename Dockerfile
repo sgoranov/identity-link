@@ -22,6 +22,7 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
     php-sqlite3 \
     php-xml \
     php-xdebug \
+    php-curl \
     composer
 
 # NodeJS \
@@ -34,6 +35,11 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
 # Install symfony cli
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh' | sudo -E bash
 RUN apt install symfony-cli
+
+# Postgres
+ENV PGHOST database-server
+ENV PGUSER admin
+ENV PGPASSWORD admin
 
 # Apache configuration
 RUN a2enmod rewrite

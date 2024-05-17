@@ -1,9 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Security;
 
 use App\Form\Type\LoginType;
-use App\Repository\UserRepository;
+use App\Model\OAuth2\GrantTypeModel;
+use App\ModelMapper\ClientMapper;
+use App\Repository\ClientRepository;
+use App\Service\Api\UserConnectorInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,10 +29,12 @@ class AuthAuthenticator extends AbstractAuthenticator
 {
 
     public function __construct(
-        private RouterInterface $router,
-        private UrlGeneratorInterface $urlGenerator,
-        private FormFactoryInterface $formFactory,
-        private UserRepository $userRepository,
+        private readonly RouterInterface $router,
+        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly FormFactoryInterface $formFactory,
+        private readonly UserConnectorInterface $userConnector,
+        private readonly ClientRepository $clientRepository,
+        private readonly ClientMapper $clientMapper,
     )
     {
     }
@@ -42,15 +48,20 @@ class AuthAuthenticator extends AbstractAuthenticator
             throw new AuthenticationException('Invalid username or password');
         }
 
+        $params = $request->getSession()->get('auth_request_params', []);
+        $clientEntity = $this->clientRepository->getByIdentifier($params['client_id']);
+        $client = $this->clientMapper->toModel($clientEntity);
+
         $data = $form->getData();
-        $user = $this->userRepository->getUser($data['user_id'], $data['password']);
+        $user = $this->userConnector->getUserEntityByUserCredentials(
+            $data['user_id'], $data['password'], GrantTypeModel::AUTHORIZATION_CODE, $client);
         if ($user === null) {
             throw new AuthenticationException('Invalid username or password');
         }
 
         // TODO: check for google authenticate
 
-        return new SelfValidatingPassport(new UserBadge($user->getId()));
+        return new SelfValidatingPassport(new UserBadge($user->getIdentifier()));
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
@@ -78,7 +89,7 @@ class AuthAuthenticator extends AbstractAuthenticator
         return new RedirectResponse($this->router->generate($request->attributes->get('_route')));
     }
 
-    public function start(Request $request, AuthenticationException $authException = null)
+    public function start(Request $request, AuthenticationException $authException = null): Response
     {
         $request->getSession()->set('auth_request_params', $request->query->all());
 

@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\ModelMapper\UserMapper;
-use App\Repository\UserRepository;
+use App\Service\Api\UserConnectorInterface;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -19,13 +18,12 @@ use Symfony\Component\Routing\Annotation\Route;
 class AuthorizationController extends AbstractController
 {
     public function __construct(
-        readonly AuthorizationServer $server,
-        readonly Security $security,
-        readonly HttpFoundationFactoryInterface $httpFoundationFactory,
-        readonly HttpMessageFactoryInterface $httpMessageFactory,
-        readonly ResponseFactoryInterface $responseFactory,
-        readonly UserRepository $userRepository,
-        readonly UserMapper $userMapper,
+        private readonly AuthorizationServer $server,
+        private readonly Security $security,
+        private readonly HttpFoundationFactoryInterface $httpFoundationFactory,
+        private readonly HttpMessageFactoryInterface $httpMessageFactory,
+        private readonly ResponseFactoryInterface $responseFactory,
+        private readonly UserConnectorInterface $userConnector,
     )
     {
     }
@@ -45,9 +43,8 @@ class AuthorizationController extends AbstractController
                 throw OAuthServerException::invalidRequest('code_challenge_method', 'Plain code challenge method is not allowed for this client');
             }
 
-            $user = $this->userRepository->getUserById($this->getUser()->getUserIdentifier());
-
-            $authRequest->setUser($this->userMapper->toModel($user));
+            $user = $this->userConnector->getUserEntityById($this->getUser()->getUserIdentifier());
+            $authRequest->setUser($user);
             $authRequest->setAuthorizationApproved(true);
 
             $response = $this->server->completeAuthorizationRequest($authRequest, $serverResponse);

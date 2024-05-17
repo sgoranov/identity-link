@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Repository;
 
+use App\DataFixtures\AppFixtures;
 use App\Service\OAuth2\AuthCodeService;
-use App\Tests\Fixtures\AppFixtures;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class AuthCodeRepositoryTest extends KernelTestCase

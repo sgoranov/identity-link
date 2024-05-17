@@ -20,7 +20,7 @@ use League\OAuth2\Server\Grant\RefreshTokenGrant;
 
 class AuthorizationServerFactory
 {
-    private string $privateKey;
+    private array $jwtKey;
 
     private string $encryptionKey;
 
@@ -52,9 +52,9 @@ class AuthorizationServerFactory
     {
     }
 
-    public function setPrivateKey(string $privateKey): void
+    public function setJwtKey(array $jwtKey): void
     {
-        $this->privateKey = $privateKey;
+        $this->jwtKey = $jwtKey;
     }
 
     public function setEncryptionKey(string $encryptionKey): void
@@ -108,7 +108,7 @@ class AuthorizationServerFactory
             $this->clientRepository,
             $this->accessTokenRepository,
             $this->scopeRepository,
-            $this->privateKey,
+            $this->jwtKey['private'],
             Key::loadFromAsciiSafeString(file_get_contents($this->encryptionKey))
         );
 

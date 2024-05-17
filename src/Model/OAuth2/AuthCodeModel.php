@@ -10,7 +10,6 @@ use League\OAuth2\Server\Entities\ScopeEntityInterface;
 
 class AuthCodeModel implements AuthCodeEntityInterface
 {
-
     private string $identifier;
     private ?string $redirectUri = null;
     private string $userIdentifier;

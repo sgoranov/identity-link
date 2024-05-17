@@ -11,15 +11,10 @@ cd /var/www/
 composer install --no-scripts
 
 # Database setup
-export PGHOST=database-server
-export PGUSER=admin
-export PGPASSWORD=admin
 until psql -c "\q"; do sleep 3; done
-echo "SELECT 'CREATE DATABASE idp' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'idp')\gexec" \
+echo "SELECT 'CREATE DATABASE \"php-identity-link\"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\"php-identity-link\"')\gexec" \
  | psql -v ON_ERROR_STOP=1
-
-php bin/console -e dev doctrine:migrations:migrate
-php bin/console -e dev -n doctrine:fixtures:load
+php bin/console -e dev doctrine:migrations:migrate --no-interaction
 
 # PHPUnit setup
 rm -rf data/database.sqlite

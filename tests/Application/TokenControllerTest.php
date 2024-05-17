@@ -28,10 +28,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Application;
 
+use App\DataFixtures\AppFixtures;
 use App\Model\OAuth2\GrantTypeModel;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
-use App\Tests\Fixtures\AppFixtures;
 use App\Tests\TestHelper;
 use League\OAuth2\Server\RequestAccessTokenEvent;
 use League\OAuth2\Server\RequestEvent;

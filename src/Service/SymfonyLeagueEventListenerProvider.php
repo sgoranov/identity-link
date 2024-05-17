@@ -35,19 +35,16 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class SymfonyLeagueEventListenerProvider implements ListenerProviderInterface
 {
-    /**
-     * @var EventDispatcherInterface
-     */
-    private $eventDispatcher;
+    private EventDispatcherInterface $eventDispatcher;
 
     public function __construct(EventDispatcherInterface $eventDispatcher)
     {
         $this->eventDispatcher = $eventDispatcher;
     }
 
-    public function provideListeners(ListenerAcceptorInterface $listenerAcceptor)
+    public function provideListeners(ListenerAcceptorInterface $listenerAcceptor): SymfonyLeagueEventListenerProvider
     {
-        $listener = \Closure::fromCallable([$this, 'dispatchLeagueEventWithSymfonyEventDispatcher']);
+        $listener = $this->dispatchLeagueEventWithSymfonyEventDispatcher(...);
 
         $listenerAcceptor->addListener('*', $listener);
 
