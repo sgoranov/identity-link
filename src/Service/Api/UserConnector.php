@@ -8,14 +8,10 @@ use App\Service\JwtTokenGenerator;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\UserEntityInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
-class UserConnector implements UserConnectorInterface
+class UserConnector extends AbstractConnector implements UserConnectorInterface
 {
     private string $userAuthEndpoint;
     private string $userFetchEndpoint;
@@ -26,6 +22,7 @@ class UserConnector implements UserConnectorInterface
         private readonly SerializerInterface $serializer,
     )
     {
+        parent::__construct($this->jwtTokenGenerator, $this->logger);
     }
     public function setUserAuthEndpoint(string $userAuthEndpoint): void
     {
@@ -77,39 +74,5 @@ class UserConnector implements UserConnectorInterface
         ]);
 
         return $user;
-    }
-
-    private function fetchData(string $method, string $endpoint, array $options = []): ?string
-    {
-        $token = $this->jwtTokenGenerator
-            ->setGroups(['administrator'])
-            ->setSubject('internal')
-            ->setAudience('php-identity-link')
-            ->setIssuer('php-identity-link')
-            ->loadTokenFromCache();
-
-        $options['headers']['Authorization'] = 'Bearer ' . $token;
-
-        $client = HttpClient::create();
-
-        try {
-
-            $result = $client->request($method, $endpoint, $options);
-
-            return $result->getContent();
-
-        } catch (ClientExceptionInterface $e) {
-
-            $response = $e->getResponse();
-            if ($response->getStatusCode() !== Response::HTTP_BAD_REQUEST) {
-                $this->logger->error('An error occurred: ' . $e->getMessage());
-            }
-
-        } catch (ExceptionInterface $e) {
-
-            $this->logger->error('An error occurred: ' . $e->getMessage());
-        }
-
-        return null;
     }
 }

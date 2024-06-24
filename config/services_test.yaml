@@ -19,10 +19,13 @@ services:
 
     App\Tests\TestHelper:
         arguments:
-            - '@App\Repository\ClientRepository'
+            - '@App\Service\Api\ClientConnectorInterface'
 
     App\Repository\ScopeRepository:
         public: true
 
     App\Service\Api\UserConnectorInterface:
         class: App\Tests\Mock\UserConnectorMock
+
+    App\Service\Api\ClientConnectorInterface:
+        class: App\Tests\Mock\ClientConnectorMock

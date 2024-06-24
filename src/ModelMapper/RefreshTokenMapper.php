@@ -31,15 +31,4 @@ class RefreshTokenMapper
 
         return $entity;
     }
-
-    public function toModel(RefreshToken $entity): RefreshTokenModel
-    {
-        $model = new RefreshTokenModel();
-        $model->setIsRevoked($entity->isRevoked());
-        $model->setIdentifier($entity->getIdentifier());
-        $model->setExpiryDateTime($entity->getExpiryDateTime());
-        $model->setAccessToken($this->accessTokenMapper->toModel($entity->getAccessToken()));
-
-        return $model;
-    }
 }

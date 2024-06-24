@@ -7,21 +7,16 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 
 class ClientModel implements ClientEntityInterface
 {
-    private string $identifier;
     private string $name;
     private string $redirectUri;
-    private bool $isConfidential;
+
+    private bool $public;
     private array $scopes;
     private array $grantTypes;
 
     public function getIdentifier(): string
     {
-        return $this->identifier;
-    }
-
-    public function setIdentifier(string $identifier): void
-    {
-        $this->identifier = $identifier;
+        return $this->name;
     }
 
     public function getName(): string
@@ -46,12 +41,7 @@ class ClientModel implements ClientEntityInterface
 
     public function isConfidential(): bool
     {
-        return $this->isConfidential;
-    }
-
-    public function setIsConfidential(bool $isConfidential): void
-    {
-        $this->isConfidential = $isConfidential;
+        return !$this->public;
     }
 
     public function getScopes(): array
@@ -74,10 +64,13 @@ class ClientModel implements ClientEntityInterface
         $this->grantTypes = $grantTypes;
     }
 
-    public static function getInstanceByDoctrineEntity(\App\Entity\Client $entity): ClientModel
+    public function isPublic(): bool
     {
-        return ClientMapper::getInstanceByDoctrineEntity($entity);
+        return $this->public;
     }
 
-
+    public function setPublic(bool $public): void
+    {
+        $this->public = $public;
+    }
 }

@@ -6,6 +6,8 @@
 parameters:
     user_auth_endpoint: 'http://host.docker.internal:9001/api/v1/auth'
     user_fetch_endpoint: 'http://host.docker.internal:9001/api/v1/user/{id}'
+    client_auth_endpoint: 'http://host.docker.internal:9002/api/v1/auth'
+    client_query_endpoint: 'http://host.docker.internal:9002/api/v1/query'
     jwt_key:
         kid: '5eda9b41-085c-403f-85e7-50d3b4131082'
         public: 'file://%kernel.project_dir%/var/public.key'
@@ -42,6 +44,12 @@ services:
         calls:
             - setUserAuthEndpoint: [ '%user_auth_endpoint%' ]
             - setUserFetchEndpoint: [ '%user_fetch_endpoint%' ]
+
+    App\Service\Api\ClientConnectorInterface:
+        class: App\Service\Api\ClientConnector
+        calls:
+            - setClientAuthEndpoint: [ '%client_auth_endpoint%' ]
+            - setQueryEndpoint: [ '%client_query_endpoint%' ]
 
     App\Service\JwtTokenGenerator:
         arguments:

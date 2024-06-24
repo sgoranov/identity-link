@@ -5,8 +5,7 @@ namespace App\Security;
 
 use App\Form\Type\LoginType;
 use App\Model\OAuth2\GrantTypeModel;
-use App\ModelMapper\ClientMapper;
-use App\Repository\ClientRepository;
+use App\Service\Api\ClientConnectorInterface;
 use App\Service\Api\UserConnectorInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -33,8 +32,7 @@ class AuthAuthenticator extends AbstractAuthenticator
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly FormFactoryInterface $formFactory,
         private readonly UserConnectorInterface $userConnector,
-        private readonly ClientRepository $clientRepository,
-        private readonly ClientMapper $clientMapper,
+        private readonly ClientConnectorInterface $clientConnector,
     )
     {
     }
@@ -49,12 +47,11 @@ class AuthAuthenticator extends AbstractAuthenticator
         }
 
         $params = $request->getSession()->get('auth_request_params', []);
-        $clientEntity = $this->clientRepository->getByIdentifier($params['client_id']);
-        $client = $this->clientMapper->toModel($clientEntity);
+        $clientEntity = $this->clientConnector->getClientEntityById($params['client_id']);
 
         $data = $form->getData();
         $user = $this->userConnector->getUserEntityByUserCredentials(
-            $data['user_id'], $data['password'], GrantTypeModel::AUTHORIZATION_CODE, $client);
+            $data['user_id'], $data['password'], GrantTypeModel::AUTHORIZATION_CODE, $clientEntity);
         if ($user === null) {
             throw new AuthenticationException('Invalid username or password');
         }

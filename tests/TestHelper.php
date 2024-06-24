@@ -31,7 +31,7 @@ namespace App\Tests;
 use App\Entity\AuthCode;
 use App\Entity\RefreshToken;
 use App\Model\OAuth2\ScopeModel;
-use App\Repository\ClientRepository;
+use App\Service\Api\ClientConnectorInterface;
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Exception\CryptoException;
 use Defuse\Crypto\Key;
@@ -43,7 +43,9 @@ final class TestHelper
     public const PRIVATE_KEY_PATH = __DIR__ . '/resources/private.key';
     public const PUBLIC_KEY_PATH = __DIR__ . '/resources/public.key';
 
-    public function __construct(readonly ClientRepository $clientRepository)
+    public function __construct(
+        private readonly ClientConnectorInterface $clientConnector
+    )
     {
     }
 
@@ -67,7 +69,7 @@ final class TestHelper
 
     public function generateEncryptedAuthCodePayload(AuthCode $authCode): ?string
     {
-        $client = $this->clientRepository->getByIdentifier($authCode->getClientIdentifier());
+        $client = $this->clientConnector->getClientEntityById($authCode->getClientIdentifier());
 
         $payload = json_encode([
             'client_id' => $authCode->getClientIdentifier(),
