@@ -8,8 +8,6 @@ use App\Service\JwtTokenGenerator;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\UserEntityInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class UserConnector extends AbstractConnector implements UserConnectorInterface
 {
@@ -19,7 +17,6 @@ class UserConnector extends AbstractConnector implements UserConnectorInterface
     public function __construct(
         private readonly JwtTokenGenerator $jwtTokenGenerator,
         private readonly LoggerInterface $logger,
-        private readonly SerializerInterface $serializer,
     )
     {
         parent::__construct($this->jwtTokenGenerator, $this->logger);
@@ -40,15 +37,9 @@ class UserConnector extends AbstractConnector implements UserConnectorInterface
             return null;
         }
 
-        $user = new UserModel();
-
         $data = json_decode($content, true);
 
-        $this->serializer->deserialize(json_encode($data['response']['user']), UserModel::class, 'json', [
-            AbstractNormalizer::OBJECT_TO_POPULATE => $user,
-        ]);
-
-        return $user;
+        return $this->mapToUserModel($data['response']['user']);
     }
 
     public function getUserEntityByUserCredentials($username, $password, $grantType, ClientEntityInterface $clientEntity): ?UserEntityInterface
@@ -65,13 +56,17 @@ class UserConnector extends AbstractConnector implements UserConnectorInterface
             return null;
         }
 
-        $user = new UserModel();
-
         $data = json_decode($content, true);
 
-        $this->serializer->deserialize(json_encode($data['response']['user']), UserModel::class, 'json', [
-            AbstractNormalizer::OBJECT_TO_POPULATE => $user,
-        ]);
+        return $this->mapToUserModel($data['response']['user']);
+    }
+
+    private function mapToUserModel(array $userData): UserModel
+    {
+        $user = new UserModel();
+        $user->setIdentifier($userData['id']);
+        $user->setRoles([]);
+        $user->setIsTwoFaEnabled($userData['isTwoFaEnabled']);
 
         return $user;
     }

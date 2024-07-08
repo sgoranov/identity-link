@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Form\Type\LoginType;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,11 +28,10 @@ class LoginController extends AbstractController
         ]);
     }
 
-    #[Route('/google-authenticate', name: 'security_google_authenticate', methods: ['GET', 'POST'])]
-    public function googleAuthenticate(EntityManagerInterface $entityManager): Response
+    #[Route('/login/2fa', name: 'security_2fa', methods: ['GET'])]
+    public function twoFaAuth(Request $request): void
     {
-        return $this->render('index/index.html.twig', [
-            'controller_name' => 'IndexController',
-        ]);
+        // This URL is used by AuthAuthenticator to check
+        // and verify if the user has passed the 2FA.
     }
 }

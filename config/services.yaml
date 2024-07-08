@@ -8,6 +8,10 @@ parameters:
     user_fetch_endpoint: 'http://host.docker.internal:9001/api/v1/user/{id}'
     client_auth_endpoint: 'http://host.docker.internal:9002/api/v1/auth'
     client_query_endpoint: 'http://host.docker.internal:9002/api/v1/query'
+    two_fa_auth_endpoint: 'http://host.docker.internal:9003/api/v1/auth'
+    two_fa_index_endpoint: 'http://localhost:9003/2fa/verify/{id}'
+    two_fa_verification_enabled: '%env(bool:TWO_FA_VERIFICATION_ENABLED)%'
+    two_fa_verification_conditional: '%env(bool:TWO_FA_VERIFICATION_CONDITIONAL)%'
     jwt_key:
         kid: '5eda9b41-085c-403f-85e7-50d3b4131082'
         public: 'file://%kernel.project_dir%/var/public.key'
@@ -39,6 +43,11 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Security\AuthAuthenticator:
+        class: App\Security\AuthAuthenticator
+        calls:
+            - setTwoFaConfigurationParams: [ '%two_fa_verification_enabled%', '%two_fa_verification_conditional%', '%two_fa_index_endpoint%' ]
+
     App\Service\Api\UserConnectorInterface:
         class: App\Service\Api\UserConnector
         calls:
@@ -50,6 +59,11 @@ services:
         calls:
             - setClientAuthEndpoint: [ '%client_auth_endpoint%' ]
             - setQueryEndpoint: [ '%client_query_endpoint%' ]
+
+    App\Service\Api\TwoFaConnector:
+        class: App\Service\Api\TwoFaConnector
+        calls:
+            - setAuthEndpoint: [ '%two_fa_auth_endpoint%' ]
 
     App\Service\JwtTokenGenerator:
         arguments:

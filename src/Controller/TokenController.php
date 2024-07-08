@@ -16,10 +16,10 @@ use Symfony\Component\Routing\Annotation\Route;
 class TokenController extends AbstractController
 {
     public function __construct(
-        private AuthorizationServer $server,
-        private HttpFoundationFactoryInterface $httpFoundationFactory,
-        private HttpMessageFactoryInterface $httpMessageFactory,
-        private ResponseFactoryInterface $responseFactory,
+        private readonly AuthorizationServer $server,
+        private readonly HttpFoundationFactoryInterface $httpFoundationFactory,
+        private readonly HttpMessageFactoryInterface $httpMessageFactory,
+        private readonly ResponseFactoryInterface $responseFactory,
     )
     {
     }

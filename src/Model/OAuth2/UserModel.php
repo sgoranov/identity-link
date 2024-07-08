@@ -5,16 +5,15 @@ namespace App\Model\OAuth2;
 
 use League\OAuth2\Server\Entities\UserEntityInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Serializer\Annotation\SerializedName;
 
 class UserModel implements UserEntityInterface, UserInterface
 {
 
-    #[SerializedName("id")]
     private string $identifier;
 
-    #[SerializedName("groups")]
-    private array $roles;
+    private array $roles = [];
+
+    private bool $isTwoFaEnabled = false;
 
     public function getIdentifier(): string
     {
@@ -43,5 +42,15 @@ class UserModel implements UserEntityInterface, UserInterface
     public function setRoles(array $roles): void
     {
         $this->roles = $roles;
+    }
+
+    public function isTwoFaEnabled(): bool
+    {
+        return $this->isTwoFaEnabled;
+    }
+
+    public function setIsTwoFaEnabled(bool $isTwoFaEnabled): void
+    {
+        $this->isTwoFaEnabled = $isTwoFaEnabled;
     }
 }

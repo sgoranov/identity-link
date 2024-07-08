@@ -21,7 +21,6 @@ security:
     access_control:
          - { path: ^/oauth2/token, roles: PUBLIC_ACCESS }
          - { path: ^/login, roles: PUBLIC_ACCESS }
-         - { path: ^/google-authenticate, roles: PUBLIC_ACCESS }
          - { path: ^/jwks, roles: PUBLIC_ACCESS }
 
          - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
