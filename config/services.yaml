@@ -4,6 +4,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    user_query_endpoint: 'http://host.docker.internal:9001/api/v1/query'
     user_auth_endpoint: 'http://host.docker.internal:9001/api/v1/auth'
     user_fetch_endpoint: 'http://host.docker.internal:9001/api/v1/user/{id}'
     client_auth_endpoint: 'http://host.docker.internal:9002/api/v1/auth'
@@ -12,6 +13,8 @@ parameters:
     two_fa_index_endpoint: 'http://localhost:9003/2fa/verify/{id}'
     two_fa_verification_enabled: '%env(bool:TWO_FA_VERIFICATION_ENABLED)%'
     two_fa_verification_conditional: '%env(bool:TWO_FA_VERIFICATION_CONDITIONAL)%'
+    jwt_include_groups_claim: '%env(bool:JWT_INCLUDE_GROUPS_CLAIM)%'
+    jwt_groups_claim_limit: '%env(int:JWT_GROUPS_CLAIM_LIMIT)%'
     jwt_key:
         kid: '5eda9b41-085c-403f-85e7-50d3b4131082'
         public: 'file://%kernel.project_dir%/var/public.key'
@@ -48,11 +51,17 @@ services:
         calls:
             - setTwoFaConfigurationParams: [ '%two_fa_verification_enabled%', '%two_fa_verification_conditional%', '%two_fa_index_endpoint%' ]
 
+    App\Service\OAuth2\AccessTokenService:
+        class: App\Service\OAuth2\AccessTokenService
+        calls:
+            - configureJwtGroupsClaims: [ '%jwt_include_groups_claim%', '%jwt_groups_claim_limit%' ]
+
     App\Service\Api\UserConnectorInterface:
         class: App\Service\Api\UserConnector
         calls:
             - setUserAuthEndpoint: [ '%user_auth_endpoint%' ]
             - setUserFetchEndpoint: [ '%user_fetch_endpoint%' ]
+            - setQueryEndpoint: [ '%user_query_endpoint%' ]
 
     App\Service\Api\ClientConnectorInterface:
         class: App\Service\Api\ClientConnector

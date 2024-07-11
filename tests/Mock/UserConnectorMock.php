@@ -5,6 +5,7 @@ namespace App\Tests\Mock;
 
 use App\DataFixtures\AppFixtures;
 use App\Model\OAuth2\UserModel;
+use App\Service\Api\DTO\GroupsResponse;
 use App\Service\Api\UserConnectorInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\UserEntityInterface;
@@ -38,5 +39,14 @@ class UserConnectorMock implements UserConnectorInterface
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
 
         return $user;
+    }
+
+    public function getGroups(string $id, int $limit): GroupsResponse
+    {
+        $response = new GroupsResponse();
+        $response->setGroups([]);
+        $response->setHasMore(false);
+
+        return $response;
     }
 }

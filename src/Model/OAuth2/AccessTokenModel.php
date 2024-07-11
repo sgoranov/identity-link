@@ -24,6 +24,36 @@ class AccessTokenModel implements AccessTokenEntityInterface
     private array $scopes;
     private ClientEntityInterface $client;
 
+    private ?array $groups = null;
+
+    public function __toString(): string
+    {
+        $this->initJwtConfiguration();
+
+        $builder = $this->jwtConfiguration->builder();
+
+        $builder = $builder->permittedFor($this->getClient()->getIdentifier());
+        $builder = $builder->identifiedBy($this->getIdentifier());
+        $builder = $builder->issuedAt(new DateTimeImmutable());
+        $builder = $builder->canOnlyBeUsedAfter(new DateTimeImmutable());
+        $builder = $builder->expiresAt($this->getExpiryDateTime());
+        $builder = $builder->relatedTo((string) $this->getUserIdentifier());
+        $builder = $builder->withClaim('scopes', $this->getScopes());
+
+        if ($this->groups !== null) {
+            $builder = $builder->withClaim('groups', $this->groups);
+        }
+
+        $token = $builder->getToken($this->jwtConfiguration->signer(), $this->jwtConfiguration->signingKey());
+
+        return $token->toString();
+    }
+
+    public function setGroups(?array $groups): void
+    {
+        $this->groups = $groups;
+    }
+
     public function getIdentifier(): string
     {
         return $this->identifier;

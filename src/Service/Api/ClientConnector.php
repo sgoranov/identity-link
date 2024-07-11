@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Service\Api;
 
 use App\Model\OAuth2\ClientModel;
+use App\Service\Api\DTO\GroupsResponse;
 use App\Service\JwtTokenGenerator;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use Psr\Log\LoggerInterface;
@@ -12,7 +13,6 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class ClientConnector extends AbstractConnector implements ClientConnectorInterface
 {
-
     private string $queryEndpoint;
     private string $clientAuthEndpoint;
 
@@ -49,15 +49,9 @@ class ClientConnector extends AbstractConnector implements ClientConnectorInterf
             return null;
         }
 
-        $client = new ClientModel();
-
         $data = json_decode($content, true);
 
-        $this->serializer->deserialize(json_encode($data['response']['client']), ClientModel::class, 'json', [
-            AbstractNormalizer::OBJECT_TO_POPULATE => $client,
-        ]);
-
-        return $client;
+        return $this->mapToModel($data['response']['client']);;
     }
 
     public function getClientEntityById(string $id): ?ClientEntityInterface
@@ -78,16 +72,57 @@ class ClientConnector extends AbstractConnector implements ClientConnectorInterf
             return null;
         }
 
-        $client = new ClientModel();
-
         $data = json_decode($content, true);
         if (count($data['response']['result']) === 0) {
             return null;
         }
 
-        $this->serializer->deserialize(json_encode($data['response']['result'][0]), ClientModel::class, 'json', [
-            AbstractNormalizer::OBJECT_TO_POPULATE => $client,
+        return $this->mapToModel($data['response']['result'][0]);
+    }
+
+    public function getGroups(string $id, int $limit): GroupsResponse
+    {
+        $options = [
+            'json' => [
+                'alias' => 't',
+                'type' => 'Group',
+                'joins' => [
+                    'c' => 't.clients'
+                ],
+                'query' => 'c.name = :name',
+                'parameters' => [
+                    'name' => $id,
+                ],
+                'limit' => $limit,
+            ]
+        ];
+
+        if (($content = $this->fetchData('POST', $this->queryEndpoint, $options)) === null) {
+            throw new \Exception('Unable to fetch client groups');
+        }
+
+        $data = json_decode($content, true);
+
+        $response = new GroupsResponse();
+        $this->serializer->deserialize(json_encode($data['response']), GroupsResponse::class, 'json', [
+            AbstractNormalizer::OBJECT_TO_POPULATE => $response,
         ]);
+
+        return $response;
+    }
+
+    private function mapToModel(array $clientData): ClientModel
+    {
+        $client = new ClientModel();
+        $client->setName($clientData['name']);
+        $client->setRedirectUri($clientData['redirectUri']);
+        $client->setPublic($clientData['public']);
+        $client->setScopes($clientData['scopes']);
+        $client->setGrantTypes($clientData['grantTypes']);
+
+        $roles = $clientData['groups']['data'];
+        $hasMoreRoles = $clientData['groups']['hasMore'];
+        $client->setRoles($roles);
 
         return $client;
     }

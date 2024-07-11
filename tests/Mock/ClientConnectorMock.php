@@ -7,6 +7,7 @@ use App\DataFixtures\AppFixtures;
 use App\Model\OAuth2\ClientModel;
 use App\Model\OAuth2\GrantTypeModel;
 use App\Service\Api\ClientConnectorInterface;
+use App\Service\Api\DTO\GroupsResponse;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 
 class ClientConnectorMock implements ClientConnectorInterface
@@ -70,5 +71,14 @@ class ClientConnectorMock implements ClientConnectorInterface
         }
 
         return null;
+    }
+
+    public function getGroups(string $id, int $limit): GroupsResponse
+    {
+        $response = new GroupsResponse();
+        $response->setGroups([]);
+        $response->setHasMore(false);
+
+        return $response;
     }
 }
