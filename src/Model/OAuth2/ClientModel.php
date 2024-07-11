@@ -7,16 +7,21 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 
 class ClientModel implements ClientEntityInterface
 {
+    private string $id;
     private string $name;
     private string $redirectUri;
-
     private bool $public;
     private array $scopes;
     private array $grantTypes;
 
     public function getIdentifier(): string
     {
-        return $this->name;
+        return $this->id;
+    }
+
+    public function setIdentifier(string $id): void
+    {
+        $this->id = $id;
     }
 
     public function getName(): string

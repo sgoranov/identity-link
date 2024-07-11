@@ -20,6 +20,7 @@ class ClientConnectorMock implements ClientConnectorInterface
             $client = new ClientModel();
 
             $client->setPublic(false);
+            $client->setIdentifier(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $client->setName(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $client->setRedirectUri(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI);
             $client->setGrantTypes([
@@ -44,6 +45,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         if ($id === AppFixtures::PRIVATE_CLIENT_IDENTIFIER) {
 
             $client->setPublic(false);
+            $client->setIdentifier(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $client->setName(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $client->setRedirectUri(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI);
             $client->setGrantTypes([
@@ -60,6 +62,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         } elseif ($id === AppFixtures::PUBLIC_CLIENT_IDENTIFIER) {
 
             $client->setPublic(true);
+            $client->setIdentifier(AppFixtures::PUBLIC_CLIENT_IDENTIFIER);
             $client->setName(AppFixtures::PUBLIC_CLIENT_IDENTIFIER);
             $client->setRedirectUri(AppFixtures::PUBLIC_CLIENT_REDIRECT_URI);
             $client->setGrantTypes([

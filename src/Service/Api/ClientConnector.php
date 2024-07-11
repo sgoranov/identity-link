@@ -114,15 +114,12 @@ class ClientConnector extends AbstractConnector implements ClientConnectorInterf
     private function mapToModel(array $clientData): ClientModel
     {
         $client = new ClientModel();
+        $client->setIdentifier($clientData['id']);
         $client->setName($clientData['name']);
         $client->setRedirectUri($clientData['redirectUri']);
         $client->setPublic($clientData['public']);
         $client->setScopes($clientData['scopes']);
         $client->setGrantTypes($clientData['grantTypes']);
-
-        $roles = $clientData['groups']['data'];
-        $hasMoreRoles = $clientData['groups']['hasMore'];
-        $client->setRoles($roles);
 
         return $client;
     }
