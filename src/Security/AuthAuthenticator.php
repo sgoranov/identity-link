@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -42,6 +43,8 @@ class AuthAuthenticator extends AbstractAuthenticator
         private readonly ClientConnectorInterface $clientConnector,
         private readonly TwoFaConnectorInterface $twoFaConnector,
         private readonly RequestStack $requestStack,
+        private readonly RateLimiterFactory $loginIpLimiter,
+        private readonly RateLimiterFactory $loginUsernameLimiter,
     )
     {
     }
@@ -72,6 +75,23 @@ class AuthAuthenticator extends AbstractAuthenticator
             }
 
             $data = $form->getData();
+
+            $ipLimiter = $this->loginIpLimiter->create($request->getClientIp());
+            $usernameLimiter = $this->loginUsernameLimiter->create($data['user_id']);
+
+            $ipLimit = $ipLimiter->consume();
+            $usernameLimit = $usernameLimiter->consume();
+
+            if (!$ipLimit->isAccepted() || !$usernameLimit->isAccepted()) {
+                $retryAfter = max($ipLimit->getRetryAfter()->getTimestamp(), $usernameLimit->getRetryAfter()->getTimestamp()) - time();
+
+                $minutes = floor($retryAfter / 60);
+                $seconds = $retryAfter % 60;
+
+                throw new AuthenticationException(sprintf(
+                    'Too many login attempts. Please try again in %d minute(s) and %d second(s).', $minutes, $seconds));
+            }
+
             $user = $this->userConnector->getUserEntityByUserCredentials($data['user_id'], $data['password'],
                 GrantTypeModel::AUTHORIZATION_CODE, $this->loadClientFromSession($request));
             if ($user === null) {
