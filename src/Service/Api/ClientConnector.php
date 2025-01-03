@@ -51,7 +51,7 @@ class ClientConnector extends AbstractConnector implements ClientConnectorInterf
 
         $data = json_decode($content, true);
 
-        return $this->mapToModel($data['response']['client']);;
+        return $this->mapToModel($data['response']['client']);
     }
 
     public function getClientEntityById(string $id): ?ClientEntityInterface
