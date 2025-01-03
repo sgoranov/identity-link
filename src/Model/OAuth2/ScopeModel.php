@@ -13,6 +13,7 @@ class ScopeModel implements ScopeEntityInterface
     const OPENID = 'openid';
     const PROFILE = 'profile';
     const GROUPS = 'groups';
+    const OFFLINE_ACCESS = 'offline_access';
 
     public static function getSupported(): array
     {
@@ -20,6 +21,7 @@ class ScopeModel implements ScopeEntityInterface
             self::OPENID,
             self::PROFILE,
             self::GROUPS,
+            self::OFFLINE_ACCESS,
         ];
     }
 
