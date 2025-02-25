@@ -11,8 +11,8 @@ parameters:
     client_query_endpoint: 'http://host.docker.internal:9002/api/v1/query'
     two_fa_auth_endpoint: 'http://host.docker.internal:9003/api/v1/auth'
     two_fa_index_endpoint: 'http://localhost:9003/2fa/verify/{id}'
-    two_fa_verification_enabled: '%env(bool:TWO_FA_VERIFICATION_ENABLED)%'
-    two_fa_verification_conditional: '%env(bool:TWO_FA_VERIFICATION_CONDITIONAL)%'
+    two_fa_mode: '%env(PASSWORD_AUTHENTICATOR_2FA_MODE)%'
+    authenticator_type: '%env(string:AUTHENTICATOR_TYPE)%'
     jwt_include_groups_claim: '%env(bool:JWT_INCLUDE_GROUPS_CLAIM)%'
     jwt_groups_claim_limit: '%env(int:JWT_GROUPS_CLAIM_LIMIT)%'
     jwt_key:
@@ -46,10 +46,10 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    App\Security\AuthAuthenticator:
-        class: App\Security\AuthAuthenticator
+    App\Security\PasswordAuthenticator:
+        class: App\Security\PasswordAuthenticator
         calls:
-            - setTwoFaConfigurationParams: [ '%two_fa_verification_enabled%', '%two_fa_verification_conditional%', '%two_fa_index_endpoint%' ]
+            - setTwoFaConfiguration: [ '%two_fa_mode%', '%two_fa_index_endpoint%' ]
 
     App\Service\OAuth2\AccessTokenService:
         class: App\Service\OAuth2\AccessTokenService

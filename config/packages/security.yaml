@@ -14,7 +14,8 @@ security:
         secured:
             pattern: ^/
             custom_authenticators:
-                - App\Security\AuthAuthenticator
+                - App\Security\PasswordAuthenticator
+            entry_point: App\Security\PasswordAuthenticator
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used

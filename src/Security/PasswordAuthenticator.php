@@ -10,6 +10,7 @@ use App\Service\Api\ClientConnectorInterface;
 use App\Service\Api\TwoFaConnectorInterface;
 use App\Service\Api\UserConnectorInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,13 +29,11 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
 use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
-class AuthAuthenticator extends AbstractAuthenticator
+class PasswordAuthenticator extends AbstractAuthenticator
     implements AuthenticationEntryPointInterface, InteractiveAuthenticatorInterface
 {
     private string $twoFaIndexEndpoint;
-    private bool $twoFaEnabled;
-    private bool $twoFaConditional;
-
+    private string $twoFaMode;
     public function __construct(
         private readonly RouterInterface $router,
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -45,14 +44,14 @@ class AuthAuthenticator extends AbstractAuthenticator
         private readonly RequestStack $requestStack,
         private readonly RateLimiterFactory $loginIpLimiter,
         private readonly RateLimiterFactory $loginUsernameLimiter,
+        private readonly ParameterBagInterface $parameterBag,
     )
     {
     }
 
-    public function setTwoFaConfigurationParams(bool $twoFaEnabled, bool $twoFaConditional, string $twoFaIndexEndpoint): void
+    public function setTwoFaConfiguration(string $twoFaMode, string $twoFaIndexEndpoint): void
     {
-        $this->twoFaEnabled = $twoFaEnabled;
-        $this->twoFaConditional = $twoFaConditional;
+        $this->twoFaMode = $twoFaMode;
         $this->twoFaIndexEndpoint = $twoFaIndexEndpoint;
     }
 
@@ -140,6 +139,10 @@ class AuthAuthenticator extends AbstractAuthenticator
 
     public function supports(Request $request): ?bool
     {
+        if ($this->parameterBag->get('authenticator_type') !== 'PasswordAuthenticator') {
+            return false;
+        }
+
         $url = $request->getBaseUrl() . $request->getPathInfo();
 
         if ($request->isMethod('POST') && ($this->router->generate('security_login') === $url)) {
@@ -212,9 +215,11 @@ class AuthAuthenticator extends AbstractAuthenticator
 
     private function isTwoFaEnabled(UserModel $user): bool
     {
-        if ($this->twoFaEnabled && !$this->twoFaConditional) {
+        if ($this->twoFaMode === 'enabled') {
             return true;
-        } elseif ($this->twoFaEnabled && $this->twoFaConditional && $user->isTwoFaEnabled()) {
+        }
+
+        if ($this->twoFaMode === 'conditional' && $user->isTwoFaEnabled()) {
             return true;
         }
 
