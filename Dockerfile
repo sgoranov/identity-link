@@ -13,6 +13,7 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
     telnet \
     apache2 \
     curl \
+    jq \
     ca-certificates \
     gnupg \
     postgresql-client \
