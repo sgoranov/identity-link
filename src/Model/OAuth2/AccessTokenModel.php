@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\OAuth2;
 
+use App\OAuth\CryptKey;
 use DateTimeImmutable;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
@@ -11,12 +12,13 @@ use League\OAuth2\Server\Entities\Traits\AccessTokenTrait;
 
 class AccessTokenModel implements AccessTokenEntityInterface
 {
-    use AccessTokenTrait;
+    use AccessTokenTrait { setPrivateKey as setPrivateKeyInTrait ; }
 
     private string $identifier;
     private DateTimeImmutable $dateTime;
     private ?string $userIdentifier;
     private bool $isRevoked = false;
+    private $privateKey;
 
     /**
      * @var ScopeModel[]
@@ -32,6 +34,7 @@ class AccessTokenModel implements AccessTokenEntityInterface
 
         $builder = $this->jwtConfiguration->builder();
 
+        $builder = $builder->withHeader('kid', $this->privateKey->getId());
         $builder = $builder->permittedFor($this->getClient()->getIdentifier());
         $builder = $builder->identifiedBy($this->getIdentifier());
         $builder = $builder->issuedAt(new DateTimeImmutable());
@@ -47,6 +50,12 @@ class AccessTokenModel implements AccessTokenEntityInterface
         $token = $builder->getToken($this->jwtConfiguration->signer(), $this->jwtConfiguration->signingKey());
 
         return $token->toString();
+    }
+
+    public function setPrivateKey(CryptKey|\League\OAuth2\Server\CryptKey $privateKey): void
+    {
+        $this->setPrivateKeyInTrait($privateKey);
+        $this->privateKey = $privateKey;
     }
 
     public function setGroups(?array $groups): void

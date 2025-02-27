@@ -108,7 +108,7 @@ class AuthorizationServerFactory
             $this->clientRepository,
             $this->accessTokenRepository,
             $this->scopeRepository,
-            $this->jwtKey['private'],
+            new CryptKey($this->jwtKey['private'], null, null, $this->jwtKey['kid']),
             Key::loadFromAsciiSafeString(file_get_contents($this->encryptionKey))
         );
 
