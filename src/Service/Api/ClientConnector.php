@@ -80,7 +80,7 @@ class ClientConnector extends AbstractConnector implements ClientConnectorInterf
         return $this->mapToModel($data['response']['result'][0]);
     }
 
-    public function getGroups(string $id, int $limit): GroupsResponse
+    public function getGroups(string $uuid, int $limit): GroupsResponse
     {
         $options = [
             'json' => [
@@ -89,9 +89,9 @@ class ClientConnector extends AbstractConnector implements ClientConnectorInterf
                 'joins' => [
                     'c' => 't.clients'
                 ],
-                'query' => 'c.name = :name',
+                'query' => 'c.id = :id',
                 'parameters' => [
-                    'name' => $id,
+                    'id' => $uuid,
                 ],
                 'limit' => $limit,
             ]

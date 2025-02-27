@@ -76,7 +76,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         return null;
     }
 
-    public function getGroups(string $id, int $limit): GroupsResponse
+    public function getGroups(string $uuid, int $limit): GroupsResponse
     {
         $response = new GroupsResponse();
         $response->setGroups([]);

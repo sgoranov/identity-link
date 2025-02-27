@@ -12,5 +12,5 @@ interface ClientConnectorInterface
 
     public function getClientEntityById(string $id): ?ClientEntityInterface;
 
-    public function getGroups(string $id, int $limit): GroupsResponse;
+    public function getGroups(string $uuid, int $limit): GroupsResponse;
 }
