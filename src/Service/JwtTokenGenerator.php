@@ -31,7 +31,7 @@ class JwtTokenGenerator
             'iat' => time(),
             'nbf' => time(),
             'exp' => time() + $this->getExpTime(),
-            'groups' => implode(' ', $this->getGroups()),
+            'groups' => $this->getGroups(),
         ];
 
         return JWT::encode($payload, $key, 'RS256', null, ['kid' => $this->jwtKey['kid']]);
