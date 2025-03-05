@@ -25,8 +25,9 @@ chmod 600 tests/resources/private.key
 
 # Set correct permissions on var/
 rm -rf var/cache/*
-chmod -R o+rw var/
+php bin/console php-identity-link:generate-keys
 chmod 600 var/private.key
+chown -R www-data:www-data var
 
 # This will exec the CMD from Dockerfile
 exec "$@" &
@@ -64,7 +65,7 @@ if [ "${PHP_IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
               \"name\": \"$PHP_IDENTITY_LINK_TEST_DATA_CLIENT_ID\",
               \"description\": \"description\",
               \"redirectUri\": \"$PHP_IDENTITY_LINK_TEST_DATA_REDIRECT_URI\",
-              \"grantTypes\": [\"client_credentials\", \"authorization_code\"],
+              \"grantTypes\": [\"client_credentials\", \"authorization_code\", \"password\", \"refresh_token\"],
               \"groups\": [\"$GROUP_ID\"],
               \"isPublic\": false
           }")
@@ -131,7 +132,7 @@ if [ "${PHP_IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
               \"firstName\": \"Firstname\",
               \"lastName\": \"Lastname\",
               \"email\": \"test@phpidentitylink.com\",
-              \"grantTypes\": [\"password\", \"authorization_code\"],
+              \"grantTypes\": [\"password\", \"authorization_code\", \"refresh_token\"],
               \"groups\": [\"$GROUP_ID\"]
           }")
 
