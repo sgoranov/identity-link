@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use App\Api\Contract\ClientConnectorInterface;
+use App\Api\Contract\TwoFaConnectorInterface;
+use App\Api\Contract\UserConnectorInterface;
+use App\Api\IdentityLink\Response\DbUserResponse;
 use App\Form\Type\LoginType;
-use App\Model\OAuth2\GrantTypeModel;
-use App\Model\OAuth2\UserModel;
-use App\Service\Api\ClientConnectorInterface;
-use App\Service\Api\TwoFaConnectorInterface;
-use App\Service\Api\UserConnectorInterface;
+use App\LeagueOAuth2\Entity\ClientEntity;
+use App\LeagueOAuth2\Entity\GrantTypeEntity;
+use App\Security\Exception\TwoFaAuthRequiredException;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -33,7 +35,7 @@ class PasswordAuthenticator extends AbstractAuthenticator
     implements AuthenticationEntryPointInterface, InteractiveAuthenticatorInterface
 {
     private string $twoFaIndexEndpoint;
-    private string $twoFaMode;
+
     public function __construct(
         private readonly RouterInterface $router,
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -49,9 +51,8 @@ class PasswordAuthenticator extends AbstractAuthenticator
     {
     }
 
-    public function setTwoFaConfiguration(string $twoFaMode, string $twoFaIndexEndpoint): void
+    public function setTwoFaIndexEndpoint(string $twoFaIndexEndpoint): void
     {
-        $this->twoFaMode = $twoFaMode;
         $this->twoFaIndexEndpoint = $twoFaIndexEndpoint;
     }
 
@@ -91,27 +92,24 @@ class PasswordAuthenticator extends AbstractAuthenticator
                     'Too many login attempts. Please try again in %d minute(s) and %d second(s).', $minutes, $seconds));
             }
 
-            $user = $this->userConnector->getUserEntityByUserCredentials($data['user_id'], $data['password'],
-                GrantTypeModel::AUTHORIZATION_CODE, $this->loadClientFromSession($request));
+            $user = $this->userConnector->getUserByUserCredentials($data['user_id'], $data['password'],
+                GrantTypeEntity::AUTHORIZATION_CODE, $this->loadClientFromSession($request));
             if ($user === null) {
                 throw new AuthenticationException('Invalid username or password');
             }
 
-            if (!($user instanceof UserModel)) {
-                throw new \Exception('User must be an instance of UserModel');
-            }
-
             // user logged in successfully and 2FA is disabled
             // we can proceed creating the passport
-            if ($this->isTwoFaEnabled($user) === false) {
-                return new SelfValidatingPassport(new UserBadge($user->getIdentifier()));
+            if ($this->twoFaConnector->isTwoFaEnabled() === false) {
+                return new SelfValidatingPassport(new UserBadge($user->getId()));
             }
 
             // 2FA is required
-            $twoFaId = $this->twoFaConnector->initiateAuthenticationRequest($user->getIdentifier());
+            $twoFaId = $this->twoFaConnector->initiateAuthenticationRequest($user->getId());
+
             if ($twoFaId !== null) {
 
-                $session->set('auth_user_id', $user->getIdentifier());
+                $session->set('auth_user_id', $user->getId());
                 $session->set('auth_2fa_id', $twoFaId);
 
                 throw new TwoFaAuthRequiredException($twoFaId);
@@ -124,7 +122,7 @@ class PasswordAuthenticator extends AbstractAuthenticator
             $this->twoFaConnector->validateAuthenticationRequest($twoFaId) &&
             ($user = $this->loadUserFromSession($request)) !== null) {
 
-            return new SelfValidatingPassport(new UserBadge($user->getIdentifier()));
+            return new SelfValidatingPassport(new UserBadge($user->getId()));
         }
 
         throw new AuthenticationException('Please login');
@@ -183,14 +181,14 @@ class PasswordAuthenticator extends AbstractAuthenticator
         return true;
     }
 
-    private function loadUserFromSession(Request $request): ?UserModel
+    private function loadUserFromSession(Request $request): ?DbUserResponse
     {
         $id = $request->getSession()->get('auth_user_id', false);
         if ($id === false) {
             return null;
         }
 
-        $user = $this->userConnector->getUserEntityById($id);
+        $user = $this->userConnector->getUserById($id);
         if (!$user) {
             throw new AuthenticationException('Invalid user id');
         }
@@ -205,24 +203,19 @@ class PasswordAuthenticator extends AbstractAuthenticator
             throw new AuthenticationException('Invalid client id');
         }
 
-        $clientEntity = $this->clientConnector->getClientEntityById($params['client_id']);
-        if (!$clientEntity) {
+        $client = $this->clientConnector->getClientById($params['client_id']);
+        if (!$client) {
             throw new AuthenticationException('Invalid client id');
         }
 
-        return $clientEntity;
-    }
+        $entity = new ClientEntity();
+        $entity->setIdentifier($client->getId());
+        $entity->setName($client->getName());
+        $entity->setRedirectUri($client->getRedirectUri());
+        $entity->setPublic($client->isPublic());
+        $entity->setScopes($client->getScopes());
+        $entity->setGrantTypes($client->getGrantTypes());
 
-    private function isTwoFaEnabled(UserModel $user): bool
-    {
-        if ($this->twoFaMode === 'enabled') {
-            return true;
-        }
-
-        if ($this->twoFaMode === 'conditional' && $user->isTwoFaEnabled()) {
-            return true;
-        }
-
-        return false;
+        return $entity;
     }
 }

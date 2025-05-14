@@ -3,18 +3,18 @@ declare(strict_types=1);
 
 namespace App\Tests\Mock;
 
+use App\Api\Contract\UserConnectorInterface;
+use App\Api\IdentityLink\Response\GroupsResponse;
 use App\DataFixtures\AppFixtures;
-use App\Model\OAuth2\UserModel;
-use App\Service\Api\DTO\GroupsResponse;
-use App\Service\Api\UserConnectorInterface;
+use App\LeagueOAuth2\Entity\UserEntity;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\UserEntityInterface;
 
 class UserConnectorMock implements UserConnectorInterface
 {
 
-    public function getUserEntityByUserCredentials(
-        $username, $password, $grantType, ClientEntityInterface $clientEntity): ?UserEntityInterface
+    public function getUserByUserCredentials(
+        $username, $password, $grantType, ClientEntityInterface $clientEntity): ?\App\Api\Contract\UserResponseInterface
     {
         if ($username === AppFixtures::USER_IDENTIFIER && $password === AppFixtures::USER_PASSWORD) {
             return $this->getUser();
@@ -23,7 +23,7 @@ class UserConnectorMock implements UserConnectorInterface
         return null;
     }
 
-    public function getUserEntityById(string $id): ?UserEntityInterface
+    public function getUserById(string $id): ?\App\Api\Contract\UserResponseInterface
     {
         if ($id === AppFixtures::USER_IDENTIFIER) {
             return $this->getUser();
@@ -34,8 +34,7 @@ class UserConnectorMock implements UserConnectorInterface
 
     private function getUser(): UserEntityInterface
     {
-        $user = new UserModel();
-        $user->setRoles([]);
+        $user = new UserEntity();
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
 
         return $user;
@@ -45,7 +44,6 @@ class UserConnectorMock implements UserConnectorInterface
     {
         $response = new GroupsResponse();
         $response->setGroups([]);
-        $response->setHasMore(false);
 
         return $response;
     }

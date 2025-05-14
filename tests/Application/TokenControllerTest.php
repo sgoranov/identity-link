@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace App\Tests\Application;
 
 use App\DataFixtures\AppFixtures;
-use App\Model\OAuth2\GrantTypeModel;
+use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
 use App\Tests\TestHelper;
@@ -104,7 +104,7 @@ final class TokenControllerTest extends WebTestCase
         $client->request('POST', $router->generate('oauth2_token'), [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
             'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
-            'grant_type' => GrantTypeModel::PASSWORD,
+            'grant_type' => GrantTypeEntity::PASSWORD,
             'username' => AppFixtures::USER_IDENTIFIER,
             'password' => AppFixtures::USER_PASSWORD,
         ]);
@@ -159,7 +159,7 @@ final class TokenControllerTest extends WebTestCase
         $client->request('POST', $router->generate('oauth2_token'), [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
             'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
-            'grant_type' => GrantTypeModel::REFRESH_TOKEN,
+            'grant_type' => GrantTypeEntity::REFRESH_TOKEN,
             'refresh_token' => $testHelper->generateEncryptedPayload($refreshToken),
         ]);
 
@@ -196,7 +196,7 @@ final class TokenControllerTest extends WebTestCase
         $client->request('POST', $router->generate('oauth2_token'), [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
             'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
-            'grant_type' => GrantTypeModel::AUTHORIZATION_CODE,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
             'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
             'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
         ]);
@@ -241,7 +241,7 @@ final class TokenControllerTest extends WebTestCase
 
         $client->request('POST', $router->generate('oauth2_token'), [
             'client_id' => AppFixtures::PUBLIC_CLIENT_IDENTIFIER,
-            'grant_type' => GrantTypeModel::AUTHORIZATION_CODE,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
             'redirect_uri' => AppFixtures::PUBLIC_CLIENT_REDIRECT_URI,
             'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
         ]);
@@ -302,7 +302,7 @@ final class TokenControllerTest extends WebTestCase
         $client->request('POST', $router->generate('oauth2_token'), [
             'client_id' => 'foo',
             'client_secret' => 'wrong',
-            'grant_type' => GrantTypeModel::CLIENT_CREDENTIALS,
+            'grant_type' => GrantTypeEntity::CLIENT_CREDENTIALS,
         ]);
 
         $response = $client->getResponse();

@@ -30,7 +30,7 @@ namespace App\Tests\Application;
 
 use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
-use App\Model\OAuth2\UserModel;
+use App\LeagueOAuth2\Entity\UserEntity;
 use App\Repository\AuthCodeRepository;
 use App\Tests\TestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -43,7 +43,7 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new UserModel();
+        $user = new UserEntity();
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
         $user->setRoles([]);
         $client->loginUser($user, 'secured');
@@ -78,7 +78,7 @@ class AuthorizationControllerTest extends WebTestCase
         $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
         $testHelper = $client->getContainer()->get(TestHelper::class);
 
-        $user = new UserModel();
+        $user = new UserEntity();
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
         $user->setRoles([]);
         $client->loginUser($user, 'secured');
@@ -136,7 +136,7 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new UserModel();
+        $user = new UserEntity();
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
         $user->setRoles([]);
         $client->loginUser($user, 'secured');
@@ -170,7 +170,7 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new UserModel();
+        $user = new UserEntity();
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
         $user->setRoles([]);
         $client->loginUser($user, 'secured');
@@ -211,7 +211,7 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new UserModel();
+        $user = new UserEntity();
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
         $user->setRoles([]);
         $client->loginUser($user, 'secured');
@@ -276,7 +276,7 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new UserModel();
+        $user = new UserEntity();
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
         $user->setRoles([]);
         $client->loginUser($user, 'secured');
@@ -308,7 +308,7 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new UserModel();
+        $user = new UserEntity();
         $user->setIdentifier(AppFixtures::USER_IDENTIFIER);
         $user->setRoles([]);
         $client->loginUser($user, 'secured');

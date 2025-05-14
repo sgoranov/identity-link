@@ -9,9 +9,9 @@ parameters:
     user_fetch_endpoint: 'http://host.docker.internal:9001/api/v1/user/{id}'
     client_auth_endpoint: 'http://host.docker.internal:9002/api/v1/auth'
     client_query_endpoint: 'http://host.docker.internal:9002/api/v1/query'
+    two_fa_ping_endpoint: 'http://host.docker.internal:9003/api/v1/ping'
     two_fa_auth_endpoint: 'http://host.docker.internal:9003/api/v1/auth'
     two_fa_index_endpoint: 'http://localhost:9003/2fa/verify/{id}'
-    two_fa_mode: '%env(PASSWORD_AUTHENTICATOR_2FA_MODE)%'
     authenticator_type: '%env(string:AUTHENTICATOR_TYPE)%'
     jwt_include_groups_claim: '%env(bool:JWT_INCLUDE_GROUPS_CLAIM)%'
     jwt_groups_claim_limit: '%env(int:JWT_GROUPS_CLAIM_LIMIT)%'
@@ -49,36 +49,37 @@ services:
     App\Security\PasswordAuthenticator:
         class: App\Security\PasswordAuthenticator
         calls:
-            - setTwoFaConfiguration: [ '%two_fa_mode%', '%two_fa_index_endpoint%' ]
+            - setTwoFaIndexEndpoint: [ '%two_fa_index_endpoint%' ]
 
-    App\Service\OAuth2\AccessTokenService:
-        class: App\Service\OAuth2\AccessTokenService
+    App\LeagueOAuth2\Repository\AccessTokenRepository:
+        class: App\LeagueOAuth2\Repository\AccessTokenRepository
         calls:
             - configureJwtGroupsClaims: [ '%jwt_include_groups_claim%', '%jwt_groups_claim_limit%' ]
 
-    App\Service\Api\UserConnectorInterface:
-        class: App\Service\Api\UserConnector
+    App\Api\Contract\UserConnectorInterface:
+        class: App\Api\IdentityLink\Connector\DbUserConnector
         calls:
             - setUserAuthEndpoint: [ '%user_auth_endpoint%' ]
             - setUserFetchEndpoint: [ '%user_fetch_endpoint%' ]
             - setQueryEndpoint: [ '%user_query_endpoint%' ]
 
-    App\Service\Api\ClientConnectorInterface:
-        class: App\Service\Api\ClientConnector
+    App\Api\Contract\ClientConnectorInterface:
+        class: App\Api\IdentityLink\Connector\DbClientConnector
         calls:
             - setClientAuthEndpoint: [ '%client_auth_endpoint%' ]
             - setQueryEndpoint: [ '%client_query_endpoint%' ]
 
-    App\Service\Api\TwoFaConnector:
-        class: App\Service\Api\TwoFaConnector
+    App\Api\Contract\TwoFaConnectorInterface:
+        class: App\Api\IdentityLink\Connector\TwoFaConnector
         calls:
             - setAuthEndpoint: [ '%two_fa_auth_endpoint%' ]
+            - setPingEndpoint: [ '%two_fa_ping_endpoint%' ]
 
     App\Service\JwtTokenGenerator:
         arguments:
             - '%jwt_key%'
 
-    App\OAuth\AuthorizationServerFactory:
+    App\LeagueOAuth2\AuthorizationServerFactory:
         calls:
             - setJwtKey: ['%jwt_key%']
             - setEncryptionKey: ['%encryption_key%']
@@ -92,7 +93,7 @@ services:
             - enableImplicitGrant: ['%enable_implicit_grant%']
 
     League\OAuth2\Server\AuthorizationServer:
-        factory: ['@App\OAuth\AuthorizationServerFactory', 'create']
+        factory: ['@App\LeagueOAuth2\AuthorizationServerFactory', 'create']
 
     Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface:
         class: Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory
@@ -106,4 +107,4 @@ services:
     League\Event\Emitter:
         class: League\Event\Emitter
         calls:
-            - useListenerProvider: ['@App\Service\SymfonyLeagueEventListenerProvider']
+            - useListenerProvider: ['@App\LeagueOAuth2\SymfonyLeagueEventListenerProvider']

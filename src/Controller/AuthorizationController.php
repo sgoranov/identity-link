@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Service\Api\UserConnectorInterface;
+use App\Api\Contract\UserConnectorInterface;
+use App\LeagueOAuth2\Entity\UserEntity;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -43,8 +44,12 @@ class AuthorizationController extends AbstractController
                 throw OAuthServerException::invalidRequest('code_challenge_method', 'Plain code challenge method is not allowed for this client');
             }
 
-            $user = $this->userConnector->getUserEntityById($this->getUser()->getUserIdentifier());
-            $authRequest->setUser($user);
+            $user = $this->userConnector->getUserById($this->getUser()->getUserIdentifier());
+
+            $model = new UserEntity();
+            $model->setIdentifier($user->getId());
+
+            $authRequest->setUser($model);
             $authRequest->setAuthorizationApproved(true);
 
             $response = $this->server->completeAuthorizationRequest($authRequest, $serverResponse);

@@ -4,20 +4,20 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Repository;
 
 use App\DataFixtures\AppFixtures;
-use App\Service\OAuth2\AccessTokenService;
-use App\Service\OAuth2\ClientService;
+use App\LeagueOAuth2\Repository\AccessTokenRepository;
+use App\LeagueOAuth2\Repository\ClientRepository;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class AccessTokenRepositoryTest extends KernelTestCase
 {
-    private static ClientService $clientRepository;
-    private static AccessTokenService $accessTokenRepository;
+    private static ClientRepository $clientRepository;
+    private static AccessTokenRepository $accessTokenRepository;
 
     public static function setUpBeforeClass(): void
     {
         $container = static::getContainer();
-        self::$accessTokenRepository = $container->get(AccessTokenService::class);
-        self::$clientRepository = $container->get(ClientService::class);
+        self::$accessTokenRepository = $container->get(AccessTokenRepository::class);
+        self::$clientRepository = $container->get(ClientRepository::class);
     }
 
     public function testGetNewToken(): void

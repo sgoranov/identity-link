@@ -28,10 +28,10 @@ declare(strict_types=1);
 
 namespace App\Tests;
 
+use App\Api\Contract\ClientConnectorInterface;
 use App\Entity\AuthCode;
 use App\Entity\RefreshToken;
-use App\Model\OAuth2\ScopeModel;
-use App\Service\Api\ClientConnectorInterface;
+use App\LeagueOAuth2\Entity\ScopeEntity;
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Exception\CryptoException;
 use Defuse\Crypto\Key;
@@ -55,7 +55,7 @@ final class TestHelper
             'client_id' => $refreshToken->getAccessToken()->getClientIdentifier(),
             'refresh_token_id' => $refreshToken->getIdentifier(),
             'access_token_id' => $refreshToken->getAccessToken()->getIdentifier(),
-            'scopes' => ScopeModel::convertToStringArray($refreshToken->getAccessToken()->getScopes()),
+            'scopes' => ScopeEntity::convertToStringArray($refreshToken->getAccessToken()->getScopes()),
             'user_id' => $refreshToken->getAccessToken()->getUserIdentifier(),
             'expire_time' => $refreshToken->getExpiryDateTime()->getTimestamp(),
         ]);
@@ -69,13 +69,13 @@ final class TestHelper
 
     public function generateEncryptedAuthCodePayload(AuthCode $authCode): ?string
     {
-        $client = $this->clientConnector->getClientEntityById($authCode->getClientIdentifier());
+        $client = $this->clientConnector->getClientById($authCode->getClientIdentifier());
 
         $payload = json_encode([
             'client_id' => $authCode->getClientIdentifier(),
             'redirect_uri' => $client->getRedirectUri(),
             'auth_code_id' => $authCode->getIdentifier(),
-            'scopes' => ScopeModel::convertToStringArray($authCode->getScopes()),
+            'scopes' => ScopeEntity::convertToStringArray($authCode->getScopes()),
             'user_id' => $authCode->getUserIdentifier(),
             'expire_time' => $authCode->getExpiryDateTime()->getTimestamp(),
             'code_challenge' => null,

@@ -6,7 +6,7 @@ namespace App\DataFixtures;
 use App\Entity\AccessToken;
 use App\Entity\AuthCode;
 use App\Entity\RefreshToken;
-use App\Model\OAuth2\ScopeModel;
+use App\LeagueOAuth2\Entity\ScopeEntity;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\DependencyInjection\Attribute\When;
@@ -38,7 +38,7 @@ class AppFixtures extends Fixture
         $code = new AuthCode();
         $code->setClientIdentifier(self::PUBLIC_CLIENT_IDENTIFIER);
         $code->setIsRevoked(false);
-        $code->setScopes(json_encode([ScopeModel::OPENID]));
+        $code->setScopes(json_encode([ScopeEntity::OPENID]));
         $code->setIdentifier(self::AUTH_CODE_PUBLIC_CLIENT_IDENTIFIER);
         $code->setUserIdentifier(self::USER_IDENTIFIER);
         $code->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
@@ -49,7 +49,7 @@ class AppFixtures extends Fixture
         $code = new AuthCode();
         $code->setClientIdentifier(self::PRIVATE_CLIENT_IDENTIFIER);
         $code->setIsRevoked(false);
-        $code->setScopes(json_encode([ScopeModel::OPENID]));
+        $code->setScopes(json_encode([ScopeEntity::OPENID]));
         $code->setIdentifier(self::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER);
         $code->setUserIdentifier(self::USER_IDENTIFIER);
         $code->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
@@ -60,7 +60,7 @@ class AppFixtures extends Fixture
         $accessToken = new AccessToken();
         $accessToken->setClientIdentifier(self::PRIVATE_CLIENT_IDENTIFIER);
         $accessToken->setIsRevoked(false);
-        $accessToken->setScopes(json_encode([ScopeModel::OPENID]));
+        $accessToken->setScopes(json_encode([ScopeEntity::OPENID]));
         $accessToken->setIdentifier(self::ACCESS_TOKEN_IDENTIFIER);
         $accessToken->setUserIdentifier(self::USER_IDENTIFIER);
         $accessToken->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
