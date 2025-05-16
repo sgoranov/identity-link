@@ -9,23 +9,23 @@ secured using JWT tokens issued by the core service. Here’s an overview of the
 ## Components
 
  - Core: The main service responsible for issuing and validating tokens.
- - DB Clients: Manages the client entities that can request tokens.
- - DB Users: Manages the user entities and their authentication.
- - 2FA Google: Provides two-factor authentication support using Google Authenticator.
- - Shared: Contains shared libraries and utilities used across the other components.
+ - [DB Clients](https://github.com/sgoranov/php-identity-link-db-clients): Manages the client entities that can request tokens.
+ - [DB Users](https://github.com/sgoranov/php-identity-link-db-users): Manages the user entities and their authentication.
+ - [2FA](https://github.com/sgoranov/php-identity-link-2fa): Provides two-factor authentication support using TOTP.
+ - [Shared](https://github.com/sgoranov/php-identity-link-shared): Contains shared libraries and utilities used across the other components.
 
 ## Architecture
 
 Core issues and validates JWT tokens.
 DB Clients and DB Users handle client and user data respectively, accessible only via valid tokens from the core.
-2FA Google integrates Google Authenticator for two-factor authentication, enhancing security.
+2FA is optional and is used  for two-factor authentication, enhancing security.
 Shared libraries ensure reusable and maintainable code across services.
 
 ## Example Workflow
 
 User Authentication: The user authenticates through the core service, receiving a JWT token.
 Client/User Management: The user can manage clients and users via the DB Clients and DB Users services using the token.
-Two-Factor Authentication: For enhanced security, the user sets up two-factor authentication through the 2FA Google service.
+Two-Factor Authentication: For enhanced security, the user sets up two-factor authentication through the 2FA service.
 
 ## Docker image
 
@@ -40,7 +40,7 @@ Start with docker compose:
 ```bash
 docker-compose --project-name php-identity-link \
  -f php-identity-link/docker-compose.yml \ 
- -f php-identity-link-2fa-google/docker-compose.yml \ 
+ -f php-identity-link-2fa/docker-compose.yml \ 
  -f php-identity-link-db-users/docker-compose.yml \
  -f php-identity-link-db-clients/docker-compose.yml \
  --env-file ~/.env up
