@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Symfony
+name: Run tests using phpunit
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
         php-version: '8.1'
     - uses: actions/checkout@v3
     - name: Copy .env.test.local
-      run: php -r "file_exists('.env.test.local') || copy('.env.test', '.env.test.local');"
+      run: php -r "file_exists('.env.test.local') || copy('.github/workflows/.env.test', '.env.test.local');"
     - name: Cache Composer packages
       id: composer-cache
       uses: actions/cache@v3
