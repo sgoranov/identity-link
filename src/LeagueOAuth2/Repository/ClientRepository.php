@@ -21,6 +21,10 @@ class ClientRepository implements ClientRepositoryInterface
     {
         $client = $this->clientConnector->getClientById($clientIdentifier);
 
+        if (null === $client) {
+            return null;
+        }
+
         $model = new ClientEntity();
         $model->setIdentifier($client->getId());
         $model->setName($client->getName());

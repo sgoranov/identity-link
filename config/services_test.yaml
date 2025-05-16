@@ -17,15 +17,15 @@ services:
     _defaults:
         public: true
 
-    App\Tests\TestHelper:
+    App\Tests\Helper\TestHelper:
         arguments:
-            - '@App\Service\Api\ClientConnectorInterface'
+            - '@App\Api\Contract\ClientConnectorInterface'
 
     App\Repository\ScopeRepository:
         public: true
 
-    App\Service\Api\UserConnectorInterface:
-        class: App\Tests\Mock\UserConnectorMock
+    App\Api\Contract\UserConnectorInterface:
+        class: App\Tests\Helper\Mocks\UserConnectorMock
 
-    App\Service\Api\ClientConnectorInterface:
-        class: App\Tests\Mock\ClientConnectorMock
+    App\Api\Contract\ClientConnectorInterface:
+        class: App\Tests\Helper\Mocks\ClientConnectorMock

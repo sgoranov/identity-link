@@ -26,13 +26,13 @@
  */
 declare(strict_types=1);
 
-namespace App\Tests\Application;
+namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
-use App\Tests\TestHelper;
+use App\Tests\Helper\TestHelper;
 use League\OAuth2\Server\RequestAccessTokenEvent;
 use League\OAuth2\Server\RequestEvent;
 use League\OAuth2\Server\RequestRefreshTokenEvent;
@@ -44,7 +44,7 @@ final class TokenControllerTest extends WebTestCase
 {
     public function testSuccessfulClientCredentialsRequest(): void
     {
-        $client = static::createClient();
+        $client = TokenControllerTest::createClient();
         $eventDispatcher = $client->getContainer()->get(EventDispatcherInterface::class);
         $router = $client->getContainer()->get(RouterInterface::class);
 
@@ -82,7 +82,7 @@ final class TokenControllerTest extends WebTestCase
 
     public function testSuccessfulPasswordRequest(): void
     {
-        $client = static::createClient();
+        $client = TokenControllerTest::createClient();
         $eventDispatcher = $client->getContainer()->get(EventDispatcherInterface::class);
         $router = $client->getContainer()->get(RouterInterface::class);
 
@@ -132,7 +132,7 @@ final class TokenControllerTest extends WebTestCase
 
     public function testSuccessfulRefreshTokenRequest(): void
     {
-        $client = static::createClient();
+        $client = TokenControllerTest::createClient();
         $eventDispatcher = $client->getContainer()->get(EventDispatcherInterface::class);
         /** @var TestHelper $testHelper */
         $testHelper = $client->getContainer()->get(TestHelper::class);
@@ -185,7 +185,7 @@ final class TokenControllerTest extends WebTestCase
 
     public function testSuccessfulAuthorizationCodeRequest(): void
     {
-        $client = static::createClient();
+        $client = TokenControllerTest::createClient();
         $eventDispatcher = $client->getContainer()->get(EventDispatcherInterface::class);
         $testHelper = $client->getContainer()->get(TestHelper::class);
         $router = $client->getContainer()->get(RouterInterface::class);
@@ -216,7 +216,7 @@ final class TokenControllerTest extends WebTestCase
 
     public function testSuccessfulAuthorizationCodeRequestWithPublicClient(): void
     {
-        $client = static::createClient();
+        $client = TokenControllerTest::createClient();
         $eventDispatcher = $client->getContainer()->get(EventDispatcherInterface::class);
         $testHelper = $client->getContainer()->get(TestHelper::class);
         $router = $client->getContainer()->get(RouterInterface::class);
@@ -269,7 +269,7 @@ final class TokenControllerTest extends WebTestCase
 
     public function testFailedTokenRequest(): void
     {
-        $client = static::createClient();
+        $client = TokenControllerTest::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
         $client->request('POST', $router->generate('oauth2_token'));
@@ -288,7 +288,7 @@ final class TokenControllerTest extends WebTestCase
 
     public function testFailedClientCredentialsTokenRequest(): void
     {
-        $client = static::createClient();
+        $client = TokenControllerTest::createClient();
         $eventDispatcher = $client->getContainer()->get(EventDispatcherInterface::class);
         $testHelper = $client->getContainer()->get(TestHelper::class);
         $router = $client->getContainer()->get(RouterInterface::class);

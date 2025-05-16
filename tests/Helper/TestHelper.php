@@ -26,7 +26,7 @@
  */
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace App\Tests\Helper;
 
 use App\Api\Contract\ClientConnectorInterface;
 use App\Entity\AuthCode;
@@ -35,13 +35,12 @@ use App\LeagueOAuth2\Entity\ScopeEntity;
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Exception\CryptoException;
 use Defuse\Crypto\Key;
-use League\OAuth2\Server\CryptKey;
 
 final class TestHelper
 {
-    public const ENCRYPTION_KEY_PATH = __DIR__ . '/resources/encryption.key';
-    public const PRIVATE_KEY_PATH = __DIR__ . '/resources/private.key';
-    public const PUBLIC_KEY_PATH = __DIR__ . '/resources/public.key';
+    public const ENCRYPTION_KEY_PATH = __DIR__ . '/../resources/encryption.key';
+    public const PRIVATE_KEY_PATH = __DIR__ . '/../resources/private.key';
+    public const PUBLIC_KEY_PATH = __DIR__ . '/../resources/public.key';
 
     public function __construct(
         private readonly ClientConnectorInterface $clientConnector
@@ -96,28 +95,5 @@ final class TestHelper
         } catch (CryptoException $e) {
             return null;
         }
-    }
-
-    public function generateJwtToken(AccessTokenModel $accessToken): string
-    {
-        $clientEntity = new ClientEntity();
-        $clientEntity->setIdentifier($accessToken->getClient()->getIdentifier());
-        $clientEntity->setRedirectUri(array_map('strval', $accessToken->getClient()->getRedirectUris()));
-
-        $accessTokenEntity = new AccessTokenEntity();
-        $accessTokenEntity->setPrivateKey(new CryptKey(self::PRIVATE_KEY_PATH, null, false));
-        $accessTokenEntity->setIdentifier($accessToken->getIdentifier());
-        $accessTokenEntity->setExpiryDateTime($accessToken->getExpiry());
-        $accessTokenEntity->setClient($clientEntity);
-        $accessTokenEntity->setUserIdentifier($accessToken->getUserIdentifier());
-
-        foreach ($accessToken->getScopes() as $scope) {
-            $scopeEntity = new ScopeEntity();
-            $scopeEntity->setIdentifier((string) $scope);
-
-            $accessTokenEntity->addScope($scopeEntity);
-        }
-
-        return (string) $accessTokenEntity;
     }
 }

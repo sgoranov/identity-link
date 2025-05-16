@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Tests\Application;
+namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
-use App\Tests\SessionHelper;
+use App\Tests\Helper\SessionHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Http\SecurityRequestAttributes;

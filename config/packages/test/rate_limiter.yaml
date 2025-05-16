@@ -1,0 +1,6 @@
+framework:
+  rate_limiter:
+    login_ip:
+      policy: 'no_limit'
+    login_username:
+      policy: 'no_limit'
