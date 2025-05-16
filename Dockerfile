@@ -23,8 +23,7 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
     php-sqlite3 \
     php-xml \
     php-xdebug \
-    php-curl \
-    composer
+    php-curl
 
 # NodeJS \
 ENV NODE_VERSION 16
@@ -32,6 +31,10 @@ RUN mkdir -p /etc/apt/keyrings
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
 RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_VERSION.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
 RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-get -y install nodejs
+
+# Download and install composer
+RUN cd /bin/ && curl --silent --show-error https://getcomposer.org/installer | php
+RUN cd /bin/ && ln -s composer.phar composer
 
 # Install symfony cli
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh' | sudo -E bash

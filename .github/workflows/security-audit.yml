@@ -1,0 +1,26 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ develop ]
+  schedule:
+    - cron: '0 6 * * 1' # Weekly check every Monday at 06:00 UTC
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Install dependencies
+        run: composer install --no-progress --no-scripts --prefer-dist
+
+      - name: Run Composer audit
+        run: composer audit --no-interaction --format=plain
