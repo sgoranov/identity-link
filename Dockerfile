@@ -40,11 +40,6 @@ RUN cd /bin/ && ln -s composer.phar composer
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh' | sudo -E bash
 RUN apt install symfony-cli
 
-# Postgres
-ENV PGHOST database-server
-ENV PGUSER admin
-ENV PGPASSWORD admin
-
 # Apache configuration
 RUN a2enmod rewrite
 RUN a2enmod actions

@@ -11,6 +11,9 @@ services:
     volumes:
       - ${PHP_IDENTITY_LINK_SOURCE_DIR}:/var/www
     environment:
+      PGHOST: database-server
+      PGUSER: ${DB_USER}
+      PGPASSWORD: ${DB_PASSWORD}
       PHP_IDENTITY_LINK_TEST_DATA_GENERATION: ${PHP_IDENTITY_LINK_TEST_DATA_GENERATION}
       PHP_IDENTITY_LINK_TEST_DATA_CLIENT_ID: ${PHP_IDENTITY_LINK_TEST_DATA_CLIENT_ID}
       PHP_IDENTITY_LINK_TEST_DATA_CLIENT_SECRET: ${PHP_IDENTITY_LINK_TEST_DATA_CLIENT_SECRET}
@@ -32,8 +35,8 @@ services:
     ports:
       - "9006:5432"
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     networks:
       - my-network
 
