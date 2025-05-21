@@ -1,9 +1,9 @@
 {
-    "name": "sgoranov/php-identity-link",
+    "name": "sgoranov/identity-link",
     "type": "project",
     "license": "MIT",
     "keywords": ["oauth2", "server"],
-    "homepage": "https://github.com/sgoranov/php-identity-link",
+    "homepage": "https://github.com/sgoranov/identity-link",
     "authors": [
         {
             "name": "Simeon Goranov",

@@ -15,7 +15,7 @@ class GenerateJwt extends Command
         private readonly JwtTokenGenerator $jwtTokenGenerator,
     )
     {
-        parent::__construct('php-identity-link:generate-jwt');
+        parent::__construct('identity-link:generate-jwt');
     }
 
     protected function configure(): void
@@ -23,8 +23,8 @@ class GenerateJwt extends Command
         $this
             ->setDescription('Generate JWT token')
 
-            ->addOption('iss', null, InputOption::VALUE_OPTIONAL, 'Issuer of the JWT', 'php-identity-link')
-            ->addOption('aud', null, InputOption::VALUE_OPTIONAL, 'Recipient for which the JWT is intended', 'php-identity-link')
+            ->addOption('iss', null, InputOption::VALUE_OPTIONAL, 'Issuer of the JWT', 'identity-link')
+            ->addOption('aud', null, InputOption::VALUE_OPTIONAL, 'Recipient for which the JWT is intended', 'identity-link')
             ->addOption('sub', null, InputOption::VALUE_OPTIONAL, 'Subject of the JWT (the user)', '')
             ->addOption('exp-time', null, InputOption::VALUE_OPTIONAL, 'Expiration time in seconds', 3600)
         ;

@@ -12,21 +12,21 @@ composer install --no-scripts
 
 # Database setup
 until psql -c "\q"; do sleep 3; done
-echo "SELECT 'CREATE DATABASE \"php-identity-link\"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\"php-identity-link\"')\gexec" \
+echo "SELECT 'CREATE DATABASE \"identity-link\"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\"identity-link\"')\gexec" \
  | psql -v ON_ERROR_STOP=1
 php bin/console -e dev doctrine:migrations:migrate --no-interaction
 
-rm -rf data && mkdir -p data
-touch data/database.sqlite
-php bin/console -e test doctrine:database:create
-php bin/console -e test doctrine:schema:create
+# PHPUnit setup
+echo "SELECT 'CREATE DATABASE \"test-identity-link\"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '\"test-identity-link\"')\gexec" \
+ | psql -v ON_ERROR_STOP=1
+php bin/console -e test doctrine:migrations:migrate --no-interaction
 php bin/console -e test -n doctrine:fixtures:load
 
 chmod 600 tests/resources/private.key
 
 # Set correct permissions on var/
 rm -rf var/cache/*
-php bin/console php-identity-link:generate-keys
+php bin/console identity-link:generate-keys
 chmod 600 var/private.key
 chown -R www-data:www-data var
 
@@ -36,8 +36,8 @@ exec "$@" &
 APACHE_PID=$!
 
 # Test data generation
-if [ "${PHP_IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
-  AUTH_TOKEN=$(php bin/console php-identity-link:generate-jwt)
+if [ "${IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
+  AUTH_TOKEN=$(php bin/console identity-link:generate-jwt)
   RETRY_INTERVAL=3
 
   CLIENT_API_URL="http://host.docker.internal:9002/api/v1"
@@ -48,7 +48,7 @@ if [ "${PHP_IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
       response=$(curl -s -w "%{http_code}" --location "$CLIENT_API_URL/group" \
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
-          --data "{\"name\": \"$PHP_IDENTITY_LINK_TEST_DATA_GROUP_NAME\"}")
+          --data "{\"name\": \"$IDENTITY_LINK_TEST_DATA_GROUP_NAME\"}")
 
       http_status="${response: -3}"
       if [ "$http_status" -ne 201 ]; then
@@ -63,9 +63,9 @@ if [ "${PHP_IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
           --data "{
-              \"name\": \"$PHP_IDENTITY_LINK_TEST_DATA_CLIENT_ID\",
+              \"name\": \"$IDENTITY_LINK_TEST_DATA_CLIENT_ID\",
               \"description\": \"description\",
-              \"redirectUri\": \"$PHP_IDENTITY_LINK_TEST_DATA_REDIRECT_URI\",
+              \"redirectUri\": \"$IDENTITY_LINK_TEST_DATA_REDIRECT_URI\",
               \"grantTypes\": [\"client_credentials\", \"authorization_code\", \"password\", \"refresh_token\"],
               \"groups\": [\"$GROUP_ID\"],
               \"isPublic\": false
@@ -85,7 +85,7 @@ if [ "${PHP_IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
           --data "{
-              \"password\": \"$PHP_IDENTITY_LINK_TEST_DATA_CLIENT_SECRET\",
+              \"password\": \"$IDENTITY_LINK_TEST_DATA_CLIENT_SECRET\",
               \"passwordHint\": \"pass hint\",
               \"expirationDateTime\": \"$EXPIRATION_DATE\",
               \"client\": \"$CLIENT_ID\"
@@ -113,7 +113,7 @@ if [ "${PHP_IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
       response=$(curl -s -w "%{http_code}" --location "$USER_API_URL/group" \
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
-          --data "{\"name\": \"$PHP_IDENTITY_LINK_TEST_DATA_GROUP_NAME\"}")
+          --data "{\"name\": \"$IDENTITY_LINK_TEST_DATA_GROUP_NAME\"}")
 
       http_status="${response: -3}"
       if [ "$http_status" -ne 201 ]; then
@@ -128,8 +128,8 @@ if [ "${PHP_IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
           --data "{
-              \"username\": \"$PHP_IDENTITY_LINK_TEST_DATA_USER_NAME\",
-              \"password\": \"$PHP_IDENTITY_LINK_TEST_DATA_USER_PASS\",
+              \"username\": \"$IDENTITY_LINK_TEST_DATA_USER_NAME\",
+              \"password\": \"$IDENTITY_LINK_TEST_DATA_USER_PASS\",
               \"firstName\": \"Firstname\",
               \"lastName\": \"Lastname\",
               \"email\": \"test@phpidentitylink.com\",

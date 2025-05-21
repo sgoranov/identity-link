@@ -1,6 +1,6 @@
-# PHP Identity Link
+# Identity Link
 
-PHP Identity Link is an OAuth2 server implemented using Symfony and PHP. 
+Identity Link is an OAuth2 server implemented using Symfony and PHP. 
 The project is designed with a microservices architecture, where each repository represents a 
 distinct service. The communication is unidirectional from the core service to the other 
 components, which do not interact directly with each other. Access to the components is 
@@ -9,10 +9,10 @@ secured using JWT tokens issued by the core service. Here’s an overview of the
 ## Components
 
  - Core: The main service responsible for issuing and validating tokens.
- - [DB Clients](https://github.com/sgoranov/php-identity-link-db-clients): Manages the client entities that can request tokens.
- - [DB Users](https://github.com/sgoranov/php-identity-link-db-users): Manages the user entities and their authentication.
- - [2FA](https://github.com/sgoranov/php-identity-link-2fa): Provides two-factor authentication support using TOTP.
- - [Shared](https://github.com/sgoranov/php-identity-link-shared): Contains shared libraries and utilities used across the other components.
+ - [DB Clients](https://github.com/sgoranov/identity-link-db-clients): Manages the client entities that can request tokens.
+ - [DB Users](https://github.com/sgoranov/identity-link-db-users): Manages the user entities and their authentication.
+ - [2FA](https://github.com/sgoranov/identity-link-2fa): Provides two-factor authentication support using TOTP.
+ - [Shared](https://github.com/sgoranov/identity-link-shared): Contains shared libraries and utilities used across the other components.
 
 ## Architecture
 
@@ -38,11 +38,11 @@ for more information about environment variables.
 
 Start with docker compose:
 ```bash
-docker-compose --project-name php-identity-link \
- -f php-identity-link/docker-compose.yml \ 
- -f php-identity-link-2fa/docker-compose.yml \ 
- -f php-identity-link-db-users/docker-compose.yml \
- -f php-identity-link-db-clients/docker-compose.yml \
+docker-compose --project-name identity-link \
+ -f identity-link/docker-compose.yml \ 
+ -f identity-link-2fa/docker-compose.yml \ 
+ -f identity-link-db-users/docker-compose.yml \
+ -f identity-link-db-clients/docker-compose.yml \
  --env-file ~/.env up
 ```
 

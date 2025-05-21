@@ -10,7 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'php-identity-link:generate-keys')]
+#[AsCommand(name: 'identity-link:generate-keys')]
 class GenerateKeys extends Command
 {
     private string $defaultOutputDir;
@@ -18,7 +18,7 @@ class GenerateKeys extends Command
     public function __construct(string $projectDir)
     {
         $this->defaultOutputDir = $projectDir . '/var';
-        parent::__construct('php-identity-link:generate-keys');
+        parent::__construct('identity-link:generate-keys');
     }
 
     protected function configure(): void
