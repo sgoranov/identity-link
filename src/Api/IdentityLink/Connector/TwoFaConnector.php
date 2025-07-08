@@ -7,22 +7,18 @@ use App\Api\Contract\TwoFaConnectorInterface;
 use App\Api\IdentityLink\Response\AuthResponse;
 use App\Api\Shared\AbstractConnector;
 use App\Service\JwtTokenGenerator;
-use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class TwoFaConnector extends AbstractConnector implements TwoFaConnectorInterface
 {
-    const CACHE_KEY = 'twofa_enabled';
     private string $authEndpoint;
-    private string $pingEndpoint;
 
     public function __construct(
         private readonly JwtTokenGenerator $jwtTokenGenerator,
         private readonly LoggerInterface $logger,
         private readonly SerializerInterface $serializer,
-        private readonly CacheItemPoolInterface $cache,
     )
     {
         parent::__construct($this->jwtTokenGenerator, $this->logger);
@@ -80,26 +76,7 @@ class TwoFaConnector extends AbstractConnector implements TwoFaConnectorInterfac
             return false;
         }
 
-        $item = $this->cache->getItem(self::CACHE_KEY);
-        if ($item->isHit()) {
-            return $item->get();
-        }
-
-        $result = false;
-        if ($this->fetchData('GET', $this->pingEndpoint) !== null) {
-            $result = true;
-        }
-
-        $item->set($result);
-        $item->expiresAfter(3600); // 1 hour
-        $this->cache->save($item);
-
-        return $result;
-    }
-
-    public function setPingEndpoint(string $pingEndpoint): void
-    {
-        $this->pingEndpoint = $pingEndpoint;
+        return !empty($this->authEndpoint);
     }
 
     public function setAuthEndpoint(string $authEndpoint): void
