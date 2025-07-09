@@ -34,7 +34,11 @@ class RefreshTokenRepository implements RefreshTokenRepositoryInterface
      */
     public function persistNewRefreshToken(RefreshTokenEntityInterface $refreshTokenEntity)
     {
-        $this->entityManager->persist($this->refreshTokenMapper->toDoctrineEntity($refreshTokenEntity));
+        $userIdentifier = $refreshTokenEntity->getAccessToken()->getUserIdentifier();
+        $doctrineEntity = $this->refreshTokenMapper->toDoctrineEntity($refreshTokenEntity);
+        $doctrineEntity->setUserIdentifier($userIdentifier);
+
+        $this->entityManager->persist($doctrineEntity);
         $this->entityManager->flush();
     }
 

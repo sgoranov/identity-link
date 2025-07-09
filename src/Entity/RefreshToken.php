@@ -9,6 +9,7 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: RefreshTokenRepository::class)]
+#[ORM\Index(columns: ['user_identifier'], name: 'idx_refresh_token_user_identifier')]
 class RefreshToken
 {
     use RevocationTrait;
@@ -21,6 +22,9 @@ class RefreshToken
 
     #[ORM\Column]
     private string $identifier;
+
+    #[ORM\Column]
+    private string $userIdentifier;
 
     #[ORM\Column]
     private DateTimeImmutable $expiryDateTime;
@@ -41,6 +45,16 @@ class RefreshToken
     public function setIdentifier($identifier): void
     {
         $this->identifier = $identifier;
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->userIdentifier;
+    }
+
+    public function setUserIdentifier(string $userIdentifier): void
+    {
+        $this->userIdentifier = $userIdentifier;
     }
 
     public function getExpiryDateTime(): DateTimeImmutable

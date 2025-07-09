@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace DoctrineMigrations;
@@ -9,24 +10,26 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20240517143314 extends AbstractMigration
+final class Version20250711110611 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Initial database schema';
+        return '';
     }
 
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('CREATE TABLE access_token (id UUID NOT NULL, identifier TEXT NOT NULL, user_identifier VARCHAR(255) DEFAULT NULL, client_identifier VARCHAR(255) NOT NULL, expiry_date_time TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, scopes TEXT DEFAULT NULL, is_revoked BOOLEAN NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE INDEX idx_access_token_user_identifier ON access_token (user_identifier)');
         $this->addSql('COMMENT ON COLUMN access_token.id IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN access_token.expiry_date_time IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('CREATE TABLE auth_code (id UUID NOT NULL, identifier TEXT NOT NULL, user_identifier VARCHAR(255) NOT NULL, client_identifier VARCHAR(255) NOT NULL, expiry_date_time TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, redirect_uri VARCHAR(500) DEFAULT NULL, scopes TEXT DEFAULT NULL, is_revoked BOOLEAN NOT NULL, PRIMARY KEY(id))');
         $this->addSql('COMMENT ON COLUMN auth_code.id IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN auth_code.expiry_date_time IS \'(DC2Type:datetime_immutable)\'');
-        $this->addSql('CREATE TABLE refresh_token (id UUID NOT NULL, access_token_id UUID DEFAULT NULL, identifier VARCHAR(255) NOT NULL, expiry_date_time TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, is_revoked BOOLEAN NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE TABLE refresh_token (id UUID NOT NULL, access_token_id UUID DEFAULT NULL, identifier VARCHAR(255) NOT NULL, user_identifier VARCHAR(255) NOT NULL, expiry_date_time TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, is_revoked BOOLEAN NOT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_C74F21952CCB2688 ON refresh_token (access_token_id)');
+        $this->addSql('CREATE INDEX idx_refresh_token_user_identifier ON refresh_token (user_identifier)');
         $this->addSql('COMMENT ON COLUMN refresh_token.id IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN refresh_token.access_token_id IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN refresh_token.expiry_date_time IS \'(DC2Type:datetime_immutable)\'');

@@ -36,4 +36,19 @@ class RefreshTokenRepository extends ServiceEntityRepository
 
         return $result;
     }
+
+    public function revokeByUserIdentifier(string $userIdentifier): void
+    {
+        $qb = $this->_em->createQueryBuilder();
+        $qb->update(RefreshToken::class, 'r')
+            ->set('r.isRevoked', ':revoked')
+            ->where('r.userIdentifier = :userIdentifier')
+            ->andWhere('r.isRevoked = false')
+            ->andWhere('r.expiryDateTime > :now')
+            ->setParameter('revoked', true)
+            ->setParameter('userIdentifier', $userIdentifier)
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->execute();
+    }
 }

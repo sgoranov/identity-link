@@ -29,9 +29,12 @@ declare(strict_types=1);
 namespace App\Tests\Helper;
 
 use App\Api\Contract\ClientConnectorInterface;
+use App\Api\Contract\UserConnectorInterface;
+use App\Entity\AccessToken;
 use App\Entity\AuthCode;
 use App\Entity\RefreshToken;
 use App\LeagueOAuth2\Entity\ScopeEntity;
+use App\Service\JwtTokenGenerator;
 use Defuse\Crypto\Crypto;
 use Defuse\Crypto\Exception\CryptoException;
 use Defuse\Crypto\Key;
@@ -43,12 +46,49 @@ final class TestHelper
     public const PUBLIC_KEY_PATH = __DIR__ . '/../resources/public.key';
 
     public function __construct(
-        private readonly ClientConnectorInterface $clientConnector
+        private readonly ClientConnectorInterface $clientConnector,
+        private readonly UserConnectorInterface $userConnector,
+        private readonly JwtTokenGenerator $jwtTokenGenerator,
     )
     {
     }
 
-    public function generateEncryptedPayload(RefreshToken $refreshToken): ?string
+    public function generateJwtPayloadByAccessToken(AccessToken $accessToken): string
+    {
+        $client = $this->clientConnector->getClientById($accessToken->getClientIdentifier());
+
+        $payload = [
+            'aud' => $client->getId(),
+            'jti' => $accessToken->getIdentifier(),
+            'iat' => microtime(true),
+            'nbf' => microtime(true),
+            'exp' => $accessToken->getExpiryDateTime()->format('U.u'),
+            'scopes' => $accessToken->getScopes(),
+        ];
+
+        if (!empty($accessToken->getUserIdentifier())) {
+            $payload['sub'] = $accessToken->getUserIdentifier();
+            $payload['oid'] = $accessToken->getUserIdentifier();
+
+            $user = $this->userConnector->getUserById($accessToken->getUserIdentifier());
+            $payload['name'] = $user->getDisplayName();
+
+            $groups = $this->userConnector->getGroups($accessToken->getUserIdentifier(), 10);
+            $payload['groups'] = $groups->getGroups();
+        } else {
+            $payload['sub'] = '';
+            $payload['oid'] = '';
+
+            $payload['name'] = $client->getName();
+
+            $groups = $this->clientConnector->getGroups($accessToken->getClientIdentifier(), 10);
+            $payload['groups'] = $groups->getGroups();
+        }
+
+        return $this->jwtTokenGenerator->createTokenByPayload($payload);
+    }
+
+    public function generateEncryptedRefreshTokenPayload(RefreshToken $refreshToken): ?string
     {
         $payload = json_encode([
             'client_id' => $refreshToken->getAccessToken()->getClientIdentifier(),

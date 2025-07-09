@@ -22,14 +22,23 @@ class AccessTokenRepository extends ServiceEntityRepository
         parent::__construct($registry, AccessToken::class);
     }
 
-    public function getByIdentifier(string $tokenId): AccessToken
+    public function getByIdentifier(string $tokenId): ?AccessToken
     {
-        $result = $this->findOneBy(['identifier' => $tokenId]);
+        return $this->findOneBy(['identifier' => $tokenId]);
+    }
 
-        if ($result === null) {
-            throw new \Exception('Not found');
-        }
-
-        return $result;
+    public function revokeByUserIdentifier(string $userIdentifier): void
+    {
+        $qb = $this->_em->createQueryBuilder();
+        $qb->update(AccessToken::class, 'a')
+            ->set('a.isRevoked', ':revoked')
+            ->where('a.userIdentifier = :userIdentifier')
+            ->andWhere('a.isRevoked = false')
+            ->andWhere('a.expiryDateTime > :now')
+            ->setParameter('revoked', true)
+            ->setParameter('userIdentifier', $userIdentifier)
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->execute();
     }
 }

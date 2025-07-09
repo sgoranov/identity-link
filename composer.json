@@ -26,10 +26,12 @@
         "firebase/php-jwt": "^6.10",
         "league/oauth2-server": "^8.4",
         "nyholm/psr7": "^1.8",
+        "sgoranov/identity-link-shared": "dev-develop",
         "strobotti/php-jwk": "^1.4",
         "symfony/console": "6.*",
         "symfony/dotenv": "6.*",
         "symfony/event-dispatcher": "6.*",
+        "symfony/expression-language": "6.*",
         "symfony/flex": "^2",
         "symfony/form": "6.*",
         "symfony/framework-bundle": "6.*",
@@ -104,5 +106,11 @@
         "symfony/maker-bundle": "^1.51",
         "symfony/phpunit-bridge": "6.*",
         "symfony/web-profiler-bundle": "6.*"
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/sgoranov/identity-link-shared"
+        }
+    ]
 }

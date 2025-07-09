@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Security\Jwt\JwtConfig;
 use Firebase\JWT\JWT;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
@@ -15,16 +16,21 @@ class JwtTokenGenerator
     private array $groups = [];
 
     public function __construct(
-        private readonly array $jwtKey,
+        private readonly JwtConfig $jwtConfig,
     )
     {
     }
 
+    public function createTokenByPayload(array $payload): string
+    {
+        $key = file_get_contents($this->jwtConfig->getPrivateKey());
+
+        return JWT::encode($payload, $key, 'RS256', null, ['kid' => $this->jwtConfig->getKid()]);
+    }
+
     public function createToken(): string
     {
-        $key = file_get_contents($this->jwtKey['private']);
-
-        $payload = [
+        return $this->createTokenByPayload([
             'iss' => $this->getIssuer(),
             'aud' => $this->getAudience(),
             'sub' => $this->getSubject(),
@@ -32,9 +38,7 @@ class JwtTokenGenerator
             'nbf' => time(),
             'exp' => time() + $this->getExpTime(),
             'groups' => $this->getGroups(),
-        ];
-
-        return JWT::encode($payload, $key, 'RS256', null, ['kid' => $this->jwtKey['kid']]);
+        ]);
     }
 
     public function loadTokenFromCache(): string

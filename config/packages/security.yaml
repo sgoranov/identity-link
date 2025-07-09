@@ -11,6 +11,12 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
+        access_token:
+          pattern: ^/(single-sign-off)
+          stateless: true
+          access_token:
+            token_handler: sgoranov\IdentityLinkShared\Security\AccessTokenHandler
+
         secured:
             pattern: ^/
             custom_authenticators:
@@ -24,6 +30,7 @@ security:
          - { path: ^/login, roles: PUBLIC_ACCESS }
          - { path: ^/jwks, roles: PUBLIC_ACCESS }
 
+         - { path: ^/single-sign-off, roles: IS_AUTHENTICATED_FULLY }
          - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
 
 #when@test:

@@ -11,6 +11,15 @@
             "config/packages/test/dama_doctrine_test_bundle.yaml"
         ]
     },
+    "doctrine/deprecations": {
+        "version": "1.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "87424683adc81d7dc305eefec1fced883084aab9"
+        }
+    },
     "doctrine/doctrine-bundle": {
         "version": "2.10",
         "recipe": {
@@ -75,6 +84,9 @@
             "phpunit.xml.dist",
             "tests/bootstrap.php"
         ]
+    },
+    "sgoranov/identity-link-shared": {
+        "version": "dev-develop"
     },
     "symfony/console": {
         "version": "6.3",

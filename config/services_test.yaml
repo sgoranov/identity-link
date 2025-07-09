@@ -1,7 +1,7 @@
 parameters:
     jwt_key:
         kid: '5eda9b41-085c-403f-85e7-50d3b4131082'
-        public: 'file://%kernel.project_dir%/var/public.key'
+        public: 'file://%kernel.project_dir%/tests/resources/public.key'
         private: 'file://%kernel.project_dir%/tests/resources/private.key'
     encryption_key: '%kernel.project_dir%/tests/resources/encryption.key'
     access_token_ttl: PT1H
@@ -20,6 +20,8 @@ services:
     App\Tests\Helper\TestHelper:
         arguments:
             - '@App\Api\Contract\ClientConnectorInterface'
+            - '@App\Api\Contract\UserConnectorInterface'
+            - '@App\Service\JwtTokenGenerator'
 
     App\Repository\ScopeRepository:
         public: true

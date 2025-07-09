@@ -10,6 +10,7 @@ use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AccessTokenRepository::class)]
+#[ORM\Index(columns: ['user_identifier'], name: 'idx_access_token_user_identifier')]
 class AccessToken
 {
     use ScopeTrait, RevocationTrait;

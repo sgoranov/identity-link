@@ -9,6 +9,7 @@ use App\LeagueOAuth2\Repository\ClientRepository;
 use App\LeagueOAuth2\Repository\RefreshTokenRepository;
 use App\LeagueOAuth2\Repository\ScopeRepository;
 use App\LeagueOAuth2\Repository\UserRepository;
+use App\Security\Jwt\JwtConfig;
 use Defuse\Crypto\Key;
 use League\Event\Emitter;
 use League\OAuth2\Server\AuthorizationServer;
@@ -20,8 +21,6 @@ use League\OAuth2\Server\Grant\RefreshTokenGrant;
 
 class AuthorizationServerFactory
 {
-    private array $jwtKey;
-
     private string $encryptionKey;
 
     private string $accessToken_Ttl;
@@ -41,20 +40,16 @@ class AuthorizationServerFactory
     private bool $enableImplicitGrant;
 
     public function __construct(
-        readonly AccessTokenRepository  $accessTokenRepository,
-        readonly AuthCodeRepository     $authCodeRepository,
-        readonly ClientRepository       $clientRepository,
-        readonly RefreshTokenRepository $refreshTokenRepository,
-        readonly ScopeRepository        $scopeRepository,
-        readonly UserRepository         $userRepository,
-        readonly Emitter                $emitter,
+        private readonly AccessTokenRepository $accessTokenRepository,
+        private readonly AuthCodeRepository $authCodeRepository,
+        private readonly ClientRepository $clientRepository,
+        private readonly RefreshTokenRepository $refreshTokenRepository,
+        private readonly ScopeRepository $scopeRepository,
+        private readonly UserRepository $userRepository,
+        private readonly Emitter $emitter,
+        private readonly JwtConfig $jwtConfig,
     )
     {
-    }
-
-    public function setJwtKey(array $jwtKey): void
-    {
-        $this->jwtKey = $jwtKey;
     }
 
     public function setEncryptionKey(string $encryptionKey): void
@@ -108,7 +103,7 @@ class AuthorizationServerFactory
             $this->clientRepository,
             $this->accessTokenRepository,
             $this->scopeRepository,
-            new CryptKey($this->jwtKey['private'], null, null, $this->jwtKey['kid']),
+            new CryptKey($this->jwtConfig->getPrivateKey(), null, null, $this->jwtConfig->getKid()),
             Key::loadFromAsciiSafeString(file_get_contents($this->encryptionKey))
         );
 

@@ -160,7 +160,7 @@ final class TokenControllerTest extends WebTestCase
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
             'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
             'grant_type' => GrantTypeEntity::REFRESH_TOKEN,
-            'refresh_token' => $testHelper->generateEncryptedPayload($refreshToken),
+            'refresh_token' => $testHelper->generateEncryptedRefreshTokenPayload($refreshToken),
         ]);
 
         $response = $client->getResponse();
