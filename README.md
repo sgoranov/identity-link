@@ -53,3 +53,34 @@ You can execute all tests using the command bellow.
 ```bash
 docker exec -it core bash -c "cd /var/www; php bin/phpunit"
 ```
+
+## Overriding Templates and Assets
+
+In certain environments, you may want to override default templates (such as login 
+forms or base layouts) without modifying the original files provided by the application. 
+This can be achieved by using the local_theme directory, which is excluded from 
+version control (.gitignore) to allow environment-specific customization.
+
+### Overriding Twig Templates
+
+To override a template:
+
+ - Create the corresponding path inside the local_theme/templates directory.
+ - Copy the original template you want to override.
+ - Apply your custom changes.
+
+```bash
+mkdir -p local_theme/templates/login
+cp templates/login/login.html.twig local_theme/templates/login/login.html.twig
+```
+
+Any template found in local_theme/templates/ with the same name as the original 
+will automatically replace it.
+
+### Overriding Public Assets
+
+You can also add your own assets like CSS, JavaScript, or images to _local_theme/public_.
+**These files are not automatically published.** You must copy them manually to the actual _public/_ 
+directory during your build or deployment process.
+
+This allows each environment to include its own branding or theme without affecting shared code.

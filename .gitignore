@@ -8,7 +8,15 @@
 /public/bundles/
 /var/
 /vendor/
-/data/
+
+/local_theme/*
+/local_theme/**
+!/local_theme/
+!/local_theme/.gitkeep
+!/local_theme/templates/
+!/local_theme/templates/.gitkeep
+!/local_theme/public/
+!/local_theme/public/.gitkeep
 ###< symfony/framework-bundle ###
 
 ###> phpunit/phpunit ###
