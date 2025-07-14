@@ -44,6 +44,7 @@
         "symfony/security-bundle": "6.*",
         "symfony/security-csrf": "6.*",
         "symfony/serializer": "6.*",
+        "symfony/translation": "6.*",
         "symfony/uid": "6.*",
         "symfony/validator": "6.*",
         "symfony/yaml": "6.*"

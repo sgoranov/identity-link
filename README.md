@@ -79,8 +79,8 @@ will automatically replace it.
 
 ### Overriding Public Assets
 
-You can also add your own assets like CSS, JavaScript, or images to _local_theme/public_.
-**These files are not automatically published.** You must copy them manually to the actual _public/_ 
-directory during your build or deployment process.
+You can also add your own assets like CSS, JavaScript, or images to _local_theme/public_ directory.
+To make this easier, the repository includes a symbolic link named _theme/_ that points to _local_theme/public_.
+You can reference theme-specific assets using paths like _/theme/style.css_.
 
 This allows each environment to include its own branding or theme without affecting shared code.

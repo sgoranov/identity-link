@@ -115,3 +115,7 @@ services:
         class: League\Event\Emitter
         calls:
             - useListenerProvider: ['@App\LeagueOAuth2\SymfonyLeagueEventListenerProvider']
+
+    App\EventListener\LocaleListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 15 }

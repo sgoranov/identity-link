@@ -17,5 +17,12 @@
         <div class="container py-3">
             {% block content %}{% endblock %}
         </div>
+
+        <footer class="container py-4 border-top text-center">
+            <div class="d-inline-flex gap-3">
+                <a href="{{ path('switch_locale', { locale: 'en' }) }}">English</a>
+                <a href="{{ path('switch_locale', { locale: 'bg' }) }}">Български</a>
+            </div>
+        </footer>
     </body>
 </html>

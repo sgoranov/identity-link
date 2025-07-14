@@ -1,0 +1,7 @@
+login:
+  title: Login
+
+form_login:
+  user_id: User ID
+  password: Password
+  submit: Login

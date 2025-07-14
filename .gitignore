@@ -17,6 +17,8 @@
 !/local_theme/templates/.gitkeep
 !/local_theme/public/
 !/local_theme/public/.gitkeep
+!/local_theme/translations/
+!/local_theme/translations/.gitkeep
 ###< symfony/framework-bundle ###
 
 ###> phpunit/phpunit ###

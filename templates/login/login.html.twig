@@ -1,10 +1,10 @@
 {% extends 'base.html.twig' %}
 
 {% block content %}
-    <h1>Login</h1>
+    <h1>{{ 'login.title'|trans }}</h1>
     {% if error %}
         <div class="alert alert-danger" role="alert">
-            {{ error.getMessage() }}
+            {{ error.messageKey|trans(error.messageData, 'security') }}
         </div>
     {% endif %}
     {{ form(form) }}

@@ -1,0 +1,7 @@
+login:
+  title: Вход
+
+form_login:
+  user_id: Потребителско име
+  password: Парола
+  submit: Вход

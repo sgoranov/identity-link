@@ -29,8 +29,8 @@ security:
          - { path: ^/oauth2/token, roles: PUBLIC_ACCESS }
          - { path: ^/login, roles: PUBLIC_ACCESS }
          - { path: ^/jwks, roles: PUBLIC_ACCESS }
+         - { path: ^/switch-locale, roles: PUBLIC_ACCESS }
 
-         - { path: ^/single-sign-off, roles: IS_AUTHENTICATED_FULLY }
          - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
 
 #when@test:
