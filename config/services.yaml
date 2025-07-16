@@ -4,6 +4,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    reset_password_url: '%env(string:RESET_PASSWORD_URL)%'
     user_query_endpoint: '%env(string:USER_QUERY_ENDPOINT)%'
     user_auth_endpoint: '%env(string:USER_AUTH_ENDPOINT)%'
     user_fetch_endpoint: '%env(string:USER_FETCH_ENDPOINT)%'

@@ -1,5 +1,6 @@
 login:
   title: Login
+  forgot_password: Forgot your password?
 
 form_login:
   user_id: User ID

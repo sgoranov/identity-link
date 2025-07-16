@@ -1,5 +1,6 @@
 login:
   title: Вход
+  forgot_password: Забравена парола?
 
 form_login:
   user_id: Потребителско име

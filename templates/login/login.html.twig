@@ -8,4 +8,10 @@
         </div>
     {% endif %}
     {{ form(form) }}
+
+    {% if resetPasswordUrl is not empty %}
+        <div class="mt-3">
+            <a href="{{ resetPasswordUrl }}">{{ 'login.forgot_password'|trans }}</a>
+        </div>
+    {% endif %}
 {% endblock %}

@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use App\Form\Type\LoginType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -13,7 +14,7 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
 class LoginController extends AbstractController
 {
     #[Route('/login', name: 'security_login', methods: ['GET', 'POST'])]
-    public function login(Request $request): Response
+    public function login(Request $request, ParameterBagInterface $parameterBag): Response
     {
         $error = null;
         if ($request->hasSession()) {
@@ -25,6 +26,7 @@ class LoginController extends AbstractController
         return $this->render('login/login.html.twig', [
             'form' => $this->createForm(LoginType::class),
             'error' => $error,
+            'resetPasswordUrl' => $parameterBag->get('reset_password_url'),
         ]);
     }
 
