@@ -130,6 +130,47 @@ final class TokenControllerTest extends WebTestCase
         $this->assertSame($accessToken->getIdentifier(), $refreshToken->getAccessToken()->getIdentifier());
     }
 
+    public function testPasswordRequestWithInvalidPassword(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $eventDispatcher = $client->getContainer()->get(EventDispatcherInterface::class);
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $wasRequestAccessTokenEventDispatched = false;
+        $wasRequestRefreshTokenEventDispatched = false;
+        $accessToken = null;
+        $refreshToken = null;
+
+        $eventDispatcher->addListener(RequestEvent::ACCESS_TOKEN_ISSUED, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
+            $wasRequestAccessTokenEventDispatched = true;
+            $accessToken = $event->getAccessToken();
+        });
+
+        $eventDispatcher->addListener(RequestEvent::REFRESH_TOKEN_ISSUED, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshToken): void {
+            $wasRequestRefreshTokenEventDispatched = true;
+            $refreshToken = $event->getRefreshToken();
+        });
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::PASSWORD,
+            'username' => AppFixtures::USER_IDENTIFIER,
+            'password' => 'invalid-password',
+        ]);
+
+        $response = $client->getResponse();
+
+        $this->assertSame(400, $response->getStatusCode());
+        $this->assertSame('application/json', $response->headers->get('Content-Type'));
+
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        $this->assertSame('invalid_grant', $jsonResponse['error']);
+        $this->assertSame('The user credentials were incorrect.', $jsonResponse['message']);
+        $this->assertSame('The user credentials were incorrect.', $jsonResponse['message']);
+    }
+
     public function testSuccessfulRefreshTokenRequest(): void
     {
         $client = TokenControllerTest::createClient();

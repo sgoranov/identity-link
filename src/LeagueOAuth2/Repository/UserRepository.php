@@ -21,6 +21,7 @@ class UserRepository implements UserRepositoryInterface
         $username, $password, $grantType, ClientEntityInterface $clientEntity): ?UserEntityInterface
     {
         $user = $this->userConnector->getUserByUserCredentials($username, $password, $grantType, $clientEntity);
+        if (!$user) return null; // authentication failure
 
         $model = new UserEntity();
         $model->setIdentifier($user->getId());
