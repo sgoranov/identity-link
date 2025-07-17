@@ -2793,12 +2793,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sgoranov/identity-link-shared.git",
-                "reference": "2d4c1d035d7c9a78c4dcb2d8a2754811b6ae9840"
+                "reference": "72920a3aa41e8e02a5fbbe91b4e7125b7f2d5e4f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sgoranov/identity-link-shared/zipball/2d4c1d035d7c9a78c4dcb2d8a2754811b6ae9840",
-                "reference": "2d4c1d035d7c9a78c4dcb2d8a2754811b6ae9840",
+                "url": "https://api.github.com/repos/sgoranov/identity-link-shared/zipball/72920a3aa41e8e02a5fbbe91b4e7125b7f2d5e4f",
+                "reference": "72920a3aa41e8e02a5fbbe91b4e7125b7f2d5e4f",
                 "shasum": ""
             },
             "require": {
@@ -2844,7 +2844,7 @@
                 "source": "https://github.com/sgoranov/identity-link-shared/tree/develop",
                 "issues": "https://github.com/sgoranov/identity-link-shared/issues"
             },
-            "time": "2025-07-15T09:06:04+00:00"
+            "time": "2025-07-17T06:58:05+00:00"
         },
         {
             "name": "strobotti/php-jwk",
