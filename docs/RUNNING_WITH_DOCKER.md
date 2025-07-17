@@ -98,6 +98,25 @@ SMTP server: localhost:9025
 
 Web interface: http://localhost:9026
 
+### Redis Commander – Redis Web UI
+
+Redis Commander is a lightweight web interface for browsing and managing your Redis data. It is useful for inspecting 
+cache, sessions, rate limiter keys, and other Redis-stored values during development.
+
+**Usage:**
+
+Connects to your Redis instance and provides a visual interface to:
+View, edit, delete, and search Redis keys
+Inspect TTLs, hashes, lists, and other Redis data types
+Debug Symfony cache, session, and rate limiter entries
+No data is modified unless you explicitly make changes via the UI.
+
+**Access:**
+
+Web interface: http://localhost:9007
+
+Port 9007 on your host forwards to Redis Commander’s default port 8081.
+
 ## Testing
 
 You can execute all tests using the command bellow.

@@ -32,11 +32,12 @@ credentials and host settings.
 
 General application configuration, including authentication type and JWT token options.
 
-| Variable                     | Description                                                                     | Example Value         |
-|------------------------------|---------------------------------------------------------------------------------|-----------------------|
-| **AUTHENTICATOR_TYPE**       | Type of authenticator to use (currently only "PasswordAuthenticator" supported) | PasswordAuthenticator |
-| **JWT_INCLUDE_GROUPS_CLAIM** | Whether to include the "groups" claim in generated JWT tokens                   | true                  |
-| **JWT_GROUPS_CLAIM_LIMIT**   | Maximum number of groups to include in the JWT "groups" claim (if enabled)      | 50                    |
+| Variable                     | Description                                                                     | Example Value                     |
+|------------------------------|---------------------------------------------------------------------------------|-----------------------------------|
+| **AUTHENTICATOR_TYPE**       | Type of authenticator to use (currently only "PasswordAuthenticator" supported) | PasswordAuthenticator             |
+| **JWT_INCLUDE_GROUPS_CLAIM** | Whether to include the "groups" claim in generated JWT tokens                   | true                              |
+| **JWT_GROUPS_CLAIM_LIMIT**   | Maximum number of groups to include in the JWT "groups" claim (if enabled)      | 50                                |
+| **REDIS_DSN**                | Redis server connection string (used only when APP_ENV=distributed)             | redis://host.docker.internal:9008 |
 
 
 ## DbUserConnector

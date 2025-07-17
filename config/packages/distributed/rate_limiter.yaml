@@ -1,0 +1,6 @@
+framework:
+  rate_limiter:
+    login_ip:
+      cache_pool: rate_limiter_redis
+    login_username:
+      cache_pool: rate_limiter_redis

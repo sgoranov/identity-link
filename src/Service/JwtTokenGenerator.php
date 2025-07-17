@@ -5,7 +5,8 @@ namespace App\Service;
 
 use App\Security\Jwt\JwtConfig;
 use Firebase\JWT\JWT;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 class JwtTokenGenerator
 {
@@ -17,6 +18,7 @@ class JwtTokenGenerator
 
     public function __construct(
         private readonly JwtConfig $jwtConfig,
+        private readonly CacheInterface $cache,
     )
     {
     }
@@ -47,20 +49,10 @@ class JwtTokenGenerator
             throw new \InvalidArgumentException('Expiration time is not valid');
         }
 
-        $cache = new FilesystemAdapter(
-            $namespace = 'JwtTokenGenerator',
-
-            // the default lifetime (in seconds) for cache items that do not define their
-            // own lifetime, with a value 0 causing items to be stored indefinitely (i.e.
-            // until the files are deleted)
-            $defaultLifetime = $this->getExpTime() - 1,
-
-            // the main cache directory (the application needs read-write permissions on it)
-            // if none is specified, a directory is created inside the system temporary directory
-            $directory = null
-        );
-
-        return $cache->get($this->computeIdentifierHash(), [$this, 'createToken']);
+        return $this->cache->get($this->computeIdentifierHash(), function (ItemInterface $item) {
+            $item->expiresAfter($this->getExpTime() - 1);
+            return $this->createToken();
+        });
     }
 
     public function getIssuer(): string
@@ -125,7 +117,7 @@ class JwtTokenGenerator
 
     private function computeIdentifierHash(): string
     {
-        return sha1(vsprintf('%s-%s-%s-%s-%s', [
+        return 'jwt_token_' . sha1(vsprintf('%s-%s-%s-%s-%s', [
             $this->getAudience(),
             $this->getSubject(),
             $this->getIssuer(),
