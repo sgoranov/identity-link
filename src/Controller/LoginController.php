@@ -17,15 +17,20 @@ class LoginController extends AbstractController
     public function login(Request $request, ParameterBagInterface $parameterBag): Response
     {
         $error = null;
-        if ($request->hasSession()) {
-            $session = $request->getSession();
+        $session = $request->getSession();
+        if ($session->get(SecurityRequestAttributes::AUTHENTICATION_ERROR)) {
             $error = $session->get(SecurityRequestAttributes::AUTHENTICATION_ERROR);
             $session->remove(SecurityRequestAttributes::AUTHENTICATION_ERROR);
         }
 
+        $authParams = $session->get('auth_request_params');
+        $scopes = array_map('trim', explode(' ', $authParams['scope']));
+
         return $this->render('login/login.html.twig', [
             'form' => $this->createForm(LoginType::class),
             'error' => $error,
+            'scopes' => $scopes,
+            'client_name' => $authParams['client_id'],
             'resetPasswordUrl' => $parameterBag->get('reset_password_url'),
         ]);
     }

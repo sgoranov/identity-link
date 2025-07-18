@@ -41,7 +41,7 @@ class AppFixtures extends Fixture
         $code = new AuthCode();
         $code->setClientIdentifier(self::PUBLIC_CLIENT_IDENTIFIER);
         $code->setIsRevoked(false);
-        $code->setScopes(json_encode([ScopeEntity::OPENID]));
+        $code->setScopes(json_encode(['openid']));
         $code->setIdentifier(self::AUTH_CODE_PUBLIC_CLIENT_IDENTIFIER);
         $code->setUserIdentifier(self::USER_IDENTIFIER);
         $code->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
@@ -52,7 +52,7 @@ class AppFixtures extends Fixture
         $code = new AuthCode();
         $code->setClientIdentifier(self::PRIVATE_CLIENT_IDENTIFIER);
         $code->setIsRevoked(false);
-        $code->setScopes(json_encode([ScopeEntity::OPENID]));
+        $code->setScopes(json_encode(['openid']));
         $code->setIdentifier(self::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER);
         $code->setUserIdentifier(self::USER_IDENTIFIER);
         $code->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
@@ -63,7 +63,7 @@ class AppFixtures extends Fixture
         $accessToken = new AccessToken();
         $accessToken->setClientIdentifier(self::PRIVATE_CLIENT_IDENTIFIER);
         $accessToken->setIsRevoked(false);
-        $accessToken->setScopes(json_encode([ScopeEntity::OPENID]));
+        $accessToken->setScopes(json_encode(['openid']));
         $accessToken->setIdentifier(self::ACCESS_TOKEN_IDENTIFIER);
         $accessToken->setUserIdentifier(self::USER_IDENTIFIER);
         $accessToken->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
@@ -73,7 +73,7 @@ class AppFixtures extends Fixture
         $expiredAccessToken = new AccessToken();
         $expiredAccessToken->setClientIdentifier(self::PRIVATE_CLIENT_IDENTIFIER);
         $expiredAccessToken->setIsRevoked(false);
-        $expiredAccessToken->setScopes(json_encode([ScopeEntity::OPENID]));
+        $expiredAccessToken->setScopes(json_encode(['openid']));
         $expiredAccessToken->setIdentifier(self::EXPIRED_ACCESS_TOKEN_IDENTIFIER);
         $expiredAccessToken->setUserIdentifier(self::USER_IDENTIFIER);
         $expiredAccessToken->setExpiryDateTime((new \DateTimeImmutable())->modify('-1 day'));
@@ -83,7 +83,7 @@ class AppFixtures extends Fixture
         $clientCredentialsAccessToken = new AccessToken();
         $clientCredentialsAccessToken->setClientIdentifier(self::PRIVATE_CLIENT_IDENTIFIER);
         $clientCredentialsAccessToken->setIsRevoked(false);
-        $clientCredentialsAccessToken->setScopes(json_encode([ScopeEntity::OPENID]));
+        $clientCredentialsAccessToken->setScopes(json_encode(['openid']));
         $clientCredentialsAccessToken->setIdentifier(self::CLIENT_CREDENTIALS_ACCESS_TOKEN_IDENTIFIER);
         $clientCredentialsAccessToken->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
         $manager->persist($clientCredentialsAccessToken);

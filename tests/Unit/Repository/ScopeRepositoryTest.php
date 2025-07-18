@@ -28,15 +28,24 @@ class ScopeRepositoryTest extends KernelTestCase
         /** @var ClientEntity $client */
         $client = self::$clientRepository->getClientEntity(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
         $client->setScopes([
-            new ScopeEntity(ScopeEntity::PROFILE),
-            new ScopeEntity(ScopeEntity::OPENID),
+            new ScopeEntity('profile'),
+            new ScopeEntity('openid'),
         ]);
 
-        $scopes = self::$scopeRepository->finalizeScopes([new ScopeEntity(ScopeEntity::PROFILE)],
+        $scopes = self::$scopeRepository->finalizeScopes([new ScopeEntity('profile')],
             GrantTypeEntity::CLIENT_CREDENTIALS, $client);
         $this->assertCount(1, $scopes);
 
         list($scope) = $scopes;
-        $this->assertEquals(ScopeEntity::PROFILE, (string) $scope);
+        $this->assertEquals('profile', (string) $scope);
+    }
+
+    public function testGetScopeEntityByIdentifier(): void
+    {
+        $scope = self::$scopeRepository->getScopeEntityByIdentifier('test');
+        $this->assertFalse($scope);
+
+        $scope = self::$scopeRepository->getScopeEntityByIdentifier('openid');
+        $this->assertEquals('openid', $scope->getIdentifier());
     }
 }

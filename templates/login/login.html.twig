@@ -7,6 +7,18 @@
             {{ error.messageKey|trans(error.messageData, 'security') }}
         </div>
     {% endif %}
+
+    <div class="border rounded p-3 bg-light text-dark mb-4">
+        <p class="mb-2">
+            {{ 'form_login.requested_scopes'|trans({'%client%': client_name}) }}
+        </p>
+        <ul class="mb-0">
+            {% for scope in scopes %}
+                <li>{{ scope }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
     {{ form(form) }}
 
     {% if resetPasswordUrl is not empty %}

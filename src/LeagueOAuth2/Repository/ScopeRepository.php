@@ -6,11 +6,23 @@ namespace App\LeagueOAuth2\Repository;
 use App\LeagueOAuth2\Entity\ScopeEntity;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class ScopeRepository implements ScopeRepositoryInterface
 {
-    public function getScopeEntityByIdentifier($identifier): ScopeEntity
+    public function __construct(private readonly ParameterBagInterface $parameterBag)
     {
+    }
+
+    public function getScopeEntityByIdentifier($identifier): ScopeEntity|bool
+    {
+        // validate the scope
+        $allowedScopes = array_map('trim',
+            explode(',', $this->parameterBag->get('oauth2_allowed_scopes')));
+        if (!in_array($identifier, $allowedScopes, true)) {
+            return false;
+        }
+
         return new ScopeEntity($identifier);
     }
 

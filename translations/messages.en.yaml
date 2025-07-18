@@ -6,3 +6,4 @@ form_login:
   user_id: User ID
   password: Password
   submit: Login
+  requested_scopes: "The application %client% is requesting access to the following permissions:"

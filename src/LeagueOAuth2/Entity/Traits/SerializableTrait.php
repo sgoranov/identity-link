@@ -4,14 +4,8 @@ namespace App\LeagueOAuth2\Entity\Traits;
 
 trait SerializableTrait
 {
-
-    abstract public static function getSupported(): array;
-
     public function __construct(readonly string $identifier)
     {
-        if (!in_array($identifier, self::getSupported(), true)) {
-            throw new \InvalidArgumentException(sprintf('Invalid parameter %s passed.', $identifier));
-        }
     }
 
     public static function convertToStringArray(string $data): array

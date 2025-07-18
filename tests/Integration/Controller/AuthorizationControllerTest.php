@@ -315,4 +315,35 @@ class AuthorizationControllerTest extends WebTestCase
         $this->assertSame('The authorization grant type is not supported by the authorization server.', $jsonResponse['message']);
         $this->assertSame('Check that all required parameters have been provided', $jsonResponse['hint']);
     }
+
+    public function testAuthorizeRequestWithInvalidScopes(): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $user = new User(AppFixtures::USER_IDENTIFIER);
+        $client->loginUser($user, 'secured');
+
+        $client->request(
+            'GET',
+            $router->generate('oauth2_auth'),
+            [
+                'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+                'response_type' => 'code',
+                'state' => 'foobar',
+                'scope' => 'test1 test2',
+            ]
+        );
+
+        $response = $client->getResponse();
+
+        $this->assertSame(302, $response->getStatusCode());
+        $redirectUri = $response->headers->get('Location');
+
+        $redirectUri = str_replace('http://localhost?', '', $redirectUri);
+        $this->assertStringStartsWith(
+            'error=invalid_scope&error_description=The+requested+scope+is+invalid%2C+unknown%2C+or+malformed',
+            $redirectUri
+        );
+    }
 }
