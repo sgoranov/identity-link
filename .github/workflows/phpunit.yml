@@ -1,4 +1,4 @@
-name: Run tests using PHPUnit with PostgreSQL
+name: PHPUnit Tests
 
 on:
   push:

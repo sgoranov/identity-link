@@ -1,5 +1,12 @@
 # Identity Link
 
+![License](https://img.shields.io/github/license/sgoranov/identity-link)
+![Last Commit](https://img.shields.io/github/last-commit/sgoranov/identity-link)
+![Issues](https://img.shields.io/github/issues/sgoranov/identity-link)
+[![PHPUnit Tests](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml)
+[![Security Audit](https://github.com/sgoranov/identity-link/actions/workflows/security-audit.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/security-audit.yml)
+
+
 Identity Link is a modular, extensible OAuth2 authorization 
 server built with Symfony and PHP. It provides a complete authentication and 
 authorization solution designed for modern, distributed applications requiring 
@@ -37,3 +44,7 @@ custom enterprise environments that require centralized user and token managemen
 - [Configuration](docs/CONFIGURATION.md)
 - [Running with Docker](docs/RUNNING_WITH_DOCKER.md)
 - [Theme Customization](docs/THEME_CUSTOMIZATION.md)
+
+## License
+
+Identity Link is open source software licensed under the [MIT License](LICENSE), which permits reuse, modification, and distribution with minimal restrictions.
