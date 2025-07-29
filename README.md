@@ -4,18 +4,16 @@
 ![Last Commit](https://img.shields.io/github/last-commit/sgoranov/identity-link)
 ![Issues](https://img.shields.io/github/issues/sgoranov/identity-link)
 [![PHPUnit Tests](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml)
-[![Security Audit](https://github.com/sgoranov/identity-link/actions/workflows/security-audit.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/security-audit.yml)
+[![Security Audit](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml)
 
 
-Identity Link is a modular, extensible OAuth2 authorization 
-server built with Symfony and PHP. It provides a complete authentication and 
-authorization solution designed for modern, distributed applications requiring 
-token-based security.
+Identity Link is a modular, extensible OAuth2 authorization server built with Symfony and PHP. It provides a complete 
+authentication and authorization solution designed for modern, 
+distributed applications requiring token-based security.
 
-This project leverages the powerful **league/oauth2-server** library under the hood, 
-which provides a standards-compliant OAuth 2.0 server implementation in PHP. Identity 
-Link integrates and extends it with features like JWT issuance, client and user 
-management, 2FA support, and customizable UI themes.
+Identity Link includes features such as JWT issuance, client and 
+user management, 2FA support, and customizable UI themes - offering 
+a flexible and powerful foundation for secure application development.
 
 ## Purpose
 
