@@ -43,6 +43,7 @@ custom enterprise environments that require centralized user and token managemen
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Running with Docker](docs/RUNNING_WITH_DOCKER.md)
+- [OAuth Usage Guide](docs/OAUTH_USAGE_GUIDE.md)
 - [Theme Customization](docs/THEME_CUSTOMIZATION.md)
 
 ## License
