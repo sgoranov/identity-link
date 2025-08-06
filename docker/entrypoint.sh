@@ -36,7 +36,7 @@ exec "$@" &
 APACHE_PID=$!
 
 # Test data generation
-if [ "${IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
+if [ "${TEST_DATA_GENERATION:-0}" -eq 1 ]; then
   AUTH_TOKEN=$(php bin/console identity-link:generate-jwt)
   RETRY_INTERVAL=3
 
@@ -48,7 +48,7 @@ if [ "${IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
       response=$(curl -s -w "%{http_code}" --location "$CLIENT_API_URL/group" \
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
-          --data "{\"name\": \"$IDENTITY_LINK_TEST_DATA_GROUP_NAME\"}")
+          --data "{\"name\": \"$TEST_DATA_GROUP_NAME\"}")
 
       http_status="${response: -3}"
       if [ "$http_status" -ne 201 ]; then
@@ -63,9 +63,9 @@ if [ "${IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
           --data "{
-              \"name\": \"$IDENTITY_LINK_TEST_DATA_CLIENT_ID\",
+              \"name\": \"$TEST_DATA_CLIENT_ID\",
               \"description\": \"description\",
-              \"redirectUri\": \"$IDENTITY_LINK_TEST_DATA_REDIRECT_URI\",
+              \"redirectUri\": \"$TEST_DATA_REDIRECT_URI\",
               \"grantTypes\": [\"client_credentials\", \"authorization_code\", \"password\", \"refresh_token\"],
               \"groups\": [\"$GROUP_ID\"],
               \"isPublic\": false
@@ -85,7 +85,7 @@ if [ "${IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
           --data "{
-              \"password\": \"$IDENTITY_LINK_TEST_DATA_CLIENT_SECRET\",
+              \"password\": \"$TEST_DATA_CLIENT_SECRET\",
               \"passwordHint\": \"pass hint\",
               \"expirationDateTime\": \"$EXPIRATION_DATE\",
               \"client\": \"$CLIENT_ID\"
@@ -113,7 +113,7 @@ if [ "${IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
       response=$(curl -s -w "%{http_code}" --location "$USER_API_URL/group" \
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
-          --data "{\"name\": \"$IDENTITY_LINK_TEST_DATA_GROUP_NAME\"}")
+          --data "{\"name\": \"$TEST_DATA_GROUP_NAME\"}")
 
       http_status="${response: -3}"
       if [ "$http_status" -ne 201 ]; then
@@ -128,8 +128,8 @@ if [ "${IDENTITY_LINK_TEST_DATA_GENERATION:-0}" -eq 1 ]; then
           --header "Content-Type: application/json" \
           --header "Authorization: Bearer $AUTH_TOKEN" \
           --data "{
-              \"username\": \"$IDENTITY_LINK_TEST_DATA_USER_NAME\",
-              \"password\": \"$IDENTITY_LINK_TEST_DATA_USER_PASS\",
+              \"username\": \"$TEST_DATA_USER_NAME\",
+              \"password\": \"$TEST_DATA_USER_PASS\",
               \"firstName\": \"Firstname\",
               \"lastName\": \"Lastname\",
               \"email\": \"test@phpidentitylink.com\",

@@ -6,7 +6,6 @@
 [![PHPUnit Tests](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml)
 [![Security Audit](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml)
 
-
 Identity Link is a modular, extensible OAuth2 authorization server built with Symfony and PHP. It provides a complete 
 authentication and authorization solution designed for modern, 
 distributed applications requiring token-based security.
@@ -35,15 +34,16 @@ custom enterprise environments that require centralized user and token managemen
 - [DB Users](https://github.com/sgoranov/identity-link-db-users) - Handles user registration, storage, and authentication
 - [2FA](https://github.com/sgoranov/identity-link-2fa) - Provides optional two-factor authentication via TOTP
 - [Shared](https://github.com/sgoranov/identity-link-shared) - Common utilities and abstractions shared across services
+- [Docker](https://github.com/sgoranov/identity-link-docker) – Centralized Docker Compose setup to orchestrate all services locally for development or testing
 
 ## Documentation
 
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
-- [Running with Docker](docs/RUNNING_WITH_DOCKER.md)
 - [OAuth Usage Guide](docs/OAUTH_USAGE_GUIDE.md)
 - [Theme Customization](docs/THEME_CUSTOMIZATION.md)
 
 ## License
 
-Identity Link is open source software licensed under the [MIT License](LICENSE), which permits reuse, modification, and distribution with minimal restrictions.
+Identity Link is open source software licensed under the [MIT License](LICENSE), which permits reuse, 
+modification, and distribution with minimal restrictions.

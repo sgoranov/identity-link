@@ -17,6 +17,9 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
     ca-certificates \
     gnupg \
     postgresql-client \
+    unzip \
+    zip \
+    libzip-dev \
     php \
     php-fpm \
     php-pgsql \
@@ -24,11 +27,9 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
     php-xml \
     php-xdebug \
     php-curl \
-    php-redis
-
-# Download and install composer
-RUN cd /bin/ && curl --silent --show-error https://getcomposer.org/installer | php
-RUN cd /bin/ && ln -s composer.phar composer
+    php-redis \
+    php-zip \
+    composer
 
 # Apache configuration
 RUN a2enmod rewrite
