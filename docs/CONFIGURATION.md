@@ -52,7 +52,7 @@ GitHub repo: https://github.com/sgoranov/identity-link-db-users
 | **USER_QUERY_ENDPOINT** | Endpoint to query users (search/filter)                                    | http://host.docker.internal:9001/api/v1/query     |
 | **USER_AUTH_ENDPOINT**  | Endpoint for user authentication                                           | http://host.docker.internal:9001/api/v1/auth      |
 | **USER_FETCH_ENDPOINT** | Endpoint to fetch user details by ID (`{id}` replaced with actual user ID) | http://host.docker.internal:9001/api/v1/user/{id} |
-| **RESET_PASSWORD_URL**  | URL for reset password link; if empty, reset password option is disabled   | http://host.docker.internal:9001/reset-password   |
+| **RESET_PASSWORD_URL**  | URL for reset password link; if empty, reset password option is disabled   | http:/localhost/users/reset-password              |
 
 
 ## DbClientConnector
@@ -76,5 +76,5 @@ GitHub repo: https://github.com/sgoranov/identity-link-2fa
 | Variable                  | Description                                                                   | Example Value                                |
 |---------------------------|-------------------------------------------------------------------------------|----------------------------------------------|
 | **TWO_FA_AUTH_ENDPOINT**  | Endpoint for 2FA authentication. Leave empty to disable 2FA                   | http://host.docker.internal:9003/api/v1/auth |
-| **TWO_FA_INDEX_ENDPOINT** | Endpoint to verify 2FA token by user ID (`{id}` replaced with actual user ID) | http://localhost:9003/2fa/verify/{id}        |
+| **TWO_FA_INDEX_ENDPOINT** | Endpoint to verify 2FA token by user ID (`{id}` replaced with actual user ID) | http://localhost/2fa/2fa/verify/{id}         |
 
