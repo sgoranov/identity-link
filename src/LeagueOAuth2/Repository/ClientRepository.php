@@ -26,8 +26,7 @@ class ClientRepository implements ClientRepositoryInterface
         }
 
         $model = new ClientEntity();
-        $model->setIdentifier($client->getId());
-        $model->setName($client->getName());
+        $model->setIdentifier($client->getName());
         $model->setRedirectUri($client->getRedirectUri());
         $model->setPublic($client->isPublic());
         $model->setScopes($client->getScopes());

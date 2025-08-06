@@ -13,11 +13,8 @@ class OidcDiscoveryController extends AbstractController
     #[Route('/.well-known/openid-configuration', name: 'oidc_discovery', methods: ['GET'])]
     public function discovery(UrlGeneratorInterface $urlGenerator): JsonResponse
     {
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-        $host = $_SERVER['HTTP_HOST'];
-
         return new JsonResponse([
-            'issuer' => $protocol . $host,
+            'issuer' => 'https://' . $_SERVER['HTTP_HOST'],
             'authorization_endpoint' => $urlGenerator->generate('oauth2_auth', [], UrlGeneratorInterface::ABSOLUTE_URL),
             'token_endpoint' => $urlGenerator->generate('oauth2_token', [], UrlGeneratorInterface::ABSOLUTE_URL),
             'userinfo_endpoint' => $urlGenerator->generate('oidc_user_info', [], UrlGeneratorInterface::ABSOLUTE_URL),

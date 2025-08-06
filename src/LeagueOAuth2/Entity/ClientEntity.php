@@ -8,7 +8,6 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 class ClientEntity implements ClientEntityInterface
 {
     private string $id;
-    private string $name;
     private string $redirectUri;
     private bool $public;
     private array $scopes;
@@ -22,16 +21,6 @@ class ClientEntity implements ClientEntityInterface
     public function setIdentifier(string $id): void
     {
         $this->id = $id;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): void
-    {
-        $this->name = $name;
     }
 
     public function getRedirectUri(): string
@@ -77,5 +66,10 @@ class ClientEntity implements ClientEntityInterface
     public function setPublic(bool $public): void
     {
         $this->public = $public;
+    }
+
+    public function getName()
+    {
+        return $this->id;
     }
 }

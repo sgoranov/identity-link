@@ -209,8 +209,7 @@ class PasswordAuthenticator extends AbstractAuthenticator
         }
 
         $entity = new ClientEntity();
-        $entity->setIdentifier($client->getId());
-        $entity->setName($client->getName());
+        $entity->setIdentifier($client->getName());
         $entity->setRedirectUri($client->getRedirectUri());
         $entity->setPublic($client->isPublic());
         $entity->setScopes($client->getScopes());

@@ -48,9 +48,13 @@ services:
               arguments:
                   - '@=service("App\\Security\\Jwt\\JwtConfig").getPublicKey()'
 
+    sgoranov\IdentityLinkShared\EventListener\XForwardedPrefixListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, priority: 10 }
+
     sgoranov\IdentityLinkShared\EventListener\LocaleListener:
         tags:
-            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 15 }
+            - { name: kernel.event_listener, event: kernel.request, priority: 15 }
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
