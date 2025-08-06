@@ -1,7 +1,5 @@
 # Configuration Parameters
 
-**Table of Contents**
-
 <!-- TOC -->
 * [Configuration Parameters](#configuration-parameters)
   * [Database Configuration](#database-configuration)

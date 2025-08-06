@@ -43,6 +43,7 @@ custom enterprise environments that require centralized user and token managemen
 - [Configuration](docs/CONFIGURATION.md)
 - [OAuth Usage Guide](docs/OAUTH_USAGE_GUIDE.md)
 - [OpenID Connect Usage Guide](docs/OIDC_USAGE_GUIDE.md)
+- [API Contract Interfaces](docs/API_CONTRACTS.md)
 - [Theme Customization](docs/THEME_CUSTOMIZATION.md)
 
 ## License
