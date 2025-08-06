@@ -32,13 +32,13 @@ credentials and host settings.
 
 General application configuration, including authentication type and JWT token options.
 
-| Variable                     | Description                                                                     | Example Value                              |
-|------------------------------|---------------------------------------------------------------------------------|--------------------------------------------|
-| **AUTHENTICATOR_TYPE**       | Type of authenticator to use (currently only "PasswordAuthenticator" supported) | PasswordAuthenticator                      |
-| **JWT_INCLUDE_GROUPS_CLAIM** | Whether to include the "groups" claim in generated JWT tokens                   | true                                       |
-| **JWT_GROUPS_CLAIM_LIMIT**   | Maximum number of groups to include in the JWT "groups" claim (if enabled)      | 50                                         |
-| **REDIS_DSN**                | Redis server connection string (used only when APP_ENV=distributed)             | redis://host.docker.internal:9008          |
-| **OAUTH2_ALLOWED_SCOPES**    | Comma-separated list of allowed OAuth2 scopes                                   | openid,profile,email,offline_access,groups |
+| Variable                     | Description                                                                                                                                                                                                               | Example Value                                                                                                                |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| **AUTHENTICATOR_TYPE**       | Type of authenticator to use (currently only "PasswordAuthenticator" supported)                                                                                                                                           | PasswordAuthenticator                                                                                                        |
+| **JWT_INCLUDE_GROUPS_CLAIM** | Whether to include the "groups" claim in generated JWT tokens                                                                                                                                                             | true                                                                                                                         |
+| **JWT_GROUPS_CLAIM_LIMIT**   | Maximum number of groups to include in the JWT "groups" claim (if enabled)                                                                                                                                                | 50                                                                                                                           |
+| **REDIS_DSN**                | Redis server connection string (used only when APP_ENV=distributed)                                                                                                                                                       | redis://host.docker.internal:9008                                                                                            |
+| **OIDC_EXTRA_CLAIMS**        | JSON-encoded map of custom (non-standard) claims to include in ID Token or UserInfo responses. Keys are logical categories (e.g., "groups", "account") and values are arrays of field names. Must be a valid JSON string. | {"groups":["groups"],"account":["employee_id","department","account_status"],"permissions":["feature_flags","access_level"]} |
 
 
 ## DbUserConnector

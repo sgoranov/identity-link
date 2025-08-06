@@ -70,9 +70,6 @@ final class TestHelper
             $payload['sub'] = $accessToken->getUserIdentifier();
             $payload['oid'] = $accessToken->getUserIdentifier();
 
-            $user = $this->userConnector->getUserById($accessToken->getUserIdentifier());
-            $payload['name'] = $user->getDisplayName();
-
             $groups = $this->userConnector->getGroups($accessToken->getUserIdentifier(), 10);
             $payload['groups'] = $groups->getGroups();
         } else {

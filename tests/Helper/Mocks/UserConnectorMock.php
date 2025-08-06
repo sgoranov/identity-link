@@ -19,8 +19,13 @@ class UserConnectorMock implements UserConnectorInterface
         if ($username === AppFixtures::USER_IDENTIFIER && $password === AppFixtures::USER_PASSWORD) {
             $user = new DbUserResponse();
             $user->setId(AppFixtures::USER_IDENTIFIER);
-            $user->setFirstName('FirstName');
-            $user->setLastName('LastName');
+            $user->setClaims([
+                'name' => 'User Name',
+                'preferred_username' => 'username',
+                'email' => 'username@email.com',
+                'email_verified' => true,
+                'address' => 'User Address 11'
+            ]);
 
             return $user;
         }
@@ -33,8 +38,13 @@ class UserConnectorMock implements UserConnectorInterface
         if ($id === AppFixtures::USER_IDENTIFIER) {
             $user = new DbUserResponse();
             $user->setId(AppFixtures::USER_IDENTIFIER);
-            $user->setFirstName('FirstName');
-            $user->setLastName('LastName');
+            $user->setClaims([
+                'name' => 'User Name',
+                'preferred_username' => 'username',
+                'email' => 'username@email.com',
+                'email_verified' => true,
+                'address' => 'User Address 11'
+            ]);
 
             return $user;
         }

@@ -33,6 +33,7 @@ use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
 use App\Tests\Helper\TestHelper;
+use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\RequestAccessTokenEvent;
 use League\OAuth2\Server\RequestEvent;
 use League\OAuth2\Server\RequestRefreshTokenEvent;
@@ -42,6 +43,13 @@ use Symfony\Component\Routing\RouterInterface;
 
 final class TokenControllerTest extends WebTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $_SERVER['HTTP_HOST'] = 'localhost';
+    }
+
     public function testSuccessfulClientCredentialsRequest(): void
     {
         $client = TokenControllerTest::createClient();
@@ -357,5 +365,70 @@ final class TokenControllerTest extends WebTestCase
         $this->assertSame('Client authentication failed', $jsonResponse['message']);
 
         $this->assertTrue($wasClientAuthenticationEventDispatched);
+    }
+
+    public function testAuthorizationCodeFlowReturnsIdToken(): void
+    {
+        $client = static::createClient();
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
+
+        list($authCode) = $authCodeRepository->findBy(['identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER]);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        $response = $client->getResponse();
+
+        $this->assertSame(200, $response->getStatusCode());
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        $this->assertArrayHasKey('id_token', $jsonResponse);
+        $this->assertNotEmpty($jsonResponse['id_token']);
+
+        // Decode ID token to inspect claims
+        [$header, $payload, $signature] = explode('.', $jsonResponse['id_token']);
+        $decodedPayload = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
+
+        $this->assertArrayHasKey('sub', $decodedPayload);
+        $this->assertSame(AppFixtures::USER_IDENTIFIER, $decodedPayload['sub']);
+        $this->assertArrayHasKey('iss', $decodedPayload);
+        $this->assertArrayHasKey('aud', $decodedPayload);
+        $this->assertArrayHasKey('exp', $decodedPayload);
+    }
+
+    public function testNoIdTokenWithoutOpenidScope(): void
+    {
+        $client = static::createClient();
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+
+        // Ensure auth code has empty scopes to simulate a minimal OIDC flow
+        list($authCode) = $authCodeRepository->findBy(['identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER]);
+        $authCode->setScopes(json_encode([]));
+        $entityManager->persist($authCode);
+        $entityManager->flush();
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        $response = $client->getResponse();
+        $this->assertSame(200, $response->getStatusCode());
+
+        $jsonResponse = json_decode($response->getContent(), true);
+        $this->assertArrayNotHasKey('id_token', $jsonResponse);
     }
 }

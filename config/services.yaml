@@ -4,7 +4,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
-    oauth2_allowed_scopes: '%env(string:OAUTH2_ALLOWED_SCOPES)%'
+    oidc_extra_claims: '%env(string:OIDC_EXTRA_CLAIMS)%'
     reset_password_url: '%env(string:RESET_PASSWORD_URL)%'
     user_query_endpoint: '%env(string:USER_QUERY_ENDPOINT)%'
     user_auth_endpoint: '%env(string:USER_AUTH_ENDPOINT)%'
@@ -92,6 +92,21 @@ services:
         class: App\Api\IdentityLink\Connector\TwoFaConnector
         calls:
             - setAuthEndpoint: [ '%two_fa_auth_endpoint%' ]
+
+    App\Service\OidcExtraClaimsProvider:
+        arguments:
+            $parameterBag: '@parameter_bag'
+
+    OpenIDConnectServer\ClaimExtractor:
+        class: OpenIDConnectServer\ClaimExtractor
+        arguments:
+            - '@App\Service\OidcExtraClaimsProvider'
+
+    OpenIDConnectServer\IdTokenResponse:
+        class: OpenIDConnectServer\IdTokenResponse
+        arguments:
+            - '@App\LeagueOAuth2\Repository\UserRepository'
+            - '@OpenIDConnectServer\ClaimExtractor'
 
     App\LeagueOAuth2\AuthorizationServerFactory:
         calls:

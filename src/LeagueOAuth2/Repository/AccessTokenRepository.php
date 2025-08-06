@@ -46,13 +46,6 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
             $token->setGroups($this->getGroups($clientEntity, $userIdentifier));
         }
 
-        if ($userIdentifier !== null) {
-            $user = $this->userConnector->getUserById($userIdentifier);
-            $token->setUserDisplayName($user->getDisplayName());
-        } else {
-            $token->setUserDisplayName($clientEntity->getName());
-        }
-
         return $token;
     }
 

@@ -6,7 +6,8 @@
 [![PHPUnit Tests](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml)
 [![Security Audit](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml)
 
-Identity Link is a modular, extensible OAuth2 authorization server built with Symfony and PHP. It provides a complete 
+Identity Link is a modular, extensible OAuth2 and OpenID Connect (OIDC) authorization
+server built with Symfony and PHP. It provides a complete 
 authentication and authorization solution designed for modern, 
 distributed applications requiring token-based security.
 
@@ -41,6 +42,7 @@ custom enterprise environments that require centralized user and token managemen
 - [Installation](docs/INSTALLATION.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [OAuth Usage Guide](docs/OAUTH_USAGE_GUIDE.md)
+- [OpenID Connect Usage Guide](docs/OIDC_USAGE_GUIDE.md)
 - [Theme Customization](docs/THEME_CUSTOMIZATION.md)
 
 ## License

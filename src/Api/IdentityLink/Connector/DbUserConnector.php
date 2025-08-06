@@ -56,6 +56,14 @@ class DbUserConnector extends AbstractConnector implements UserConnectorInterfac
             AbstractNormalizer::OBJECT_TO_POPULATE => $response,
         ]);
 
+        $response->setClaims([
+            'name' => sprintf('%s %s', $data['response']['user']['firstName'], $data['response']['user']['lastName']),
+            'preferred_username' => $data['response']['user']['username'],
+            'given_name' => $data['response']['user']['firstName'],
+            'family_name' => $data['response']['user']['lastName'],
+            'email' => $data['response']['user']['email'],
+        ]);
+
         return $response;
     }
 

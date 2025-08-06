@@ -7,5 +7,5 @@ interface UserResponseInterface
 {
 
     public function getId(): string;
-    public function getDisplayName(): string;
+    public function getClaims(): array;
 }

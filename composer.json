@@ -27,6 +27,7 @@
         "league/oauth2-server": "^8.4",
         "nyholm/psr7": "^1.8",
         "sgoranov/identity-link-shared": "dev-develop",
+        "steverhoades/oauth2-openid-connect-server": "^3.0",
         "strobotti/php-jwk": "^1.4",
         "symfony/console": "6.*",
         "symfony/dotenv": "6.*",

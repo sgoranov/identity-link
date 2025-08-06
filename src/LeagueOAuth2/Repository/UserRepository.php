@@ -8,8 +8,9 @@ use App\LeagueOAuth2\Entity\UserEntity;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\UserEntityInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
+use OpenIDConnectServer\Repositories\IdentityProviderInterface;
 
-class UserRepository implements UserRepositoryInterface
+class UserRepository implements UserRepositoryInterface, IdentityProviderInterface
 {
     public function __construct(
         private readonly UserConnectorInterface $userConnector,
@@ -25,6 +26,18 @@ class UserRepository implements UserRepositoryInterface
 
         $model = new UserEntity();
         $model->setIdentifier($user->getId());
+
+        return $model;
+    }
+
+    public function getUserEntityByIdentifier($identifier): ?UserEntity
+    {
+        $user = $this->userConnector->getUserById($identifier);
+        if (!$user) return null;
+
+        $model = new UserEntity();
+        $model->setIdentifier($user->getId());
+        $model->setClaims($user->getClaims());
 
         return $model;
     }

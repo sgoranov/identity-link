@@ -18,6 +18,7 @@ use League\OAuth2\Server\Grant\ClientCredentialsGrant;
 use League\OAuth2\Server\Grant\ImplicitGrant;
 use League\OAuth2\Server\Grant\PasswordGrant;
 use League\OAuth2\Server\Grant\RefreshTokenGrant;
+use OpenIDConnectServer\IdTokenResponse;
 
 class AuthorizationServerFactory
 {
@@ -46,6 +47,7 @@ class AuthorizationServerFactory
         private readonly RefreshTokenRepository $refreshTokenRepository,
         private readonly ScopeRepository $scopeRepository,
         private readonly UserRepository $userRepository,
+        private readonly IdTokenResponse $idTokenResponse,
         private readonly Emitter $emitter,
         private readonly JwtConfig $jwtConfig,
     )
@@ -104,7 +106,8 @@ class AuthorizationServerFactory
             $this->accessTokenRepository,
             $this->scopeRepository,
             new CryptKey($this->jwtConfig->getPrivateKey(), null, null, $this->jwtConfig->getKid()),
-            Key::loadFromAsciiSafeString(file_get_contents($this->encryptionKey))
+            Key::loadFromAsciiSafeString(file_get_contents($this->encryptionKey)),
+            $this->idTokenResponse,
         );
 
         $server->setEmitter($this->emitter);

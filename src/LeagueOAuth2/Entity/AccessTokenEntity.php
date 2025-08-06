@@ -17,7 +17,6 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     private string $identifier;
     private DateTimeImmutable $dateTime;
     private ?string $userIdentifier;
-    private ?string $userDisplayName;
     private bool $isRevoked = false;
     private $privateKey;
 
@@ -43,7 +42,6 @@ class AccessTokenEntity implements AccessTokenEntityInterface
         $builder = $builder->expiresAt($this->getExpiryDateTime());
         $builder = $builder->relatedTo((string) $this->getUserIdentifier());
         $builder = $builder->withClaim('oid', (string) $this->getUserIdentifier());
-        $builder = $builder->withClaim('name', $this->getUserDisplayName());
         $builder = $builder->withClaim('scopes', $this->getScopes());
 
         if ($this->groups !== null) {
@@ -94,16 +92,6 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     public function getUserIdentifier(): ?string
     {
         return $this->userIdentifier;
-    }
-
-    public function getUserDisplayName(): ?string
-    {
-        return $this->userDisplayName;
-    }
-
-    public function setUserDisplayName(?string $userDisplayName): void
-    {
-        $this->userDisplayName = $userDisplayName;
     }
 
     public function getClient(): ClientEntityInterface

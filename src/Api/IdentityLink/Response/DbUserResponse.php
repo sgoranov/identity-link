@@ -8,8 +8,8 @@ use App\Api\Contract\UserResponseInterface;
 class DbUserResponse implements UserResponseInterface
 {
     private string $id;
-    private string $firstName;
-    private string $lastName;
+
+    private array $claims;
 
     public function getId(): string
     {
@@ -21,18 +21,13 @@ class DbUserResponse implements UserResponseInterface
         $this->id = $id;
     }
 
-    public function setFirstName(string $firstName): void
+    public function getClaims(): array
     {
-        $this->firstName = $firstName;
+        return $this->claims;
     }
 
-    public function setLastName(string $lastName): void
+    public function setClaims(array $claims): void
     {
-        $this->lastName = $lastName;
-    }
-
-    public function getDisplayName(): string
-    {
-        return sprintf('%s %s', $this->firstName, $this->lastName);
+        $this->claims = $claims;
     }
 }
