@@ -24,13 +24,17 @@ class LoginController extends AbstractController
         }
 
         $authParams = $session->get('auth_request_params');
-        $scopes = array_map('trim', explode(' ', $authParams['scope']));
+
+        $scopes = [];
+        if (isset($authParams['scope'])) {
+            $scopes = array_map('trim', explode(' ', $authParams['scope']));
+        }
 
         return $this->render('login/login.html.twig', [
             'form' => $this->createForm(LoginType::class),
             'error' => $error,
             'scopes' => $scopes,
-            'client_name' => $authParams['client_id'],
+            'client_name' => $authParams['client_id'] ?? '',
             'resetPasswordUrl' => $parameterBag->get('reset_password_url'),
         ]);
     }
