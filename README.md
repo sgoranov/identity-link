@@ -11,23 +11,56 @@ server built with Symfony and PHP. It provides a complete
 authentication and authorization solution designed for modern, 
 distributed applications requiring token-based security.
 
-Identity Link includes features such as JWT issuance, client and 
-user management, 2FA support, and customizable UI themes - offering 
-a flexible and powerful foundation for secure application development.
+## Why Choose Identity Link
 
-## Purpose
+Identity Link is a modern identity management system built with 
+scalability, flexibility, and security in mind. Here’s why it stands out:
 
-The goal of Identity Link is to serve as a secure, flexible identity provider 
-that can:
+### Microservice-Based Architecture
 
- - Act as an Authorization Server (issuing access and refresh tokens)
- - Handle User Authentication and Password Grants
- - Support Client Credentials, Authorization Code, and Refresh Token flows
- - Provide 2FA support for enhanced security
- - Expose a well-structured REST API for user, client, and group management
+Built as a set of microservices, Identity Link allows horizontal 
+scaling-spin up more instances of the same service to handle 
+increased load and maintain high performance.
 
-It is especially suited for integration into microservice-based systems or 
-custom enterprise environments that require centralized user and token management.
+### Modular Design
+
+Identity Link is composed of swappable modules, making it easy 
+to adapt to your infrastructure or requirements:
+
+ - The default `db-user` module stores user data in PostgreSQL.
+ - You can easily replace it with a custom implementation that pulls users from Active Directory, an API, or any other system.
+
+### Two-Factor Authentication Support
+
+Security is built in. TOTP (e.g., Google Authenticator) is supported 
+out of the box. Thanks to the modular design, you can also implement 
+other 2FA methods like SMS verification or third-party services 
+with minimal changes.
+
+### Fully Customizable UI and Text
+
+Identity Link is fully customizable. You can:
+
+ - Apply your own themes to modify the look and feel.
+ - Customize all texts and labels.
+ - Provide translations for a multilingual user experience.
+
+
+## Features
+
+Identity Link provides a secure and flexible identity solution for modern applications.
+Key features include:
+
+ - OAuth2 and OpenID Connect (OIDC) support
+ - JWT access token issuance
+ - Authorization Code, Client Credentials, and Password Grant flows
+ - RESTful API for user, client, and group management
+ - Modular architecture for pluggable components
+ - Built-in TOTP two-factor authentication
+ - Easy customization of UI, text, and translations
+ - Horizontal scalability through microservices
+ - Docker-based development environment
+ - Extensive PHPUnit test coverage
 
 ## Components
 
