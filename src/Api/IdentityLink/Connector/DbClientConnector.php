@@ -42,7 +42,7 @@ class DbClientConnector extends AbstractConnector implements ClientConnectorInte
     {
         $options = [
             'json' => [
-                'name' => $clientIdentifier,
+                'id' => $clientIdentifier,
                 'secret' => $clientSecret,
                 'grantType' => $grantType,
             ]
@@ -68,7 +68,7 @@ class DbClientConnector extends AbstractConnector implements ClientConnectorInte
             'json' => [
                 'type' => 'Client',
                 'alias' => 't',
-                'query' => 't.name = :clientIdentifier',
+                'query' => 't.id = :clientIdentifier',
                 'parameters' => [
                     'clientIdentifier' => $id,
                 ],
