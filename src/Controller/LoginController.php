@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Form\Type\LoginType;
+use App\LeagueOAuth2\Repository\ClientRepository;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,7 +16,7 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
 class LoginController extends AbstractController
 {
     #[Route('/login', name: 'security_login', methods: ['GET', 'POST'])]
-    public function login(Request $request, ParameterBagInterface $parameterBag): Response
+    public function login(Request $request, ParameterBagInterface $parameterBag, ClientRepository $clientRepository): Response
     {
         $error = null;
         $session = $request->getSession();
@@ -30,11 +32,15 @@ class LoginController extends AbstractController
             $scopes = array_map('trim', explode(' ', $authParams['scope']));
         }
 
+        if (!isset($authParams['client_id']) || null === ($client = $clientRepository->getClientEntity($authParams['client_id']))) {
+            throw OAuthServerException::invalidRequest('client_id');
+        }
+
         return $this->render('login/login.html.twig', [
             'form' => $this->createForm(LoginType::class),
             'error' => $error,
             'scopes' => $scopes,
-            'client_name' => $authParams['client_id'] ?? '',
+            'client_name' => $client->getName(),
             'resetPasswordUrl' => $parameterBag->get('reset_password_url'),
         ]);
     }
