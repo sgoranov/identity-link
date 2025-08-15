@@ -2,24 +2,11 @@
 
 {% block content %}
     <h1>{{ 'login.title'|trans }}</h1>
-    {% if error %}
+    {% for flash in app.flashes('error') %}
         <div class="alert alert-danger" role="alert">
-            {{ error.messageKey|trans(error.messageData, 'security') }}
+            {{ flash.key|trans(flash.params, 'security') }}
         </div>
-    {% endif %}
-
-    {% if scopes is not empty %}
-        <div class="border rounded p-3 bg-light text-dark mb-4">
-            <p class="mb-2">
-                {{ 'form_login.requested_scopes'|trans({'%client%': client_name}) }}
-            </p>
-            <ul class="mb-0">
-                {% for scope in scopes %}
-                    <li>{{ scope }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
+    {% endfor %}
 
     {{ form(form) }}
 

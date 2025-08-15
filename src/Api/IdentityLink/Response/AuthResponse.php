@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace App\Api\IdentityLink\Response;
 
+use App\Api\Contract\TwoFaConnectorResponseInterface;
 use DateTime;
 
-class AuthResponse
+class AuthResponse implements TwoFaConnectorResponseInterface
 {
     private string $id;
-    private string $identifier;
+    private string $userId;
+    private string $redirectUri;
     private DateTime $created;
     private DateTime $expired;
     private ?DateTime $authenticated = null;
@@ -23,14 +25,24 @@ class AuthResponse
         $this->id = $id;
     }
 
-    public function getIdentifier(): string
+    public function getUserId(): string
     {
-        return $this->identifier;
+        return $this->userId;
     }
 
-    public function setIdentifier(string $identifier): void
+    public function setUserId(string $userId): void
     {
-        $this->identifier = $identifier;
+        $this->userId = $userId;
+    }
+
+    public function getRedirectUri(): string
+    {
+        return $this->redirectUri;
+    }
+
+    public function setRedirectUri(string $redirectUri): void
+    {
+        $this->redirectUri = $redirectUri;
     }
 
     public function getCreated(): DateTime

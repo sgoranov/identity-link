@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Api\IdentityLink\Connector;
 
 use App\Api\Contract\TwoFaConnectorInterface;
+use App\Api\Contract\TwoFaConnectorResponseInterface;
 use App\Api\IdentityLink\Response\AuthResponse;
 use App\Api\Shared\AbstractConnector;
 use App\Service\JwtTokenGenerator;
@@ -24,11 +25,12 @@ class TwoFaConnector extends AbstractConnector implements TwoFaConnectorInterfac
         parent::__construct($this->jwtTokenGenerator, $this->logger);
     }
 
-    public function initiateAuthenticationRequest(string $userIdentifier): ?string
+    public function initiateAuthenticationRequest(string $userIdentifier, string $redirectUri): ?string
     {
         $options = [
             'json' => [
-                'identifier' => $userIdentifier,
+                'userId' => $userIdentifier,
+                'redirectUri' => $redirectUri
             ]
         ];
 
@@ -47,11 +49,11 @@ class TwoFaConnector extends AbstractConnector implements TwoFaConnectorInterfac
         return $auth->getId();
     }
 
-    public function validateAuthenticationRequest(string $id): bool
+    public function validateAuthenticationRequest(string $id): ?TwoFaConnectorResponseInterface
     {
         $endpoint = $this->authEndpoint . '/' . $id;
         if (($content = $this->fetchData('GET', $endpoint)) === null) {
-            return false;
+            return null;
         }
 
         $auth = new AuthResponse();
@@ -63,20 +65,10 @@ class TwoFaConnector extends AbstractConnector implements TwoFaConnectorInterfac
         ]);
 
         if (!is_null($auth->getAuthenticated())) {
-            return true;
+            return $auth;
         }
 
-        return false;
-    }
-
-    public function isTwoFaEnabled(): bool
-    {
-        // In test environment, always disable 2FA to allow unit tests to run without external dependencies
-        if ($_ENV['APP_ENV'] === 'test' || $_SERVER['APP_ENV'] === 'test') {
-            return false;
-        }
-
-        return !empty($this->authEndpoint);
+        return null;
     }
 
     public function setAuthEndpoint(string $authEndpoint): void

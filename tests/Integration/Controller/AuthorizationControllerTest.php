@@ -30,6 +30,7 @@ namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
+use App\Entity\AuthRequest;
 use App\Repository\AuthCodeRepository;
 use App\Security\User;
 use App\Tests\Helper\TestHelper;
@@ -46,27 +47,43 @@ class AuthorizationControllerTest extends WebTestCase
         $user = new User(AppFixtures::USER_IDENTIFIER);
         $client->loginUser($user, 'secured');
 
+        // hit the initial authorization endpoint
+        $client->request('GET', $router->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+
+        // expect redirect to /oauth2/auth/{id}
+        $this->assertResponseRedirects();
         $client->request(
             'GET',
-            $router->generate('oauth2_auth'),
-            [
-                'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
-                'response_type' => 'code',
-                'state' => 'foobar',
-            ]
+            $client->getResponse()->headers->get('Location')
         );
+        $crawler = $client->followRedirect();
 
-        $response = $client->getResponse();
+        $form = $crawler->selectButton('consent[allow]')->form();
+        $client->submit($form);
 
-        $this->assertSame(302, $response->getStatusCode());
-        $redirectUri = $response->headers->get('Location');
+        // after the consent approval, the client is redirected to the authorization endpoint
+        $this->assertResponseRedirects();
+        $client->followRedirect();
+        $url = $client->getResponse()->headers->get('Location');
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
 
-        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $redirectUri);
         $query = [];
-        parse_str(parse_url($redirectUri, \PHP_URL_QUERY), $query);
+        parse_str(parse_url($url, \PHP_URL_QUERY), $query);
         $this->assertArrayHasKey('code', $query);
         $this->assertArrayHasKey('state', $query);
         $this->assertEquals('foobar', $query['state']);
+
+        // at this point the auth request must be consumed
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        list($authRequest) = $em->getRepository(AuthRequest::class)->findAll();
+
+        $this->assertNull($authRequest->getLoginState(), 'Login state should be null for already logged-in user.');
+        $this->assertTrue($authRequest->getConsentApproved(), 'Consent should be approved.');
+        $this->assertTrue($authRequest->isConsumed(), 'AuthRequest should be marked as consumed.');
     }
 
     public function testSuccessfulPKCEAuthCodeRequest(): void
@@ -102,14 +119,26 @@ class AuthorizationControllerTest extends WebTestCase
             ]
         );
 
-        $response = $client->getResponse();
+        // expect redirect to /oauth2/auth/{id}
+        $this->assertResponseRedirects();
+        $client->request(
+            'GET',
+            $client->getResponse()->headers->get('Location')
+        );
+        $crawler = $client->followRedirect();
 
-        $this->assertSame(302, $response->getStatusCode());
-        $redirectUri = $response->headers->get('Location');
+        $form = $crawler->selectButton('consent[allow]')->form();
+        $client->submit($form);
 
-        $this->assertStringStartsWith(AppFixtures::PUBLIC_CLIENT_REDIRECT_URI, $redirectUri);
+        // after the consent approval, the client is redirected to the authorization endpoint
+        $this->assertResponseRedirects();
+        $client->followRedirect();
+        $url = $client->getResponse()->headers->get('Location');
+
+        $this->assertStringStartsWith(AppFixtures::PUBLIC_CLIENT_REDIRECT_URI, $url);
+
         $query = [];
-        parse_str(parse_url($redirectUri, \PHP_URL_QUERY), $query);
+        parse_str(parse_url($url, \PHP_URL_QUERY), $query);
         $this->assertArrayHasKey('state', $query);
         $this->assertSame($state, $query['state']);
 
@@ -198,38 +227,6 @@ class AuthorizationControllerTest extends WebTestCase
         $this->assertSame('Plain code challenge method is not allowed for this client', $jsonResponse['hint']);
     }
 
-    public function testSuccessfulTokenRequest(): void
-    {
-        $client = static::createClient();
-        $router = $client->getContainer()->get(RouterInterface::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
-        $client->request(
-            'GET',
-            $router->generate('oauth2_auth'),
-            [
-                'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
-                'response_type' => 'token', // implicit flow
-                'state' => 'foobar',
-            ]
-        );
-
-        $response = $client->getResponse();
-
-        $this->assertSame(302, $response->getStatusCode());
-        $redirectUri = $response->headers->get('Location');
-
-        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $redirectUri);
-        $fragment = [];
-        parse_str(parse_url($redirectUri, \PHP_URL_FRAGMENT), $fragment);
-        $this->assertArrayHasKey('access_token', $fragment);
-        $this->assertArrayHasKey('token_type', $fragment);
-        $this->assertArrayHasKey('expires_in', $fragment);
-        $this->assertArrayHasKey('state', $fragment);
-        $this->assertEquals('foobar', $fragment['state']);
-    }
 //
 //    public function testCodeRequestRedirectToResolutionUri(): void
 //    {

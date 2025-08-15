@@ -4,6 +4,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    login_two_fa_enabled: '%env(bool:LOGIN_TWO_FA_ENABLED)%'
+    consent_screen_enabled: '%env(bool:CONSENT_SCREEN_ENABLED)%'
     oidc_extra_claims: '%env(string:OIDC_EXTRA_CLAIMS)%'
     reset_password_url: '%env(string:RESET_PASSWORD_URL)%'
     user_query_endpoint: '%env(string:USER_QUERY_ENDPOINT)%'
@@ -71,8 +73,13 @@ services:
 
     App\Security\PasswordAuthenticator:
         class: App\Security\PasswordAuthenticator
-        calls:
-            - setTwoFaIndexEndpoint: [ '%two_fa_index_endpoint%' ]
+
+    App\Security\LoginDispatcherService:
+      calls:
+        - method: setConfig
+          arguments:
+            -
+              login_two_fa_enabled: '%login_two_fa_enabled%'
 
     App\LeagueOAuth2\Repository\AccessTokenRepository:
         class: App\LeagueOAuth2\Repository\AccessTokenRepository

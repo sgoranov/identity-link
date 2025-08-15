@@ -6,4 +6,8 @@ form_login:
   user_id: Потребителско име
   password: Парола
   submit: Вход
-  requested_scopes: "Приложението %client% иска достъп до следните разрешения:"
+
+form_consent:
+  title: "Разрешение за приложението"
+  description: "Приложението %client_name% иска достъп до вашия акаунт."
+  request: "То ще може да: %scopes%"

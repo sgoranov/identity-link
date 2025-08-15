@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
+use App\Entity\AuthRequest;
+use App\Security\LoginStateEnum;
 use App\Tests\Helper\SessionHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
@@ -18,27 +20,36 @@ class LoginControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $session = $this->getSession($client);
-        $session->set('auth_request_params', ['client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER]);
-        $session->save();
+        // hit the initial authorization endpoint
+        // this will redirect to the login page
+        $client->request('GET', $router->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
 
-        $client->request(
-            'POST',
-            $router->generate('security_login'),
-            [
-                'login' => [
-                    'user_id' => AppFixtures::USER_IDENTIFIER,
-                    'password' => AppFixtures::USER_PASSWORD,
-                    'submit' => 'submit',
-                ],
-            ]
-        );
+        // expect to redirect to the login dispatch
+        // this will redirect to the login page
+        $this->assertResponseRedirects();
+        $client->request('GET', $client->getResponse()->headers->get('Location'));
+        $crawler = $client->followRedirect();
 
-        $response = $client->getResponse();
+        $location = $client->getResponse()->headers->get('Location');
+        $crawler = $client->request('GET', $location);
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame($response->headers->get('Location'),
-            $router->generate('oauth2_auth', ['client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER]));
+        // submit the login form
+        $form = $crawler->selectButton('login[submit]')->form([
+            'login[user_id]' => AppFixtures::USER_IDENTIFIER,
+            'login[password]' => AppFixtures::USER_PASSWORD,
+        ]);
+        $client->submit($form);
+
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        list($authRequest) = $em->getRepository(AuthRequest::class)->findAll();
+
+        $this->assertEquals(LoginStateEnum::PASSWORD, $authRequest->getLoginState(), 'Login state should be PASSWORD.');
+        $this->assertNull($authRequest->getConsentApproved(), 'Consent was still not approved.');
+        $this->assertFalse($authRequest->isConsumed(), 'AuthRequest should be marked as false.');
     }
 
     public function testBadCredentialsLoginRequest(): void
@@ -46,29 +57,35 @@ class LoginControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $session = $this->getSession($client);
-        $session->set('auth_request_params', ['client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER]);
-        $session->save();
+        // hit the initial authorization endpoint
+        // this will redirect to the login page
+        $client->request('GET', $router->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
 
-        $client->request(
-            'POST',
-            $router->generate('security_login'),
-            [
-                'login' => [
-                    'user_id' => 'user',
-                    'password' => 'pass',
-                    'submit' => 'submit',
-                ],
-            ]
-        );
+        // expect to redirect to the login dispatch
+        // this will redirect to the login page
+        $this->assertResponseRedirects();
+        $client->request('GET', $client->getResponse()->headers->get('Location'));
+        $crawler = $client->followRedirect();
 
-        $response = $client->getResponse();
+        $location = $client->getResponse()->headers->get('Location');
+        $crawler = $client->request('GET', $location);
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame($response->headers->get('Location'), $router->generate('security_login'));
+        // submit the login form
+        $form = $crawler->selectButton('login[submit]')->form([
+            'login[user_id]' => 'user',
+            'login[password]' => 'pass',
+        ]);
+        $client->submit($form);
 
         $session = $client->getRequest()->getSession();
-        $error = $session->get(SecurityRequestAttributes::AUTHENTICATION_ERROR)->getMessage();
-        $this->assertSame($error, 'Invalid username or password');
+
+        $errors = $session->getFlashBag()->get('error');
+        $this->assertNotEmpty($errors);
+        list($error) = $errors;
+        $this->assertStringContainsString('Invalid username or password', $error['key']);
     }
 }

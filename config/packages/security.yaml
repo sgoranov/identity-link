@@ -11,22 +11,23 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
+        secured:
+          pattern: ^/oauth2/auth
+          custom_authenticators:
+            - App\Security\PasswordAuthenticator
+          entry_point: App\Security\PasswordAuthenticator
+
         access_token:
-          pattern: ^/(single-sign-off|user-info)
+          pattern: ^/
           stateless: true
           access_token:
             token_handler: sgoranov\IdentityLinkShared\Security\AccessTokenHandler
-
-        secured:
-            pattern: ^/
-            custom_authenticators:
-                - App\Security\PasswordAuthenticator
-            entry_point: App\Security\PasswordAuthenticator
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
          - { path: ^/.well-known/openid-configuration, roles: PUBLIC_ACCESS }
+         - { path: ^/oauth2/auth$, roles: PUBLIC_ACCESS }
          - { path: ^/oauth2/token, roles: PUBLIC_ACCESS }
          - { path: ^/login, roles: PUBLIC_ACCESS }
          - { path: ^/jwks, roles: PUBLIC_ACCESS }
