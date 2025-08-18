@@ -86,6 +86,6 @@ class LoginControllerTest extends WebTestCase
         $errors = $session->getFlashBag()->get('error');
         $this->assertNotEmpty($errors);
         list($error) = $errors;
-        $this->assertStringContainsString('Invalid username or password', $error['key']);
+        $this->assertStringContainsString('login.invalid_credentials', $error['key']);
     }
 }

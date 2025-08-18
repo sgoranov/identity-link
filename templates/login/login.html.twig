@@ -1,18 +1,39 @@
 {% extends 'base.html.twig' %}
 
 {% block content %}
-    <h1>{{ 'login.title'|trans }}</h1>
-    {% for flash in app.flashes('error') %}
-        <div class="alert alert-danger" role="alert">
-            {{ flash.key|trans(flash.params, 'security') }}
-        </div>
-    {% endfor %}
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+        <div class="card shadow-sm p-4" style="max-width: 400px; width: 100%;">
+            <h1 class="h4 text-center mb-4">{{ 'login.title'|trans }}</h1>
 
-    {{ form(form) }}
+            {% for flash in app.flashes('error') %}
+                <div class="alert alert-danger" role="alert">
+                    {{ flash.key|trans(flash.params, 'security') }}
+                </div>
+            {% endfor %}
 
-    {% if resetPasswordUrl is not empty %}
-        <div class="mt-3">
-            <a href="{{ resetPasswordUrl }}">{{ 'login.forgot_password'|trans }}</a>
+            {{ form_start(form, { 'attr': { 'class': 'needs-validation' } }) }}
+            <div class="mb-3">
+                {{ form_label(form.user_id) }}
+                {{ form_widget(form.user_id, { 'attr': { 'class': 'form-control' } }) }}
+                {{ form_errors(form.user_id) }}
+            </div>
+
+            <div class="mb-3">
+                {{ form_label(form.password) }}
+                {{ form_widget(form.password, { 'attr': { 'class': 'form-control' } }) }}
+                {{ form_errors(form.password) }}
+            </div>
+
+            <div class="d-grid gap-2">
+                {{ form_widget(form.submit, { 'attr': { 'class': 'btn btn-primary' } }) }}
+            </div>
+            {{ form_end(form) }}
+
+            {% if resetPasswordUrl is not empty %}
+                <div class="mt-3 text-center">
+                    <a href="{{ resetPasswordUrl }}">{{ 'login.forgot_password'|trans }}</a>
+                </div>
+            {% endif %}
         </div>
-    {% endif %}
+    </div>
 {% endblock %}

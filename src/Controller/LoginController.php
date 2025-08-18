@@ -10,6 +10,7 @@ use App\Form\Type\LoginType;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\LeagueOAuth2\Repository\ClientRepository;
 use App\Repository\AuthRequestRepository;
+use App\Security\Exception\RateLimitException;
 use App\Security\LoginDispatcherService;
 use App\Security\LoginStateEnum;
 use Doctrine\ORM\EntityManagerInterface;
@@ -88,7 +89,7 @@ class LoginController extends AbstractController
 
             if ($user === null) {
                 $this->addFlash('error', [
-                    'key' => 'Invalid username or password',
+                    'key' => 'login.invalid_credentials',
                     'params' => []
                 ]);
 
@@ -202,16 +203,10 @@ class LoginController extends AbstractController
                     $usernameLimit->getRetryAfter()->getTimestamp()
                 ) - time();
 
-            $minutes = floor($retryAfter / 60);
+            $minutes = (int) floor($retryAfter / 60);
             $seconds = $retryAfter % 60;
 
-            $exception = new AuthenticationException(sprintf(
-                'Too many login attempts. Please try again in %d minute(s) and %d second(s).',
-                $minutes,
-                $seconds
-            ));
-
-            throw new $exception;
+            throw new RateLimitException($minutes, $seconds);
         }
     }
 }

@@ -1,0 +1,50 @@
+/* Body & background */
+body {
+    background-color: #f8f9fa; /* soft light gray */
+    color: #212529; /* standard text color */
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Container spacing */
+.container {
+    max-width: 720px;
+}
+
+/* Header spacing */
+h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 1rem;
+}
+
+/* Links */
+a {
+    color: #0d6efd; /* subtle primary blue */
+    text-decoration: none;
+}
+
+a:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+/* Footer */
+footer {
+    color: #6c757d;
+    border-top: 1px solid #dee2e6;
+    margin-top: 3rem;
+}
+
+footer .locale-links a {
+    margin: 0 0.5rem;
+}
+
+/* Buttons (base style) */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+

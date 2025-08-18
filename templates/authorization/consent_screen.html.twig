@@ -3,20 +3,41 @@
 {% block title %}{{ 'form_consent.title'|trans }}{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h1>{{ 'form_consent.title'|trans }}</h1>
+    <div class="container my-5" style="max-width: 700px;">
+        <div class="card shadow-sm rounded-3">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">{{ 'form_consent.title'|trans }}</h1>
 
-        <p>{{ 'form_consent.description'|trans({ '%client_name%': client.name }) }}</p>
+                <p class="text-muted">
+                    {{ 'form_consent.description'|trans({ '%client_name%': client.name }) }}
+                </p>
 
-        {{ form_start(form) }}
-        <div class="mb-3">
-            <p>{{ 'form_consent.request'|trans({ '%scopes%': scopes|join(', ') }) }}</p>
+                <h5 class="mt-4 mb-3">{{ 'form_consent.permissions'|trans }}</h5>
+                <ul class="list-group mb-4">
+                    {% for scope in scopes %}
+                        <li class="list-group-item d-flex align-items-start">
+                            <div class="me-3 text-success">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ ('scopes.' ~ scope ~ '.label')|trans }}</div>
+                                <small class="text-muted">{{ ('scopes.' ~ scope ~ '.description')|trans }}</small>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item text-muted fst-italic">
+                            {{ 'form_consent.no_permissions'|trans }}
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                {{ form_start(form) }}
+                <div class="d-flex gap-3 justify-content-end">
+                    {{ form_widget(form.deny, { 'attr': { 'class': 'btn btn-outline-secondary' } }) }}
+                    {{ form_widget(form.allow, { 'attr': { 'class': 'btn btn-primary' } }) }}
+                </div>
+                {{ form_end(form) }}
+            </div>
         </div>
-
-        <div class="d-flex gap-3">
-            {{ form_widget(form.allow, { 'attr': { 'class': 'btn btn-success' } }) }}
-            {{ form_widget(form.deny, { 'attr': { 'class': 'btn btn-danger' } }) }}
-        </div>
-        {{ form_end(form) }}
     </div>
 {% endblock %}

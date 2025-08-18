@@ -8,6 +8,29 @@ form_login:
   submit: Login
 
 form_consent:
-  title: "Application Permission"
-  description: "The application %client_name% is requesting access to your account."
-  request: "It will be able to: %scopes%"
+  title: "Access Request"
+  description: "%client_name% would like to access your account."
+  permissions: "This application will be able to:"
+  no_permissions: "No permissions requested."
+  allow: "Allow"
+  deny: "Deny"
+
+scopes:
+  openid:
+    label: "Sign you in"
+    description: "Allow the application to verify your identity."
+  profile:
+    label: "Basic profile information"
+    description: "Access your name, nickname, avatar, and other basic profile details."
+  email:
+    label: "Email address"
+    description: "Access your email address."
+  phone:
+    label: "Phone number"
+    description: "Access your phone number."
+  address:
+    label: "Address"
+    description: "Access your postal address."
+  offline_access:
+    label: "Stay signed in"
+    description: "Allow the application to refresh your session without asking you to log in again."

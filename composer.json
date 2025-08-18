@@ -29,6 +29,7 @@
         "sgoranov/identity-link-shared": "dev-develop",
         "steverhoades/oauth2-openid-connect-server": "^3.0",
         "strobotti/php-jwk": "^1.4",
+        "symfony/asset": "6.*",
         "symfony/console": "6.*",
         "symfony/dotenv": "6.*",
         "symfony/event-dispatcher": "6.*",

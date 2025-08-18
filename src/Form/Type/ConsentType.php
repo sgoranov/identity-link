@@ -14,10 +14,10 @@ class ConsentType extends AbstractType
     {
         $builder
             ->add('allow', SubmitType::class, [
-                'label' => 'Allow',
+                'label' => 'form_consent.allow',
             ])
             ->add('deny', SubmitType::class, [
-                'label' => 'Deny',
+                'label' => 'form_consent.deny',
             ]);
     }
 

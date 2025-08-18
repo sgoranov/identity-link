@@ -1,0 +1,3 @@
+login:
+  too_many_attempts: "Too many login attempts. Please try again in %minutes% minute(s) and %seconds% second(s)."
+  invalid_credentials: "Invalid username or password."
