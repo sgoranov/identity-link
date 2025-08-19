@@ -15,7 +15,6 @@ parameters:
     client_query_endpoint: '%env(string:CLIENT_QUERY_ENDPOINT)%'
     two_fa_auth_endpoint: '%env(string:TWO_FA_AUTH_ENDPOINT)%'
     two_fa_index_endpoint: '%env(string:TWO_FA_INDEX_ENDPOINT)%'
-    authenticator_type: '%env(string:AUTHENTICATOR_TYPE)%'
     jwt_include_groups_claim: '%env(bool:JWT_INCLUDE_GROUPS_CLAIM)%'
     jwt_groups_claim_limit: '%env(int:JWT_GROUPS_CLAIM_LIMIT)%'
     jwt_key:
@@ -71,8 +70,8 @@ services:
         arguments:
             - '%jwt_key%'
 
-    App\Security\PasswordAuthenticator:
-        class: App\Security\PasswordAuthenticator
+    App\Security\AuthorizationEndpointAuthenticator:
+        class: App\Security\AuthorizationEndpointAuthenticator
 
     App\Security\LoginDispatcherService:
       calls:

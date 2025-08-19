@@ -14,8 +14,8 @@ security:
         secured:
           pattern: ^/oauth2/auth
           custom_authenticators:
-            - App\Security\PasswordAuthenticator
-          entry_point: App\Security\PasswordAuthenticator
+            - App\Security\AuthorizationEndpointAuthenticator
+          entry_point: App\Security\AuthorizationEndpointAuthenticator
 
         access_token:
           pattern: ^/

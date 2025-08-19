@@ -5,7 +5,6 @@ namespace App\Security;
 
 use App\Entity\AuthRequest;
 use App\Repository\AuthRequestRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,15 +19,13 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 
-class PasswordAuthenticator extends AbstractAuthenticator implements
+class AuthorizationEndpointAuthenticator extends AbstractAuthenticator implements
     AuthenticationEntryPointInterface, InteractiveAuthenticatorInterface
 {
 
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly AuthRequestRepository $authRequestRepository,
-        private readonly LoginDispatcherService $loginDispatcherService,
-        private readonly EntityManagerInterface $entityManager,
     )
     {
     }
@@ -69,8 +66,8 @@ class PasswordAuthenticator extends AbstractAuthenticator implements
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
         // Log or debug if needed
-//        dump($exception->getMessage());
-//        exit();
+        // dump($exception->getMessage());
+        // exit();
 
         // continue with normal request handling
         return null;
