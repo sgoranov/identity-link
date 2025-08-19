@@ -108,7 +108,7 @@ class LoginController extends AbstractController
             'form' => $this->createForm(LoginType::class),
             'scopes' => $authRequest->getScopes(),
             'client_name' => $client->getName(),
-            'resetPasswordUrl' => $this->parameterBag->get('reset_password_url'),
+            'resetPasswordUrl' => str_replace('{id}', $id, $this->parameterBag->get('reset_password_url')),
         ]);
     }
 
