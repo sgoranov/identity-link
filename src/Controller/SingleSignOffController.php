@@ -27,10 +27,10 @@ class SingleSignOffController extends AbstractController
         if (!empty($accessToken->sub)) {
             // User-based token: revoke all active (not expired and not revoked) access tokens
             // and their associated refresh tokens for the user identified by 'sub'
-            $tokenRevoker->revokeByUserIdentifier($accessToken->sub);
+            $tokenRevoker->revokeAllTokensForUser($accessToken->sub);
         } elseif (!empty($accessToken->jti)) {
             // Client credentials flow: revoke only the current access token
-            $tokenRevoker->revokeByTokenIdentifier($accessToken->jti);
+            $tokenRevoker->revokeAccessTokenByIdentifier($accessToken->jti);
         } else {
             // The token appears to be generated using our own keys (signature is valid),
             // but it's not recognized by the OAuth2 server — likely not issued through the proper flow.

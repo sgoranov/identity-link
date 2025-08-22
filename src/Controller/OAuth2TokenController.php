@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-class TokenController extends AbstractController
+final class OAuth2TokenController extends AbstractController
 {
     public function __construct(
         private readonly AuthorizationServer $server,
@@ -25,7 +25,7 @@ class TokenController extends AbstractController
     }
 
     #[Route('/oauth2/token', name: 'oauth2_token', methods: 'POST')]
-    public function index(Request $request): Response
+    public function __invoke(Request $request): Response
     {
         $psrRequest = $this->httpMessageFactory->createRequest($request);
         $psrResponse = $this->responseFactory->createResponse();

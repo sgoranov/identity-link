@@ -23,6 +23,21 @@ class JwtTokenGenerator
     {
     }
 
+    public static function isJWT(string $token): bool
+    {
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) {
+            return false;
+        }
+
+        try {
+            $header = JWT::jsonDecode(JWT::urlsafeB64Decode($parts[0]));
+            return isset($header->alg) && is_string($header->alg);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
     public function createTokenByPayload(array $payload): string
     {
         $key = file_get_contents($this->jwtConfig->getPrivateKey());

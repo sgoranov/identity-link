@@ -8,6 +8,8 @@
   * [Resource Owner Password Credentials Flow](#resource-owner-password-credentials-flow)
   * [Client Credentials Flow](#client-credentials-flow)
   * [Refresh Token Flow](#refresh-token-flow)
+  * [Token Revocation (RFC 7009)](#token-revocation-rfc-7009)
+  * [Token Introspection (RFC 7662)](#token-introspection-rfc-7662)
   * [Important Notes](#important-notes)
 <!-- TOC -->
 
@@ -69,6 +71,61 @@ curl -k -u client:client https://auth.example.com/oauth2/token -d 'grant_type=re
 ```
 
 Replace XXXXXXXXXXX with the refresh token you received earlier.
+
+
+## Token Revocation (RFC 7009)
+
+The revocation endpoint allows a client to invalidate an access token or refresh token.
+Both valid and invalid tokens must result in an HTTP 200 response, but invalid clients will receive 401 Unauthorized.
+
+**Request**
+
+```bash
+curl -X POST https://auth.example.com/oauth2/token/revoke \
+  -u client:client \
+  -d 'token=XXXXXXXXXXX'
+```
+
+**Response**
+
+```text
+HTTP/1.1 200 OK
+```
+
+## Token Introspection (RFC 7662)
+
+The introspection endpoint allows a client to check the validity and metadata of an access or refresh token.
+
+**Request**
+
+```bash
+curl -X POST https://auth.example.com/oauth2/token/introspect \
+  -u client:client \
+  -d 'token=XXXXXXXXXXX'
+```
+
+**Response (active token)**
+
+```json
+{
+  "active": true,
+  "client_id": "client",
+  "scope": "openid profile email",
+  "sub": "user-123",
+  "aud": "my-api",
+  "iss": "https://auth.example.com",
+  "exp": 1755692010,
+  "iat": 1755688410
+}
+```
+
+**Response (inactive or expired token)**
+
+```json
+{
+  "active": false
+}
+```
 
 ## Important Notes
 

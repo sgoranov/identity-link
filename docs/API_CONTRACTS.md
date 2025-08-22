@@ -54,14 +54,18 @@ Holds a list of groups associated with a client or user.
 
 Handles two-factor authentication (2FA) operations.
 
-- `initiateAuthenticationRequest(string $userIdentifier): ?string`  
+- `initiateAuthenticationRequest(string $userIdentifier, string $redirectUri): ?string`  
   Starts a 2FA request for a user, returning an ID or token.
 
-- `validateAuthenticationRequest(string $id): bool`  
+- `validateAuthenticationRequest(string $id): ?TwoFaConnectorResponseInterface`  
   Validates the 2FA request identified by the given ID.
 
-- `isTwoFaEnabled(): bool`  
-  Returns whether 2FA is enabled globally.
+## TwoFaConnectorResponseInterface
+
+Represents the response from a 2FA request.
+
+- `getUserId(): string`
+  Returns the user ID associated with the request.
 
 ## UserConnectorInterface
 

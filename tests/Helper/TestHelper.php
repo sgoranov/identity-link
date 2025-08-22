@@ -60,8 +60,8 @@ final class TestHelper
         $payload = [
             'aud' => $client->getId(),
             'jti' => $accessToken->getIdentifier(),
-            'iat' => microtime(true),
-            'nbf' => microtime(true),
+            'iat' => (new \DateTimeImmutable('-1 second'))->format('U.u'),
+            'nbf' => (new \DateTimeImmutable('-1 second'))->format('U.u'),
             'exp' => $accessToken->getExpiryDateTime()->format('U.u'),
             'scopes' => $accessToken->getScopes(),
         ];

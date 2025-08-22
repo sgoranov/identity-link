@@ -9,6 +9,7 @@ use App\LeagueOAuth2\Repository\ClientRepository;
 use App\LeagueOAuth2\Repository\RefreshTokenRepository;
 use App\LeagueOAuth2\Repository\ScopeRepository;
 use App\LeagueOAuth2\Repository\UserRepository;
+use App\Security\EncryptionKeyLoader;
 use App\Security\Jwt\JwtConfig;
 use Defuse\Crypto\Key;
 use League\Event\Emitter;
@@ -22,8 +23,6 @@ use OpenIDConnectServer\IdTokenResponse;
 
 class AuthorizationServerFactory
 {
-    private string $encryptionKey;
-
     private string $accessToken_Ttl;
 
     private string $refreshTokenTtl;
@@ -50,13 +49,9 @@ class AuthorizationServerFactory
         private readonly IdTokenResponse $idTokenResponse,
         private readonly Emitter $emitter,
         private readonly JwtConfig $jwtConfig,
+        private readonly EncryptionKeyLoader $encryptionKeyLoader,
     )
     {
-    }
-
-    public function setEncryptionKey(string $encryptionKey): void
-    {
-        $this->encryptionKey = $encryptionKey;
     }
 
     public function setAccessTokenTtl(string $accessToken_Ttl): void
@@ -106,7 +101,7 @@ class AuthorizationServerFactory
             $this->accessTokenRepository,
             $this->scopeRepository,
             new CryptKey($this->jwtConfig->getPrivateKey(), null, null, $this->jwtConfig->getKid()),
-            Key::loadFromAsciiSafeString(file_get_contents($this->encryptionKey)),
+            $this->encryptionKeyLoader->loadEncryptionKey(),
             $this->idTokenResponse,
         );
 

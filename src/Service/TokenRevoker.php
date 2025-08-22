@@ -12,23 +12,53 @@ class TokenRevoker
     public function __construct(
         private readonly AccessTokenRepository $accessTokenRepository,
         private readonly RefreshTokenRepository $refreshTokenRepository,
+        private readonly TokenValidator $tokenValidator,
         private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
-    public function revokeByUserIdentifier(string $userIdentifier): void
+    public function revokeAllTokensForUser(string $userIdentifier): void
     {
         $this->refreshTokenRepository->revokeByUserIdentifier($userIdentifier);
         $this->accessTokenRepository->revokeByUserIdentifier($userIdentifier);
         $this->entityManager->flush();
     }
 
-    public function revokeByTokenIdentifier(string $tokenIdentifier): void
+    public function revokeToken(string $token, ?string $clientId = null): void
     {
-        $token = $this->accessTokenRepository->getByIdentifier($tokenIdentifier);
-        if ($token !== null) {
-            $token->setIsRevoked(true);
-            $this->entityManager->flush();
+        $result = $this->tokenValidator->validateToken($token, $clientId);
+        if ($result === null) {
+            return;
         }
+
+        if ($result->getType() === TokenType::ACCESS) {
+            $this->revokeAccessTokenByIdentifier($result->getEntity()->getIdentifier());
+        } else {
+            $this->revokeRefreshTokenByIdentifier($result->getEntity()->getIdentifier());
+        }
+    }
+
+    public function revokeAccessTokenByIdentifier(string $identifier): void
+    {
+        $token = $this->accessTokenRepository->getByIdentifier($identifier);
+        if ($token === null) {
+            return;
+        }
+
+        $token->setIsRevoked(true);
+        $this->entityManager->flush();
+    }
+
+    public function revokeRefreshTokenByIdentifier(string $identifier): void
+    {
+        $refreshToken = $this->refreshTokenRepository->getByIdentifier($identifier);
+        if ($refreshToken === null) {
+            return;
+        }
+
+        $accessToken = $refreshToken->getAccessToken();
+        $accessToken->setIsRevoked(true);
+        $refreshToken->setIsRevoked(true);
+        $this->entityManager->flush();
     }
 }

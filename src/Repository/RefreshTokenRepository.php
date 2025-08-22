@@ -28,13 +28,7 @@ class RefreshTokenRepository extends ServiceEntityRepository
 
     public function getByIdentifier(string $tokenId): RefreshToken
     {
-        $result = $this->findOneBy(['identifier' => $tokenId]);
-
-        if ($result === null) {
-            throw new \Exception('Token not found');
-        }
-
-        return $result;
+        return $this->findOneBy(['identifier' => $tokenId]);
     }
 
     public function revokeByUserIdentifier(string $userIdentifier): void
