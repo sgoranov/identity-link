@@ -1,10 +1,12 @@
 framework:
   rate_limiter:
     login_ip:
+      cache_pool: rate_limiter_redis
       policy: 'fixed_window'
       limit: 3
       interval: '10 minute'
     login_username:
+      cache_pool: rate_limiter_redis
       policy: 'fixed_window'
       limit: 5
       interval: '10 minute'

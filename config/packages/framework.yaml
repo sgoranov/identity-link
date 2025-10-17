@@ -16,7 +16,7 @@ framework:
     # Remove or comment this section to explicitly disable session support.
     session:
         name: identity-link
-        handler_id: null
+        handler_id: '%env(REDIS_DSN)%'
         cookie_secure: auto
         cookie_samesite: lax
         storage_factory_id: session.storage.factory.native
