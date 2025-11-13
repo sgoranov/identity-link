@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Entity\AccessToken;
 use App\Entity\RefreshToken;
 use App\Repository\Trait\RevocationTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -33,8 +32,8 @@ class RefreshTokenRepository extends ServiceEntityRepository
 
     public function revokeByUserIdentifier(string $userIdentifier): void
     {
-        $qb = $this->_em->createQueryBuilder();
-        $qb->update(RefreshToken::class, 'r')
+        $qb = $this->createQueryBuilder('r');
+        $qb->update()
             ->set('r.isRevoked', ':revoked')
             ->where('r.userIdentifier = :userIdentifier')
             ->andWhere('r.isRevoked = false')

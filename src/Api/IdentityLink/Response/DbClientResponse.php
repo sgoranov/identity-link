@@ -4,12 +4,15 @@ declare(strict_types=1);
 namespace App\Api\IdentityLink\Response;
 
 use App\Api\Contract\ClientResponseInterface;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 
 class DbClientResponse implements ClientResponseInterface
 {
     private string $id;
     private string $name;
     private string $redirectUri;
+
+    #[SerializedName('isPublic')]
     private bool $public;
     private array $scopes;
     private array $grantTypes;

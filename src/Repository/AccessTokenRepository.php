@@ -29,8 +29,8 @@ class AccessTokenRepository extends ServiceEntityRepository
 
     public function revokeByUserIdentifier(string $userIdentifier): void
     {
-        $qb = $this->_em->createQueryBuilder();
-        $qb->update(AccessToken::class, 'a')
+        $qb = $this->createQueryBuilder('a');
+        $qb->update()
             ->set('a.isRevoked', ':revoked')
             ->where('a.userIdentifier = :userIdentifier')
             ->andWhere('a.isRevoked = false')
