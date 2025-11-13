@@ -28,8 +28,12 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
     php-xdebug \
     php-curl \
     php-redis \
-    php-zip \
-    composer
+    php-zip
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer \
+    && chmod +x /usr/local/bin/composer
 
 # Apache configuration
 RUN a2enmod rewrite
