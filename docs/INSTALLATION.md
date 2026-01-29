@@ -736,7 +736,10 @@ curl --silent --show-error --location "https://auth.example.com/clients/api/v1/c
   --data '{
     "name": "client",
     "description": "description",
-    "redirectUri": "https://example.com",
+    "redirectUri": [
+      "https://example.com",
+      "https://example.com/callback"
+    ],
     "grantTypes": [
       "client_credentials",
       "authorization_code",

@@ -34,6 +34,21 @@ class ClientConnectorMock implements ClientConnectorInterface
             return $response;
         }
 
+        if ($clientIdentifier === AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER && $clientSecret === AppFixtures::MULTI_REDIRECT_CLIENT_SECRET) {
+
+            $response = new DbClientResponse();
+            $response->setPublic(false);
+            $response->setId(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
+            $response->setName(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
+            $response->setRedirectUri(AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS);
+            $response->setGrantTypes([
+                GrantTypeEntity::AUTHORIZATION_CODE,
+            ]);
+            $response->setScopes([]);
+
+            return $response;
+        }
+
         return null;
     }
 
@@ -53,6 +68,19 @@ class ClientConnectorMock implements ClientConnectorInterface
                 GrantTypeEntity::AUTHORIZATION_CODE,
                 GrantTypeEntity::REFRESH_TOKEN,
                 GrantTypeEntity::IMPLICIT,
+            ]);
+            $response->setScopes([]);
+
+            return $response;
+
+        } elseif ($id === AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER) {
+
+            $response->setPublic(false);
+            $response->setId(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
+            $response->setName(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
+            $response->setRedirectUri(AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS);
+            $response->setGrantTypes([
+                GrantTypeEntity::AUTHORIZATION_CODE,
             ]);
             $response->setScopes([]);
 

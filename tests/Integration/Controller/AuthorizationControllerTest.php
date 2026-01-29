@@ -86,6 +86,38 @@ class AuthorizationControllerTest extends WebTestCase
         $this->assertTrue($authRequest->isConsumed(), 'AuthRequest should be marked as consumed.');
     }
 
+    public function testSuccessfulCodeRequestWithAlternateRedirectUri(): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $redirectUri = AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS[1];
+
+        $user = new User(AppFixtures::USER_IDENTIFIER);
+        $client->loginUser($user, 'secured');
+
+        $client->request('GET', $router->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'redirect_uri' => $redirectUri,
+            'state' => 'foobar',
+        ]);
+
+        $this->assertResponseRedirects();
+        $client->request(
+            'GET',
+            $client->getResponse()->headers->get('Location')
+        );
+        $crawler = $client->followRedirect();
+
+        $form = $crawler->selectButton('consent[allow]')->form();
+        $client->submit($form);
+
+        $this->assertResponseRedirects();
+        $client->followRedirect();
+        $url = $client->getResponse()->headers->get('Location');
+        $this->assertStringStartsWith($redirectUri, $url);
+    }
+
     public function testSuccessfulPKCEAuthCodeRequest(): void
     {
         $client = static::createClient();
@@ -274,6 +306,36 @@ class AuthorizationControllerTest extends WebTestCase
                 'response_type' => 'code',
                 'state' => 'foobar',
                 'redirect_uri' => 'https://example.org/oauth2/malicious-uri',
+            ]
+        );
+
+        $response = $client->getResponse();
+
+        $this->assertSame(401, $response->getStatusCode());
+        $this->assertSame('application/json', $response->headers->get('Content-Type'));
+
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        $this->assertSame('invalid_client', $jsonResponse['error']);
+        $this->assertSame('Client authentication failed', $jsonResponse['message']);
+    }
+
+    public function testFailedCodeRequestWithUnregisteredRedirectUriForMultiRedirectClient(): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $user = new User(AppFixtures::USER_IDENTIFIER);
+        $client->loginUser($user, 'secured');
+
+        $client->request(
+            'GET',
+            $router->generate('oauth2_auth'),
+            [
+                'client_id' => AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER,
+                'response_type' => 'code',
+                'state' => 'foobar',
+                'redirect_uri' => 'http://localhost/multi/unknown',
             ]
         );
 

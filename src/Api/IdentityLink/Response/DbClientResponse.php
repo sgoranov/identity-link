@@ -10,7 +10,7 @@ class DbClientResponse implements ClientResponseInterface
 {
     private string $id;
     private string $name;
-    private string $redirectUri;
+    private array|string $redirectUri = '';
 
     #[SerializedName('isPublic')]
     private bool $public;
@@ -37,12 +37,12 @@ class DbClientResponse implements ClientResponseInterface
         $this->name = $name;
     }
 
-    public function getRedirectUri(): string
+    public function getRedirectUri(): array|string
     {
         return $this->redirectUri;
     }
 
-    public function setRedirectUri(string $redirectUri): void
+    public function setRedirectUri(array|string $redirectUri): void
     {
         $this->redirectUri = $redirectUri;
     }

@@ -105,11 +105,9 @@ final class TestHelper
 
     public function generateEncryptedAuthCodePayload(AuthCode $authCode): ?string
     {
-        $client = $this->clientConnector->getClientById($authCode->getClientIdentifier());
-
         $payload = json_encode([
             'client_id' => $authCode->getClientIdentifier(),
-            'redirect_uri' => $client->getRedirectUri(),
+            'redirect_uri' => $authCode->getRedirectUri(),
             'auth_code_id' => $authCode->getIdentifier(),
             'scopes' => ScopeEntity::convertToStringArray($authCode->getScopes()),
             'user_id' => $authCode->getUserIdentifier(),

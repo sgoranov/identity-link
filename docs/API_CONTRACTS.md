@@ -38,7 +38,7 @@ Represents client data returned by the `ClientConnectorInterface`.
 
 - `getId(): string` — Returns client ID
 - `getName(): string` — Returns client name
-- `getRedirectUri(): string` — Returns the redirect URI for the client
+- `getRedirectUri(): array|string` — Returns a redirect URI or a list of allowed redirect URIs for the client
 - `isPublic(): bool` — Whether the client is public or confidential
 - `getScopes(): array` — List of scopes the client is allowed
 - `getGrantTypes(): array` — List of allowed grant types
@@ -91,4 +91,3 @@ Represents user data returned by `UserConnectorInterface`.
 
 Implement these interfaces in your custom services to integrate with Identity Link's core authorization flows, 
 ensuring flexible and secure user and client management.
-

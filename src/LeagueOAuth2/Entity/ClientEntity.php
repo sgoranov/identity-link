@@ -9,7 +9,7 @@ class ClientEntity implements ClientEntityInterface
 {
     private string $id;
     private string $name;
-    private string $redirectUri;
+    private array|string $redirectUri = '';
     private bool $public;
     private array $scopes;
     private array $grantTypes;
@@ -34,12 +34,12 @@ class ClientEntity implements ClientEntityInterface
         $this->name = $name;
     }
 
-    public function getRedirectUri(): string
+    public function getRedirectUri(): array|string
     {
         return $this->redirectUri;
     }
 
-    public function setRedirectUri(string $redirectUri): void
+    public function setRedirectUri(array|string $redirectUri): void
     {
         $this->redirectUri = $redirectUri;
     }

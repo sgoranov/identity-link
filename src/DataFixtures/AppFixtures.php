@@ -23,9 +23,17 @@ class AppFixtures extends Fixture
     const PRIVATE_CLIENT_EXPIRED_SECRET = '2b740e1d-1655-4ad5-8f20-ee37e4e47f83';
     const PRIVATE_CLIENT_REDIRECT_URI = 'http://localhost';
 
+    const MULTI_REDIRECT_CLIENT_IDENTIFIER = 'ed2c5dd4-45c8-4e44-82de-cf3b4668f4e2';
+    const MULTI_REDIRECT_CLIENT_SECRET = '0c1d91e4-11b5-4a3b-b5d3-5e96c946f28a';
+    const MULTI_REDIRECT_CLIENT_REDIRECT_URIS = [
+        'http://localhost/multi',
+        'http://localhost/multi/alt',
+    ];
+
     const AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER = '000d19bd-4be7-4ce6-ba52f-ab7575ffd840';
 
     const AUTH_CODE_PUBLIC_CLIENT_IDENTIFIER = '000d19bd-4be7-4ce6-ba52-ab7575ffd841';
+    const AUTH_CODE_MULTI_CLIENT_IDENTIFIER = '000d19bd-4be7-4ce6-ba52-ab7575ffd842';
 
     const USER_IDENTIFIER = '7c1b7d1b-f624-4966-8f2a-e63ddfc34dba';
     const USER_PASSWORD = 'f1080c74-ace7-44e8-8512-d2917d6dcde6';
@@ -57,6 +65,17 @@ class AppFixtures extends Fixture
         $code->setUserIdentifier(self::USER_IDENTIFIER);
         $code->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
         $code->setRedirectUri(self::PRIVATE_CLIENT_REDIRECT_URI);
+        $manager->persist($code);
+
+        // auth code with multi redirect client
+        $code = new AuthCode();
+        $code->setClientIdentifier(self::MULTI_REDIRECT_CLIENT_IDENTIFIER);
+        $code->setIsRevoked(false);
+        $code->setScopes(json_encode(['openid']));
+        $code->setIdentifier(self::AUTH_CODE_MULTI_CLIENT_IDENTIFIER);
+        $code->setUserIdentifier(self::USER_IDENTIFIER);
+        $code->setExpiryDateTime((new \DateTimeImmutable())->modify('+1 day'));
+        $code->setRedirectUri(self::MULTI_REDIRECT_CLIENT_REDIRECT_URIS[1]);
         $manager->persist($code);
 
         // access token

@@ -316,6 +316,34 @@ final class TokenControllerTest extends WebTestCase
         $this->assertSame($accessToken->getIdentifier(), $refreshToken->getAccessToken()->getIdentifier());
     }
 
+    public function testSuccessfulAuthorizationCodeRequestWithMultiRedirectUri(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
+        list($authCode) = $authCodeRepository->findBy(['identifier' => AppFixtures::AUTH_CODE_MULTI_CLIENT_IDENTIFIER]);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::MULTI_REDIRECT_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS[1],
+            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        $response = $client->getResponse();
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('application/json; charset=UTF-8', $response->headers->get('Content-Type'));
+
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        $this->assertSame('Bearer', $jsonResponse['token_type']);
+        $this->assertNotEmpty($jsonResponse['access_token']);
+    }
+
     public function testFailedTokenRequest(): void
     {
         $client = TokenControllerTest::createClient();
