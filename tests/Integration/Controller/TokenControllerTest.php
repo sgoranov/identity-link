@@ -32,6 +32,7 @@ use App\DataFixtures\AppFixtures;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
+use App\Security\User;
 use App\Tests\Helper\TestHelper;
 use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\RequestAccessTokenEvent;
@@ -429,6 +430,64 @@ final class TokenControllerTest extends WebTestCase
         $this->assertArrayHasKey('iss', $decodedPayload);
         $this->assertArrayHasKey('aud', $decodedPayload);
         $this->assertArrayHasKey('exp', $decodedPayload);
+    }
+
+    public function testAuthorizationCodeFlowIncludesNonceInIdToken(): void
+    {
+        $this->markTestSkipped('TODO: Include nonce in ID token for authorization code flow.');
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $user = new User(AppFixtures::USER_IDENTIFIER);
+        $client->loginUser($user, 'secured');
+
+        $nonce = bin2hex(random_bytes(16));
+
+        $client->request('GET', $router->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'scope' => 'openid',
+            'state' => 'foobar',
+            'nonce' => $nonce,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+        ]);
+
+        $this->assertResponseRedirects();
+        $client->request('GET', $client->getResponse()->headers->get('Location'));
+        $crawler = $client->followRedirect();
+
+        $form = $crawler->selectButton('consent[allow]')->form();
+        $client->submit($form);
+
+        $this->assertResponseRedirects();
+        $client->followRedirect();
+        $url = $client->getResponse()->headers->get('Location');
+
+        $query = [];
+        parse_str(parse_url($url, \PHP_URL_QUERY), $query);
+        $this->assertArrayHasKey('code', $query);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $query['code'],
+        ]);
+
+        $response = $client->getResponse();
+
+        $this->assertSame(200, $response->getStatusCode());
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        $this->assertArrayHasKey('id_token', $jsonResponse);
+        $this->assertNotEmpty($jsonResponse['id_token']);
+
+        [$header, $payload, $signature] = explode('.', $jsonResponse['id_token']);
+        $decodedPayload = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
+
+        $this->assertArrayHasKey('nonce', $decodedPayload);
+        $this->assertSame($nonce, $decodedPayload['nonce']);
     }
 
     public function testNoIdTokenWithoutOpenidScope(): void
