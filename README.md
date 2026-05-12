@@ -11,6 +11,8 @@ server built with Symfony and PHP. It provides a complete
 authentication and authorization solution designed for modern, 
 distributed applications requiring token-based security.
 
+![Application Architecture](./docs/diagram.svg)
+
 ## Why Choose Identity Link
 
 Identity Link is a modern identity management system built with 

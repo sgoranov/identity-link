@@ -1,0 +1,127 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="x4lJv_5D3qJeNFbzbqJR">
+    <mxGraphModel dx="2197" dy="1823" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="obYorNC8pEpNs_z5_JDt-73" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="540" width="1170" x="-730" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-60" parent="obYorNC8pEpNs_z5_JDt-73" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CCFFCC;fontColor=#ffffff;strokeColor=#2D7600;" value="" vertex="1">
+          <mxGeometry height="560" width="1170" y="-50" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-5" parent="obYorNC8pEpNs_z5_JDt-73" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#97D077;" value="&lt;h1&gt;Nginx&lt;/h1&gt;Serving as the &lt;b data-path-to-node=&quot;2,0&quot; data-index-in-node=&quot;21&quot;&gt;primary entry point&lt;/b&gt; for the Application Layer, Nginx acts as a high-performance reverse proxy and static file server. It efficiently manages all incoming client traffic, enforcing initial request handling before distributing load to the underlying backend services." vertex="1">
+          <mxGeometry height="175.77" width="260" x="40" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-59" parent="obYorNC8pEpNs_z5_JDt-73" style="rounded=1;align=center;verticalAlign=top;whiteSpace=wrap;html=1;fillColor=#67AB9F;" value="&lt;h1&gt;Core&lt;/h1&gt;Oauth2 and OpenID connect support" vertex="1">
+          <mxGeometry height="166.15384615384616" width="190" x="75" y="305.34538461538466" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-62" connectable="0" parent="obYorNC8pEpNs_z5_JDt-73" style="group" value="" vertex="1">
+          <mxGeometry height="362.88" width="685" x="460" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-64" parent="obYorNC8pEpNs_z5_JDt-73" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Security&lt;/h1&gt;&lt;p&gt;REST API communication is secured via JWT (JSON Web Tokens). Each service independently verifies the token signature by retrieving public keys from the JWKS (JSON Web Key Set) endpoint provided by the Core.&lt;/p&gt;" vertex="1">
+          <mxGeometry height="207.6923076923077" width="180" x="270" y="185.77384615384622" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-67" edge="1" parent="obYorNC8pEpNs_z5_JDt-73" source="obYorNC8pEpNs_z5_JDt-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="obYorNC8pEpNs_z5_JDt-59">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-63" edge="1" parent="obYorNC8pEpNs_z5_JDt-73" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.002;entryY=0.578;entryDx=0;entryDy=0;endArrow=classic;endFill=1;entryPerimeter=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="409.95" />
+              <mxPoint x="300" y="409.95" />
+            </Array>
+            <mxPoint x="265" y="409.997619047619" as="sourcePoint" />
+            <mxPoint x="461.3700000000001" y="410.41000000000025" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-66" edge="1" parent="obYorNC8pEpNs_z5_JDt-73" source="obYorNC8pEpNs_z5_JDt-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="obYorNC8pEpNs_z5_JDt-61" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="780" y="108" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-85" connectable="0" parent="obYorNC8pEpNs_z5_JDt-73" style="group" value="" vertex="1">
+          <mxGeometry height="362.3822222222222" width="685" x="460" y="151.5" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-92" connectable="0" parent="obYorNC8pEpNs_z5_JDt-85" style="group" value="" vertex="1">
+          <mxGeometry height="362.3822222222222" width="685" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-61" parent="obYorNC8pEpNs_z5_JDt-92" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B9E0A5;" value="" vertex="1">
+          <mxGeometry height="320" width="685" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-56" parent="obYorNC8pEpNs_z5_JDt-92" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#9AC7BF;" value="&lt;h1&gt;2FA&lt;/h1&gt;Provides optional two-factor authentication via TOTP" vertex="1">
+          <mxGeometry height="151.68" width="170" x="480" y="128.32" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-57" parent="obYorNC8pEpNs_z5_JDt-92" style="rounded=1;align=center;verticalAlign=top;whiteSpace=wrap;html=1;fillColor=#9AC7BF;" value="&lt;h1&gt;Clients&lt;/h1&gt;Manages registered OAuth2 clients, secrets, and their access policies" vertex="1">
+          <mxGeometry height="150" width="190" x="260" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-58" parent="obYorNC8pEpNs_z5_JDt-92" style="rounded=1;align=center;verticalAlign=top;whiteSpace=wrap;html=1;fillColor=#9AC7BF;" value="&lt;h1&gt;Users&lt;/h1&gt;Handles user registration, storage, and authentication" vertex="1">
+          <mxGeometry height="140" width="190" x="40" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-90" parent="obYorNC8pEpNs_z5_JDt-92" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Modular Design&lt;/h1&gt;&lt;p&gt;Each microservice can be seamlessly swapped with an alternative implementation. A well-documented contract interface ensures compatibility and simplifies the integration of new components.&lt;/p&gt;" vertex="1">
+          <mxGeometry height="120" width="610" x="40" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-86" parent="obYorNC8pEpNs_z5_JDt-73" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;h1&gt;Application Layer&lt;/h1&gt;The Application Layer facilitates seamless traffic management and secure service orchestration. Utilizing Nginx as a high-performance entry point, the system routes requests to a centralized Core for OAuth2 and OpenID Connect authentication. This layer is built on a modular microservices architecture-including dedicated modules for Users, Clients, and 2FA ensuring that each component remains decoupled, independently scalable, and easily replaceable through well-defined contract interfaces." vertex="1">
+          <mxGeometry height="98.18181818181817" width="752.4637681159419" x="295" y="-40" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-94" edge="1" parent="1" source="obYorNC8pEpNs_z5_JDt-61" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.689;entryY=-0.001;entryDx=0;entryDy=0;entryPerimeter=0;" target="obYorNC8pEpNs_z5_JDt-49">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-80" edge="1" parent="1" source="obYorNC8pEpNs_z5_JDt-59" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="obYorNC8pEpNs_z5_JDt-49">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-560" y="860" />
+              <mxPoint x="-560" y="860" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-97" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="260" width="1180" x="-740" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-49" parent="obYorNC8pEpNs_z5_JDt-97" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" value="" vertex="1">
+          <mxGeometry height="260" width="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-50" parent="obYorNC8pEpNs_z5_JDt-97" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;h1&gt;Storage Layer&lt;/h1&gt;We use Redis to handle session storage and caching; by centralizing this data, all application instances can share the same state seamlessly. For our core data needs, we use PostgreSQL as a reliable relational database." vertex="1">
+          <mxGeometry height="90" width="480" x="30" y="75" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-29" parent="obYorNC8pEpNs_z5_JDt-97" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;" value="&lt;div&gt;&lt;h1&gt;Redis&lt;/h1&gt;Implemented as a centralized session and cache store, allowing multiple horizontally scaled instances to share state and maintain session persistence.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="220" width="220" x="550" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-96" parent="obYorNC8pEpNs_z5_JDt-97" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;" value="&lt;div&gt;&lt;h1&gt;DB&lt;/h1&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;A scalable architecture utilizing&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt; &lt;/span&gt;&lt;b style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;one or more database servers, abstracted by the Doctrine ORM&lt;/b&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;. Doctrine is used to decouple the application logic from the database schema, allowing for easier maintenance and database portability.&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="220" width="320" x="790" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-47" edge="1" parent="obYorNC8pEpNs_z5_JDt-97" source="obYorNC8pEpNs_z5_JDt-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" target="obYorNC8pEpNs_z5_JDt-29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-106" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="350" width="1170" x="-730" y="-120" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-99" parent="obYorNC8pEpNs_z5_JDt-106" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="" vertex="1">
+          <mxGeometry height="350" width="1170" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-100" parent="obYorNC8pEpNs_z5_JDt-106" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;User Interface &amp;amp; Access Management&lt;/h1&gt;&lt;p&gt;This suite of components provides a secure, intuitive environment for system administration. By combining a modern React-based dashboard with a secure Backend-for-Frontend (BFF) architecture, the platform ensures that administrative tasks are both efficient and protected.&lt;/p&gt;" vertex="1">
+          <mxGeometry height="120" width="1110" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-101" parent="obYorNC8pEpNs_z5_JDt-106" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#f8cecc;strokeColor=#b85450;" value="&lt;h1&gt;Identity Link Console&lt;/h1&gt;The Identity Link Console is the centralized administrative dashboard for the platform. It provides a comprehensive interface for managing users, clients, groups, and secrets. Administrators can use the console to configure granular access controls, review role assignments, and manage client credentials through a single, streamlined workspace." vertex="1">
+          <mxGeometry height="200" width="360" x="780" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-103" parent="obYorNC8pEpNs_z5_JDt-106" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;h1&gt;Backend-for-Frontend&lt;/h1&gt;&lt;div&gt;The Backend-for-Frontend (BFF) serves as the secure intermediary between the Console and the core services. It implements the BFF Security Pattern by:&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;Authentication&lt;/b&gt; - executing the OIDC login flow and managing secure, encrypted session cookies.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;Security&lt;/b&gt; - offloading sensitive token handling from the browser to the server-side to prevent XSS and token theft.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;API Gateway&lt;/b&gt; - proxying requests to backend microservices while automatically attaching the necessary OAuth2 access tokens.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="200" width="700" x="20" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-105" edge="1" parent="obYorNC8pEpNs_z5_JDt-106" source="obYorNC8pEpNs_z5_JDt-103" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;startArrow=classic;startFill=1;" target="obYorNC8pEpNs_z5_JDt-101">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="obYorNC8pEpNs_z5_JDt-104" edge="1" parent="1" source="obYorNC8pEpNs_z5_JDt-103" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="obYorNC8pEpNs_z5_JDt-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-560" y="240" />
+              <mxPoint x="-560" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
