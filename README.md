@@ -69,6 +69,8 @@ Key features include:
 - [DB Clients](https://github.com/sgoranov/identity-link-db-clients) - Manages registered OAuth2 clients, secrets, and their access policies
 - [DB Users](https://github.com/sgoranov/identity-link-db-users) - Handles user registration, storage, and authentication
 - [2FA](https://github.com/sgoranov/identity-link-2fa) - Provides optional two-factor authentication via TOTP
+- [Console](https://github.com/sgoranov/identity-link-console) - Administrative UI for managing users, clients, groups, etc.
+- [BFF](https://github.com/sgoranov/identity-link-bff) - Backend-for-frontend that handles OIDC login, stores the user session, and proxies requests to backend services while attaching the access token
 - [Shared](https://github.com/sgoranov/identity-link-shared) - Common utilities and abstractions shared across services
 - [Docker](https://github.com/sgoranov/identity-link-docker) – Centralized Docker Compose setup to orchestrate all services locally for development or testing
 

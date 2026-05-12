@@ -1,0 +1,29 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+cd "$PROJECT_ROOT"
+
+set -a
+[ -f .env ] && source .env
+[ -f .env.test ] && source .env.test
+[ -f .env.test.local ] && source .env.test.local
+set +a
+
+echo "Cleaning up previous debug session..."
+docker compose -f docker-compose-test.yaml down --remove-orphans -v
+
+echo "Starting tests..."
+docker compose -f docker-compose-test.yaml up \
+  --build \
+  --force-recreate \
+  --renew-anon-volumes \
+  --exit-code-from identity-link-core-test \
+  --abort-on-container-exit
+
+TEST_EXIT_CODE=$?
+
+echo "Cleaning up test environment..."
+docker compose -f docker-compose-test.yaml down -v --remove-orphans
+
+exit $TEST_EXIT_CODE

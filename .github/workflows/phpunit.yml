@@ -13,13 +13,20 @@ jobs:
   symfony-tests:
     runs-on: ubuntu-latest
 
+    env:
+      DB_USER: symfony
+      DB_PASSWORD: symfony
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_NAME: test
+
     services:
       postgres:
         image: postgres:15
         env:
           POSTGRES_USER: symfony
           POSTGRES_PASSWORD: symfony
-          POSTGRES_DB: symfony_test
+          POSTGRES_DB: test
         ports:
           - 5432:5432
         options: >-
@@ -28,16 +35,13 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    env:
-      DATABASE_URL: "postgresql://symfony:symfony@127.0.0.1:5432/symfony_test"
-
     steps:
       - uses: actions/checkout@v3
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.5'
 
       - name: Cache Composer packages
         uses: actions/cache@v3
@@ -52,7 +56,7 @@ jobs:
 
       - name: Set up test database
         run: |
-          php bin/console doctrine:database:drop --env=test --force
+          php bin/console doctrine:database:drop --env=test --if-exists --force
           php bin/console doctrine:database:create --env=test
           php bin/console doctrine:schema:create --env=test
           php bin/console doctrine:fixtures:load --env=test --no-interaction

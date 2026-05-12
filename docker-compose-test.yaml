@@ -1,0 +1,44 @@
+services:
+
+  identity-link-core-test:
+    container_name: identity-link-core-test
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    image: identity-link-core-test
+    depends_on:
+      identity-link-database-server-test:
+        condition: service_healthy
+    networks:
+      - identity-link-network
+
+  identity-link-core-test-debug:
+    extends:
+      file: docker-compose-test.yaml
+      service: identity-link-core-test
+    container_name: identity-link-core-test-debug
+    volumes:
+      - .:/app
+    entrypoint: bash
+    stdin_open: true
+    tty: true
+
+  identity-link-database-server-test:
+    container_name: identity-link-database-server-test
+    image: postgres:15
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    networks:
+      - identity-link-network
+
+networks:
+  identity-link-network:
+    driver: bridge
