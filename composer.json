@@ -63,7 +63,13 @@
             "ext-sodium": "8.5.0",
             "ext-sqlite3": "8.5.0"
         },
-        "sort-packages": true
+        "sort-packages": true,
+        "audit": {
+            "ignore-abandoned": [
+                "sebastian/code-unit",
+                "sebastian/code-unit-reverse-lookup"
+            ]
+        }
     },
     "autoload": {
         "psr-4": {
