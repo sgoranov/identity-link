@@ -37,7 +37,8 @@ to adapt to your infrastructure or requirements:
 Security is built in. TOTP (e.g., Google Authenticator) is supported 
 out of the box. Thanks to the modular design, you can also implement 
 other 2FA methods like SMS verification or third-party services 
-with minimal changes.
+with minimal changes. When 2FA is globally enabled, user services can
+skip or require 2FA per user through `UserResponseInterface::twoFaEnabled()`.
 
 ### Fully Customizable UI and Text
 

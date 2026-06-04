@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use App\Api\Contract\UserConnectorInterface;
+use App\Entity\AuthRequest;
 use App\Repository\AuthRequestRepository;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -12,7 +14,8 @@ class LoginDispatcherService
 
     public function __construct(
         private readonly AuthRequestRepository $authRequestRepository,
-        private readonly RequestStack $requestStack
+        private readonly RequestStack $requestStack,
+        private readonly UserConnectorInterface $userConnector,
     )
     {
     }
@@ -40,7 +43,7 @@ class LoginDispatcherService
             return null;
         }
 
-        $loginFlow = $this->buildLoginFlow();
+        $loginFlow = $this->buildLoginFlow($authRequest);
         $currentState = $authRequest->getLoginState();
 
         // If no state yet, the first step in flow is the only valid one
@@ -67,7 +70,11 @@ class LoginDispatcherService
     public function isStateAllowed(string $state): bool
     {
         $authRequest = $this->authRequestRepository->findActive($this->getAuthRequestId());
-        $loginFlow = $this->buildLoginFlow();
+        if (!$authRequest) {
+            return false;
+        }
+
+        $loginFlow = $this->buildLoginFlow($authRequest);
 
         // If no state yet, the first step in flow is the only valid one
         if ($authRequest->getLoginState() === null) {
@@ -86,7 +93,7 @@ class LoginDispatcherService
         return $nextState?->value === $state;
     }
 
-    private function buildLoginFlow(): array
+    private function buildLoginFlow(AuthRequest $authRequest): array
     {
         $loginFlow = [LoginStateEnum::PASSWORD];
 
@@ -94,7 +101,7 @@ class LoginDispatcherService
             throw new \RuntimeException('login_two_fa_enabled is not set in config');
         }
 
-        if ($this->config['login_two_fa_enabled']) {
+        if ($this->config['login_two_fa_enabled'] && $this->isTwoFaEnabledForUser($authRequest)) {
             $loginFlow[] = LoginStateEnum::TWO_FACTOR_INITIATE;
             $loginFlow[] = LoginStateEnum::TWO_FACTOR_COMPLETE;
         }
@@ -102,6 +109,16 @@ class LoginDispatcherService
         $loginFlow[] = LoginStateEnum::COMPLETED;
 
         return $loginFlow;
+    }
+
+    private function isTwoFaEnabledForUser(AuthRequest $authRequest): bool
+    {
+        $userIdentifier = $authRequest->getUserIdentifier();
+        if ($userIdentifier === null) {
+            return true;
+        }
+
+        return $this->userConnector->getUserById($userIdentifier)?->twoFaEnabled() ?? true;
     }
 
     private function getAuthRequestId(): ?string

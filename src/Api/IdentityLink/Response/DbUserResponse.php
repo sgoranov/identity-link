@@ -11,6 +11,8 @@ class DbUserResponse implements UserResponseInterface
 
     private array $claims;
 
+    private bool $twoFaEnabled = true;
+
     public function getId(): string
     {
         return $this->id;
@@ -29,5 +31,15 @@ class DbUserResponse implements UserResponseInterface
     public function setClaims(array $claims): void
     {
         $this->claims = $claims;
+    }
+
+    public function twoFaEnabled(): bool
+    {
+        return $this->twoFaEnabled;
+    }
+
+    public function setTwoFaEnabled(bool $twoFaEnabled): void
+    {
+        $this->twoFaEnabled = $twoFaEnabled;
     }
 }

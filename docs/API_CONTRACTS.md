@@ -86,6 +86,7 @@ Represents user data returned by `UserConnectorInterface`.
 
 - `getId(): string` — Returns user ID
 - `getClaims(): array` — Returns user claims for inclusion in tokens or userinfo response
+- `twoFaEnabled(): bool` — Whether this user must complete two-factor authentication during login when 2FA is globally enabled
 
 ## Summary
 

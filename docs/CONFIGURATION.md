@@ -36,6 +36,7 @@ General application configuration, including authentication type and JWT token o
 | **JWT_GROUPS_CLAIM_LIMIT**   | Maximum number of groups to include in the JWT "groups" claim (if enabled)                                                                                                                                                | 50                                                                                                                           |
 | **REDIS_DSN**                | Redis server connection string                                                                                                                                                                                            | redis://host.docker.internal:9008                                                                                            |
 | **OIDC_EXTRA_CLAIMS**        | JSON-encoded map of custom (non-standard) claims to include in ID Token or UserInfo responses. Keys are logical categories (e.g., "groups", "account") and values are arrays of field names. Must be a valid JSON string. | {"groups":["groups"],"account":["employee_id","department","account_status"],"permissions":["feature_flags","access_level"]} |
+| **LOGIN_TWO_FA_ENABLED**     | Whether the login flow can require two-factor authentication. When enabled, each user's `UserResponseInterface::twoFaEnabled()` value decides whether that user must complete 2FA.                                        | true                                                                                                                         |
 
 
 ## DbUserConnector
@@ -72,6 +73,5 @@ GitHub repo: https://github.com/sgoranov/identity-link-2fa
 
 | Variable                  | Description                                                                   | Example Value                                |
 |---------------------------|-------------------------------------------------------------------------------|----------------------------------------------|
-| **TWO_FA_AUTH_ENDPOINT**  | Endpoint for 2FA authentication. Leave empty to disable 2FA                   | http://host.docker.internal:9003/api/v1/auth |
+| **TWO_FA_AUTH_ENDPOINT**  | Endpoint for 2FA authentication                                               | http://host.docker.internal:9003/api/v1/auth |
 | **TWO_FA_INDEX_ENDPOINT** | Endpoint to verify 2FA token by user ID (`{id}` replaced with actual user ID) | http://localhost/2fa/2fa/verify/{id}         |
-

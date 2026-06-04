@@ -8,4 +8,5 @@ interface UserResponseInterface
 
     public function getId(): string;
     public function getClaims(): array;
+    public function twoFaEnabled(): bool;
 }
