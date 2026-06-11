@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
       target: test
     image: identity-link-core-test
+    volumes:
+      - .:/app
     depends_on:
       identity-link-database-server-test:
         condition: service_healthy
@@ -18,8 +20,6 @@ services:
       file: docker-compose-test.yaml
       service: identity-link-core-test
     container_name: identity-link-core-test-debug
-    volumes:
-      - .:/app
     entrypoint: bash
     stdin_open: true
     tty: true
