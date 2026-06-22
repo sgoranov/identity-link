@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Security\Jwt\JwtConfig;
 use Strobotti\JWK\KeyFactory;
 use Strobotti\JWK\KeySet;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,17 +15,16 @@ class OidcJwksController extends AbstractController
 {
 
     #[Route('/jwks', name: 'oidc_jwks', methods: 'GET')]
-    public function index(): Response
+    public function index(JwtConfig $jwtConfig): Response
     {
-        $jwtKey = $this->getParameter('jwt_key');
-        $pem = file_get_contents($jwtKey['public']);
+        $pem = file_get_contents($jwtConfig->getPublicKey());
         $keyDetails = openssl_pkey_get_details(openssl_pkey_get_public($pem));
 
         $options = [
             'use' => 'sig',
             'kty' => 'RSA',
             'alg' => 'RS256',
-            'kid' => $jwtKey['kid'],
+            'kid' => $jwtConfig->getKid(),
             'n' => $this->base64urlEncode($keyDetails['rsa']['n']),
             'e' => $this->base64urlEncode($keyDetails['rsa']['e']),
         ];

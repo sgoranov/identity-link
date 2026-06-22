@@ -18,10 +18,9 @@ parameters:
     jwt_include_groups_claim: '%env(bool:JWT_INCLUDE_GROUPS_CLAIM)%'
     jwt_groups_claim_limit: '%env(int:JWT_GROUPS_CLAIM_LIMIT)%'
     jwt_key:
-        kid: '5eda9b41-085c-403f-85e7-50d3b4131082'
-        public: 'file://%kernel.project_dir%/var/public.key'
-        private: 'file://%kernel.project_dir%/var/private.key'
-    encryption_key: '%kernel.project_dir%/var/encryption.key'
+        public: 'file://%env(JWT_PUBLIC_KEY_PATH)%'
+        private: 'file://%env(JWT_PRIVATE_KEY_PATH)%'
+    encryption_key: '%env(ENCRYPTION_KEY_PATH)%'
     access_token_ttl: PT1H
     refresh_token_ttl: P1M
     auth_code_ttl: PT1M
@@ -68,7 +67,7 @@ services:
 
     App\Security\Jwt\JwtConfig:
         arguments:
-            - '%jwt_key%'
+            $config: '%jwt_key%'
 
     App\Security\EncryptionKeyLoader:
       class: App\Security\EncryptionKeyLoader
