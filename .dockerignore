@@ -1,8 +1,6 @@
 .git
 .github
 .gitignore
-tests
 var
 vendor
 docker-compose-test.yaml
-phpunit.xml.dist

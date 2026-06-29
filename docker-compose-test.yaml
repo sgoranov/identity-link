@@ -7,8 +7,10 @@ services:
       dockerfile: Dockerfile
       target: test
     image: identity-link-core-test
-    volumes:
-      - .:/app
+    environment:
+      APP_SECRET: test
+      DB_USER: admin
+      DB_PASSWORD: admin
     depends_on:
       identity-link-database-server-test:
         condition: service_healthy
@@ -20,6 +22,8 @@ services:
       file: docker-compose-test.yaml
       service: identity-link-core-test
     container_name: identity-link-core-test-debug
+    volumes:
+      - .:/app
     entrypoint: bash
     stdin_open: true
     tty: true
@@ -28,14 +32,14 @@ services:
     container_name: identity-link-database-server-test
     image: postgres:15
     healthcheck:
-      test: pg_isready -U $$POSTGRES_USER -d postgres
+      test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 5s
       timeout: 5s
       retries: 5
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: identity-link
     networks:
       - identity-link-network
 

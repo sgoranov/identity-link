@@ -4,12 +4,6 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
 cd "$PROJECT_ROOT"
 
-set -a
-[ -f .env ] && source .env
-[ -f .env.test ] && source .env.test
-[ -f .env.test.local ] && source .env.test.local
-set +a
-
 echo "Cleaning up previous debug session..."
 docker compose -f docker-compose-test.yaml down --remove-orphans
 

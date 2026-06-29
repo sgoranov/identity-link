@@ -12,55 +12,8 @@ permissions:
 jobs:
   symfony-tests:
     runs-on: ubuntu-latest
-
-    env:
-      DB_USER: symfony
-      DB_PASSWORD: symfony
-      DB_HOST: 127.0.0.1
-      DB_PORT: 5432
-      DB_NAME: test
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: symfony
-          POSTGRES_PASSWORD: symfony
-          POSTGRES_DB: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.5'
-
-      - name: Cache Composer packages
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-
-
-      - name: Install dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist
-
-      - name: Set up test database
-        run: |
-          php bin/console doctrine:database:drop --env=test --if-exists --force
-          php bin/console doctrine:database:create --env=test
-          php bin/console doctrine:schema:create --env=test
-          php bin/console doctrine:fixtures:load --env=test --no-interaction
-          chmod 600 tests/resources/private.key
-
-      - name: Run tests
-        run: vendor/bin/phpunit
+      - name: Run local test runner script
+        run: bash bin/test-run

@@ -12,7 +12,8 @@ RUN pecl install xdebug redis && docker-php-ext-enable xdebug redis
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
-COPY composer.json composer.lock* ./
+
+COPY . .
 RUN composer install --no-interaction --no-scripts --no-progress
 
 CMD ["vendor/bin/phpunit"]

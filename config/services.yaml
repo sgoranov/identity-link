@@ -4,6 +4,9 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    fallback_app_secret: '%env(APP_SECRET)%'
+    fallback_db_user: '%env(DB_USER)%'
+    fallback_db_password: '%env(DB_PASSWORD)%'
     login_two_fa_enabled: '%env(bool:LOGIN_TWO_FA_ENABLED)%'
     consent_screen_enabled: '%env(bool:CONSENT_SCREEN_ENABLED)%'
     oidc_extra_claims: '%env(string:OIDC_EXTRA_CLAIMS)%'

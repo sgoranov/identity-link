@@ -1,6 +1,6 @@
 # see https://symfony.com/doc/current/reference/configuration/framework.html
 framework:
-    secret: '%env(APP_SECRET)%'
+    secret: '%env(default:fallback_app_secret:file:APP_SECRET_FILE)%'
     csrf_protection: true
     http_method_override: false
     handle_all_throwables: true
