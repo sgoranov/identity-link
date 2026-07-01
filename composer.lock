@@ -2604,12 +2604,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sgoranov/identity-link-shared.git",
-                "reference": "54b41448f393f96923be604a2a476ad32adf0479"
+                "reference": "436e01ce5eefe2f31ac8cf5641816cc90a5b3f14"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sgoranov/identity-link-shared/zipball/54b41448f393f96923be604a2a476ad32adf0479",
-                "reference": "54b41448f393f96923be604a2a476ad32adf0479",
+                "url": "https://api.github.com/repos/sgoranov/identity-link-shared/zipball/436e01ce5eefe2f31ac8cf5641816cc90a5b3f14",
+                "reference": "436e01ce5eefe2f31ac8cf5641816cc90a5b3f14",
                 "shasum": ""
             },
             "require": {
@@ -2675,7 +2675,7 @@
                 "source": "https://github.com/sgoranov/identity-link-shared/tree/develop",
                 "issues": "https://github.com/sgoranov/identity-link-shared/issues"
             },
-            "time": "2026-06-23T08:40:03+00:00"
+            "time": "2026-07-01T15:42:08+00:00"
         },
         {
             "name": "steverhoades/oauth2-openid-connect-server",

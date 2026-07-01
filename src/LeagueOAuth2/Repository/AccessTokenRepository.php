@@ -75,7 +75,7 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         return $entity->isRevoked();
     }
 
-    private function getGroups(ClientEntityInterface $clientEntity, string $userIdentifier = null): array
+    private function getGroups(ClientEntityInterface $clientEntity, ?string $userIdentifier = null): array
     {
         if ($userIdentifier !== null) {
             $response = $this->userConnector->getGroups($userIdentifier, $this->groupsClaimLimit);

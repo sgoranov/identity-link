@@ -9,13 +9,13 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class GenerateJwt extends Command
+class GenerateToken extends Command
 {
     public function __construct(
         private readonly JwtTokenGenerator $jwtTokenGenerator,
     )
     {
-        parent::__construct('identity-link:generate-jwt');
+        parent::__construct('identity-link:generate-token');
     }
 
     protected function configure(): void

@@ -5,7 +5,7 @@ namespace App\Repository\Trait;
 
 trait RevocationTrait
 {
-    abstract public function findOneBy(array $criteria, array $orderBy = null);
+    abstract public function findOneBy(array $criteria, ?array $orderBy = null);
 
     abstract protected function getEntityManager();
 

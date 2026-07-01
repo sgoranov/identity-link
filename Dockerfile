@@ -25,7 +25,8 @@ RUN install-php-extensions \
     pgsql \
     pdo_pgsql \
     redis \
-    zip
+    zip \
+    intl
 
 ENV SERVER_NAME=":9000"
 ENV CADDY_AUTO_HTTPS=off
