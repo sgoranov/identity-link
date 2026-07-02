@@ -26,13 +26,13 @@ class AuthCodeRepository implements AuthCodeRepositoryInterface
         return new AuthCodeEntity();
     }
 
-    public function persistNewAuthCode(AuthCodeEntityInterface $authCodeEntity)
+    public function persistNewAuthCode(AuthCodeEntityInterface $authCodeEntity): void
     {
         $this->entityManager->persist($this->authCodeMapper->toDoctrineEntity($authCodeEntity));
         $this->entityManager->flush();
     }
 
-    public function revokeAuthCode($codeId)
+    public function revokeAuthCode(string $codeId): void
     {
         /** @var Repository $repository */
         $repository = $this->entityManager->getRepository(AuthCode::class);
@@ -43,7 +43,7 @@ class AuthCodeRepository implements AuthCodeRepositoryInterface
         $this->entityManager->flush();
     }
 
-    public function isAuthCodeRevoked($codeId): bool
+    public function isAuthCodeRevoked(string $codeId): bool
     {
         /** @var Repository $repository */
         $repository = $this->entityManager->getRepository(AuthCode::class);

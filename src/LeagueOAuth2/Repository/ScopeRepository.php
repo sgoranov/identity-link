@@ -6,6 +6,7 @@ namespace App\LeagueOAuth2\Repository;
 use App\LeagueOAuth2\Entity\ScopeEntity;
 use App\Service\OidcExtraClaimsProvider;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
+use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -26,24 +27,23 @@ class ScopeRepository implements ScopeRepositoryInterface
             array_merge($this->allowedScopes, array_keys($extraClaimsProvider->getClaims())));
     }
 
-    public function getScopeEntityByIdentifier($identifier): ScopeEntity|bool
+    public function getScopeEntityByIdentifier(string $identifier): ?ScopeEntityInterface
     {
         // validate the scope
         if (!in_array($identifier, $this->allowedScopes, true)) {
-            return false;
+            return null;
         }
 
         return new ScopeEntity($identifier);
     }
 
-    /**
-     * @param array $scopes
-     * @param string $grantType
-     * @param ClientEntityInterface $clientEntity
-     * @param string $userIdentifier
-     * @return array
-     */
-    public function finalizeScopes(array $scopes, $grantType, ClientEntityInterface $clientEntity, $userIdentifier = null)
+    public function finalizeScopes(
+        array $scopes,
+        string $grantType,
+        ClientEntityInterface $clientEntity,
+        ?string $userIdentifier = null,
+        ?string $authCodeId = null
+    ): array
     {
         $availableScopes = $clientEntity->getScopes();
 

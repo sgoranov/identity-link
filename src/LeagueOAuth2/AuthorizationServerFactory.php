@@ -11,15 +11,16 @@ use App\LeagueOAuth2\Repository\ScopeRepository;
 use App\LeagueOAuth2\Repository\UserRepository;
 use App\Security\EncryptionKeyLoader;
 use App\Security\Jwt\JwtConfig;
-use Defuse\Crypto\Key;
-use League\Event\Emitter;
 use League\OAuth2\Server\AuthorizationServer;
+use League\OAuth2\Server\EventEmitting\EventEmitter;
 use League\OAuth2\Server\Grant\AuthCodeGrant;
 use League\OAuth2\Server\Grant\ClientCredentialsGrant;
 use League\OAuth2\Server\Grant\ImplicitGrant;
 use League\OAuth2\Server\Grant\PasswordGrant;
 use League\OAuth2\Server\Grant\RefreshTokenGrant;
+use League\OAuth2\Server\RequestEvent;
 use OpenIDConnectServer\IdTokenResponse;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 class AuthorizationServerFactory
 {
@@ -47,9 +48,9 @@ class AuthorizationServerFactory
         private readonly ScopeRepository $scopeRepository,
         private readonly UserRepository $userRepository,
         private readonly IdTokenResponse $idTokenResponse,
-        private readonly Emitter $emitter,
         private readonly JwtConfig $jwtConfig,
         private readonly EncryptionKeyLoader $encryptionKeyLoader,
+        private readonly EventDispatcherInterface $eventDispatcher,
     )
     {
     }
@@ -100,12 +101,26 @@ class AuthorizationServerFactory
             $this->clientRepository,
             $this->accessTokenRepository,
             $this->scopeRepository,
-            new CryptKey($this->jwtConfig->getPrivateKey(), null, null, $this->jwtConfig->getKid()),
+            new CryptKey($this->jwtConfig->getPrivateKey(), null, false, $this->jwtConfig->getKid()),
             $this->encryptionKeyLoader->loadEncryptionKey(),
             $this->idTokenResponse,
         );
 
-        $server->setEmitter($this->emitter);
+        $emitter = new EventEmitter();
+        $emitter->addListener(
+            RequestEvent::CLIENT_AUTHENTICATION_FAILED,
+            fn ($event) => $this->eventDispatcher->dispatch($event)
+        );
+        $emitter->addListener(
+            RequestEvent::REFRESH_TOKEN_ISSUED,
+            fn ($event) => $this->eventDispatcher->dispatch($event)
+        );
+        $emitter->addListener(
+            RequestEvent::ACCESS_TOKEN_ISSUED,
+            fn ($event) => $this->eventDispatcher->dispatch($event)
+        );
+
+        $server->setEmitter($emitter);
 
         if ($this->enableClientCredentialsGrant) {
             $grantType = new ClientCredentialsGrant();

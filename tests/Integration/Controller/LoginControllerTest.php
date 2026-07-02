@@ -47,7 +47,7 @@ class LoginControllerTest extends WebTestCase
         $em = $client->getContainer()->get('doctrine')->getManager();
         list($authRequest) = $em->getRepository(AuthRequest::class)->findAll();
 
-        $this->assertEquals(LoginStateEnum::PASSWORD, $authRequest->getLoginState(), 'Login state should be PASSWORD.');
+        $this->assertEquals(LoginStateEnum::PASSWORD->value, $authRequest->getLoginState()->value, 'Login state should be PASSWORD.');
         $this->assertNull($authRequest->getConsentApproved(), 'Consent was still not approved.');
         $this->assertFalse($authRequest->isConsumed(), 'AuthRequest should be marked as false.');
     }

@@ -19,7 +19,11 @@ class UserRepository implements UserRepositoryInterface, IdentityProviderInterfa
     }
 
     public function getUserEntityByUserCredentials(
-        $username, $password, $grantType, ClientEntityInterface $clientEntity): ?UserEntityInterface
+        string $username,
+        string $password,
+        string $grantType,
+        ClientEntityInterface $clientEntity
+    ): ?UserEntityInterface
     {
         $user = $this->userConnector->getUserByUserCredentials($username, $password, $grantType, $clientEntity);
         if (!$user) return null; // authentication failure

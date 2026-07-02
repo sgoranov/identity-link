@@ -32,7 +32,7 @@ class RefreshTokenRepository implements RefreshTokenRepositoryInterface
      * @param RefreshTokenEntity $refreshTokenEntity
      * @return void
      */
-    public function persistNewRefreshToken(RefreshTokenEntityInterface $refreshTokenEntity)
+    public function persistNewRefreshToken(RefreshTokenEntityInterface $refreshTokenEntity): void
     {
         $userIdentifier = $refreshTokenEntity->getAccessToken()->getUserIdentifier();
         $doctrineEntity = $this->refreshTokenMapper->toDoctrineEntity($refreshTokenEntity);
@@ -42,7 +42,7 @@ class RefreshTokenRepository implements RefreshTokenRepositoryInterface
         $this->entityManager->flush();
     }
 
-    public function revokeRefreshToken($tokenId)
+    public function revokeRefreshToken(string $tokenId): void
     {
         /** @var Repository $repository */
         $repository = $this->entityManager->getRepository(RefreshToken::class);
@@ -53,7 +53,7 @@ class RefreshTokenRepository implements RefreshTokenRepositoryInterface
         $this->entityManager->flush();
     }
 
-    public function isRefreshTokenRevoked($tokenId): bool
+    public function isRefreshTokenRevoked(string $tokenId): bool
     {
         /** @var Repository $repository */
         $repository = $this->entityManager->getRepository(RefreshToken::class);

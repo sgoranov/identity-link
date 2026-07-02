@@ -19,7 +19,7 @@ class RefreshTokenEntity implements RefreshTokenEntityInterface
         return $this->identifier;
     }
 
-    public function setIdentifier($identifier)
+    public function setIdentifier(string $identifier): void
     {
         $this->identifier = $identifier;
     }
@@ -29,12 +29,12 @@ class RefreshTokenEntity implements RefreshTokenEntityInterface
         return $this->dateTime;
     }
 
-    public function setExpiryDateTime(DateTimeImmutable $dateTime)
+    public function setExpiryDateTime(DateTimeImmutable $dateTime): void
     {
         $this->dateTime = $dateTime;
     }
 
-    public function setAccessToken(AccessTokenEntityInterface $accessToken)
+    public function setAccessToken(AccessTokenEntityInterface $accessToken): void
     {
         $this->accessToken = $accessToken;
     }

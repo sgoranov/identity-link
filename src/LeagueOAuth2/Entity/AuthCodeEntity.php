@@ -23,7 +23,7 @@ class AuthCodeEntity implements AuthCodeEntityInterface
         return $this->redirectUri;
     }
 
-    public function setRedirectUri($uri)
+    public function setRedirectUri(string $uri): void
     {
         $this->redirectUri = $uri;
     }
@@ -33,7 +33,7 @@ class AuthCodeEntity implements AuthCodeEntityInterface
         return $this->identifier;
     }
 
-    public function setIdentifier($identifier)
+    public function setIdentifier(string $identifier): void
     {
         $this->identifier = $identifier;
     }
@@ -43,12 +43,12 @@ class AuthCodeEntity implements AuthCodeEntityInterface
         return $this->dateTime;
     }
 
-    public function setExpiryDateTime(DateTimeImmutable $dateTime)
+    public function setExpiryDateTime(DateTimeImmutable $dateTime): void
     {
         $this->dateTime = $dateTime;
     }
 
-    public function setUserIdentifier($identifier)
+    public function setUserIdentifier(string $identifier): void
     {
         $this->userIdentifier = $identifier;
     }
@@ -63,12 +63,12 @@ class AuthCodeEntity implements AuthCodeEntityInterface
         return $this->client;
     }
 
-    public function setClient(ClientEntityInterface $client)
+    public function setClient(ClientEntityInterface $client): void
     {
         $this->client = $client;
     }
 
-    public function addScope(ScopeEntityInterface $scope)
+    public function addScope(ScopeEntityInterface $scope): void
     {
         if (!in_array($scope->getIdentifier(), $this->scopes, true)) {
             $this->scopes[] = $scope;

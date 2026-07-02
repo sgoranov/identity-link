@@ -216,7 +216,7 @@ class AuthorizationControllerTest extends WebTestCase
         $jsonResponse = json_decode($response->getContent(), true);
 
         $this->assertSame('invalid_request', $jsonResponse['error']);
-        $this->assertSame('The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.', $jsonResponse['message']);
+        $this->assertSame('The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.', $jsonResponse['error_description']);
         $this->assertSame('Code challenge must be provided for public clients', $jsonResponse['hint']);
     }
 
@@ -255,7 +255,7 @@ class AuthorizationControllerTest extends WebTestCase
         $jsonResponse = json_decode($response->getContent(), true);
 
         $this->assertSame('invalid_request', $jsonResponse['error']);
-        $this->assertSame('The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.', $jsonResponse['message']);
+        $this->assertSame('The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.', $jsonResponse['error_description']);
         $this->assertSame('Plain code challenge method is not allowed for this client', $jsonResponse['hint']);
     }
 
@@ -317,7 +317,7 @@ class AuthorizationControllerTest extends WebTestCase
         $jsonResponse = json_decode($response->getContent(), true);
 
         $this->assertSame('invalid_client', $jsonResponse['error']);
-        $this->assertSame('Client authentication failed', $jsonResponse['message']);
+        $this->assertSame('Client authentication failed', $jsonResponse['error_description']);
     }
 
     public function testFailedCodeRequestWithUnregisteredRedirectUriForMultiRedirectClient(): void
@@ -347,7 +347,7 @@ class AuthorizationControllerTest extends WebTestCase
         $jsonResponse = json_decode($response->getContent(), true);
 
         $this->assertSame('invalid_client', $jsonResponse['error']);
-        $this->assertSame('Client authentication failed', $jsonResponse['message']);
+        $this->assertSame('Client authentication failed', $jsonResponse['error_description']);
     }
 
     public function testFailedAuthorizeRequest(): void
@@ -370,9 +370,9 @@ class AuthorizationControllerTest extends WebTestCase
 
         $jsonResponse = json_decode($response->getContent(), true);
 
-        $this->assertSame('unsupported_grant_type', $jsonResponse['error']);
-        $this->assertSame('The authorization grant type is not supported by the authorization server.', $jsonResponse['message']);
-        $this->assertSame('Check that all required parameters have been provided', $jsonResponse['hint']);
+        $this->assertSame('invalid_request', $jsonResponse['error']);
+        $this->assertSame('The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than once, or is otherwise malformed.', $jsonResponse['error_description']);
+        $this->assertSame('Check the `response_type` parameter', $jsonResponse['hint']);
     }
 
     public function testAuthorizeRequestWithInvalidScopes(): void
@@ -401,7 +401,7 @@ class AuthorizationControllerTest extends WebTestCase
 
         $redirectUri = str_replace('http://localhost?', '', $redirectUri);
         $this->assertStringStartsWith(
-            'error=invalid_scope&error_description=The+requested+scope+is+invalid%2C+unknown%2C+or+malformed',
+            'state=foobar&error=invalid_scope&error_description=The+requested+scope+is+invalid%2C+unknown%2C+or+malformed',
             $redirectUri
         );
     }

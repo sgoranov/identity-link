@@ -43,7 +43,7 @@ class ScopeRepositoryTest extends KernelTestCase
     public function testGetScopeEntityByIdentifier(): void
     {
         $scope = self::$scopeRepository->getScopeEntityByIdentifier('test');
-        $this->assertFalse($scope);
+        $this->assertNull($scope);
 
         $scope = self::$scopeRepository->getScopeEntityByIdentifier('openid');
         $this->assertEquals('openid', $scope->getIdentifier());

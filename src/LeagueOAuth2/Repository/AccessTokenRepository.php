@@ -49,13 +49,13 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         return $token;
     }
 
-    public function persistNewAccessToken(AccessTokenEntityInterface $accessTokenEntity)
+    public function persistNewAccessToken(AccessTokenEntityInterface $accessTokenEntity): void
     {
         $this->entityManager->persist($this->accessTokenMapper->toDoctrineEntity($accessTokenEntity));
         $this->entityManager->flush();
     }
 
-    public function revokeAccessToken($tokenId)
+    public function revokeAccessToken(string $tokenId): void
     {
         /** @var Repository $repository */
         $repository = $this->entityManager->getRepository(AccessToken::class);
@@ -66,7 +66,7 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         $this->entityManager->flush();
     }
 
-    public function isAccessTokenRevoked($tokenId): bool
+    public function isAccessTokenRevoked(string $tokenId): bool
     {
         /** @var Repository $repository */
         $repository = $this->entityManager->getRepository(AccessToken::class);

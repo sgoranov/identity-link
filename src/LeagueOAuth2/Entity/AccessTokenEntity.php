@@ -5,6 +5,8 @@ namespace App\LeagueOAuth2\Entity;
 
 use App\LeagueOAuth2\CryptKey;
 use DateTimeImmutable;
+use Lcobucci\JWT\Token;
+use League\OAuth2\Server\CryptKeyInterface;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
@@ -18,7 +20,7 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     private DateTimeImmutable $dateTime;
     private ?string $userIdentifier;
     private bool $isRevoked = false;
-    private $privateKey;
+    private CryptKeyInterface $privateKey;
 
     /**
      * @var ScopeEntity[]
@@ -28,7 +30,7 @@ class AccessTokenEntity implements AccessTokenEntityInterface
 
     private ?array $groups = null;
 
-    public function __toString(): string
+    private function convertToJWT(): Token
     {
         $this->initJwtConfiguration();
 
@@ -48,13 +50,13 @@ class AccessTokenEntity implements AccessTokenEntityInterface
             $builder = $builder->withClaim('groups', $this->groups);
         }
 
-        $token = $builder->getToken($this->jwtConfiguration->signer(), $this->jwtConfiguration->signingKey());
-
-        return $token->toString();
+        return $builder->getToken($this->jwtConfiguration->signer(), $this->jwtConfiguration->signingKey());
     }
 
-    public function setPrivateKey(CryptKey|\League\OAuth2\Server\CryptKey $privateKey): void
-    {
+    public function setPrivateKey(
+        #[\SensitiveParameter]
+        CryptKeyInterface $privateKey
+    ): void {
         $this->setPrivateKeyInTrait($privateKey);
         $this->privateKey = $privateKey;
     }
@@ -69,7 +71,7 @@ class AccessTokenEntity implements AccessTokenEntityInterface
         return $this->identifier;
     }
 
-    public function setIdentifier($identifier)
+    public function setIdentifier($identifier): void
     {
         $this->identifier = $identifier;
     }
@@ -79,12 +81,12 @@ class AccessTokenEntity implements AccessTokenEntityInterface
         return $this->dateTime;
     }
 
-    public function setExpiryDateTime(DateTimeImmutable $dateTime)
+    public function setExpiryDateTime(DateTimeImmutable $dateTime): void
     {
         $this->dateTime = $dateTime;
     }
 
-    public function setUserIdentifier($identifier)
+    public function setUserIdentifier($identifier): void
     {
         $this->userIdentifier = $identifier;
     }
@@ -99,12 +101,12 @@ class AccessTokenEntity implements AccessTokenEntityInterface
         return $this->client;
     }
 
-    public function setClient(ClientEntityInterface $client)
+    public function setClient(ClientEntityInterface $client): void
     {
         $this->client = $client;
     }
 
-    public function addScope(ScopeEntityInterface $scope)
+    public function addScope(ScopeEntityInterface $scope): void
     {
         if (!in_array($scope->getIdentifier(), $this->scopes, true)) {
             $this->scopes[] = $scope;

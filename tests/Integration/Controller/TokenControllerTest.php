@@ -59,7 +59,7 @@ final class TokenControllerTest extends WebTestCase
 
         $accessToken = null;
         $wasRequestAccessTokenEventDispatched = false;
-        $eventDispatcher->addListener(RequestEvent::ACCESS_TOKEN_ISSUED, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
+        $eventDispatcher->addListener(RequestAccessTokenEvent::class, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
             $wasRequestAccessTokenEventDispatched = true;
             $accessToken = $event->getAccessToken();
         });
@@ -100,12 +100,12 @@ final class TokenControllerTest extends WebTestCase
         $accessToken = null;
         $refreshToken = null;
 
-        $eventDispatcher->addListener(RequestEvent::ACCESS_TOKEN_ISSUED, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
+        $eventDispatcher->addListener(RequestAccessTokenEvent::class, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
             $wasRequestAccessTokenEventDispatched = true;
             $accessToken = $event->getAccessToken();
         });
 
-        $eventDispatcher->addListener(RequestEvent::REFRESH_TOKEN_ISSUED, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshToken): void {
+        $eventDispatcher->addListener(RequestRefreshTokenEvent::class, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshToken): void {
             $wasRequestRefreshTokenEventDispatched = true;
             $refreshToken = $event->getRefreshToken();
         });
@@ -150,12 +150,12 @@ final class TokenControllerTest extends WebTestCase
         $accessToken = null;
         $refreshToken = null;
 
-        $eventDispatcher->addListener(RequestEvent::ACCESS_TOKEN_ISSUED, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
+        $eventDispatcher->addListener(RequestAccessTokenEvent::class, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
             $wasRequestAccessTokenEventDispatched = true;
             $accessToken = $event->getAccessToken();
         });
 
-        $eventDispatcher->addListener(RequestEvent::REFRESH_TOKEN_ISSUED, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshToken): void {
+        $eventDispatcher->addListener(RequestRefreshTokenEvent::class, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshToken): void {
             $wasRequestRefreshTokenEventDispatched = true;
             $refreshToken = $event->getRefreshToken();
         });
@@ -176,8 +176,7 @@ final class TokenControllerTest extends WebTestCase
         $jsonResponse = json_decode($response->getContent(), true);
 
         $this->assertSame('invalid_grant', $jsonResponse['error']);
-        $this->assertSame('The user credentials were incorrect.', $jsonResponse['message']);
-        $this->assertSame('The user credentials were incorrect.', $jsonResponse['message']);
+        $this->assertSame('The user credentials were incorrect.', $jsonResponse['error_description']);
     }
 
     public function testSuccessfulRefreshTokenRequest(): void
@@ -196,12 +195,12 @@ final class TokenControllerTest extends WebTestCase
         $accessToken = null;
         $refreshTokenEntity = null;
 
-        $eventDispatcher->addListener(RequestEvent::ACCESS_TOKEN_ISSUED, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
+        $eventDispatcher->addListener(RequestAccessTokenEvent::class, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
             $wasRequestAccessTokenEventDispatched = true;
             $accessToken = $event->getAccessToken();
         });
 
-        $eventDispatcher->addListener(RequestEvent::REFRESH_TOKEN_ISSUED, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshTokenEntity): void {
+        $eventDispatcher->addListener(RequestRefreshTokenEvent::class, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshTokenEntity): void {
             $wasRequestRefreshTokenEventDispatched = true;
             $refreshTokenEntity = $event->getRefreshToken();
         });
@@ -276,12 +275,12 @@ final class TokenControllerTest extends WebTestCase
         $accessToken = null;
         $refreshToken = null;
 
-        $eventDispatcher->addListener(RequestEvent::ACCESS_TOKEN_ISSUED, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
+        $eventDispatcher->addListener(RequestAccessTokenEvent::class, static function (RequestAccessTokenEvent $event) use (&$wasRequestAccessTokenEventDispatched, &$accessToken): void {
             $wasRequestAccessTokenEventDispatched = true;
             $accessToken = $event->getAccessToken();
         });
 
-        $eventDispatcher->addListener(RequestEvent::REFRESH_TOKEN_ISSUED, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshToken): void {
+        $eventDispatcher->addListener(RequestRefreshTokenEvent::class, static function (RequestRefreshTokenEvent $event) use (&$wasRequestRefreshTokenEventDispatched, &$refreshToken): void {
             $wasRequestRefreshTokenEventDispatched = true;
             $refreshToken = $event->getRefreshToken();
         });
@@ -360,7 +359,7 @@ final class TokenControllerTest extends WebTestCase
         $jsonResponse = json_decode($response->getContent(), true);
 
         $this->assertSame('unsupported_grant_type', $jsonResponse['error']);
-        $this->assertSame('The authorization grant type is not supported by the authorization server.', $jsonResponse['message']);
+        $this->assertSame('The authorization grant type is not supported by the authorization server.', $jsonResponse['error_description']);
         $this->assertSame('Check that all required parameters have been provided', $jsonResponse['hint']);
     }
 
@@ -373,7 +372,7 @@ final class TokenControllerTest extends WebTestCase
 
         $wasClientAuthenticationEventDispatched = false;
 
-        $eventDispatcher->addListener(RequestEvent::CLIENT_AUTHENTICATION_FAILED, static function (RequestEvent $event) use (&$wasClientAuthenticationEventDispatched, &$accessToken): void {
+        $eventDispatcher->addListener(RequestEvent::class, static function (RequestEvent $event) use (&$wasClientAuthenticationEventDispatched, &$accessToken): void {
             $wasClientAuthenticationEventDispatched = true;
         });
 
@@ -391,7 +390,7 @@ final class TokenControllerTest extends WebTestCase
         $jsonResponse = json_decode($response->getContent(), true);
 
         $this->assertSame('invalid_client', $jsonResponse['error']);
-        $this->assertSame('Client authentication failed', $jsonResponse['message']);
+        $this->assertSame('Client authentication failed', $jsonResponse['error_description']);
 
         $this->assertTrue($wasClientAuthenticationEventDispatched);
     }

@@ -147,8 +147,3 @@ services:
 
     Psr\Http\Message\ResponseFactoryInterface:
         class: Nyholm\Psr7\Factory\Psr17Factory
-
-    League\Event\Emitter:
-        class: League\Event\Emitter
-        calls:
-            - useListenerProvider: ['@App\LeagueOAuth2\SymfonyLeagueEventListenerProvider']
