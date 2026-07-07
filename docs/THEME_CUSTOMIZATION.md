@@ -1,14 +1,5 @@
 # Theme Customization
 
-**Table of Contents**
-
-<!-- TOC -->
-* [Theme Customization](#theme-customization)
-  * [Overriding Twig Templates](#overriding-twig-templates)
-  * [Overriding Public Assets](#overriding-public-assets)
-  * [Overriding Translations](#overriding-translations)
-<!-- TOC -->
-
 In certain environments, you may want to customize the look, feel, and behavior of the application
 — including templates, assets, translations, or other environment-specific resources —
 without modifying the original application code.

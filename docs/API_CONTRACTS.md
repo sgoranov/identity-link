@@ -1,16 +1,5 @@
 # API Contract Interfaces
 
-<!-- TOC -->
-* [API Contract Interfaces](#api-contract-interfaces)
-  * [ClientConnectorInterface](#clientconnectorinterface)
-  * [ClientResponseInterface](#clientresponseinterface)
-  * [GroupsResponseInterface](#groupsresponseinterface)
-  * [TwoFaConnectorInterface](#twofaconnectorinterface)
-  * [UserConnectorInterface](#userconnectorinterface)
-  * [UserResponseInterface](#userresponseinterface)
-  * [Summary](#summary)
-<!-- TOC -->
-
 This document describes the key interfaces that connect the core Identity Link 
 service with custom implementations for user, client, and 2FA management.
 
