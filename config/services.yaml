@@ -28,7 +28,7 @@ parameters:
     refresh_token_ttl: P1M
     auth_code_ttl: PT1M
     enable_client_credentials_grant: true
-    enable_password_grant: true
+    enable_password_grant: false
     enable_refresh_token_grant: true
     enable_auth_code_grant: true
     enable_implicit_grant: false
