@@ -25,19 +25,19 @@ Manages OAuth2 client retrieval and group membership queries.
 
 Represents client data returned by the `ClientConnectorInterface`.
 
-- `getId(): string` — Returns client ID
-- `getName(): string` — Returns client name
-- `getRedirectUri(): array|string` — Returns a redirect URI or a list of allowed redirect URIs for the client
-- `isPublic(): bool` — Whether the client is public or confidential
-- `getScopes(): array` — List of scopes the client is allowed
-- `getGrantTypes(): array` — List of allowed grant types
-
+- `getId(): string` - Returns client ID
+- `getName(): string` - Returns client name
+- `getRedirectUri(): array|string` - Returns a redirect URI or a list of allowed redirect URIs for the client
+- `isPublic(): bool` - Whether the client is public or confidential
+- `getScopes(): array` - List of scopes the client is allowed
+- `getGrantTypes(): array` - List of allowed grant types
+- `isConsentRequired(): bool` - Whether the OAuth client requires user consent to be granted via the consent screen during the authorization flow
 
 ## GroupsResponseInterface
 
 Holds a list of groups associated with a client or user.
 
-- `getGroups(): array` — Returns array of groups
+- `getGroups(): array` - Returns array of groups
 
 ## TwoFaConnectorInterface
 
@@ -73,9 +73,9 @@ Manages user retrieval and authentication.
 
 Represents user data returned by `UserConnectorInterface`.
 
-- `getId(): string` — Returns user ID
-- `getClaims(): array` — Returns user claims for inclusion in tokens or userinfo response
-- `twoFaEnabled(): bool` — Whether this user must complete two-factor authentication during login when 2FA is globally enabled
+- `getId(): string` - Returns user ID
+- `getClaims(): array` - Returns user claims for inclusion in tokens or userinfo response
+- `twoFaEnabled(): bool` - Whether this user must complete two-factor authentication during login when 2FA is globally enabled
 
 ## Summary
 

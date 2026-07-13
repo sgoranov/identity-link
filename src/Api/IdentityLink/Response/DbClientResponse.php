@@ -16,6 +16,7 @@ class DbClientResponse implements ClientResponseInterface
     private bool $public;
     private array $scopes;
     private array $grantTypes;
+    private bool $consentRequired;
 
     public function getId(): string
     {
@@ -75,5 +76,15 @@ class DbClientResponse implements ClientResponseInterface
     public function setGrantTypes(array $grantTypes): void
     {
         $this->grantTypes = $grantTypes;
+    }
+
+    public function isConsentRequired(): bool
+    {
+        return $this->consentRequired;
+    }
+
+    public function setConsentRequired(bool $consentRequired): void
+    {
+        $this->consentRequired = $consentRequired;
     }
 }

@@ -43,7 +43,7 @@ scalability, flexibility, and security in mind. Key features include:
 A public demo environment is available for evaluating Identity Link and testing integrations.
 
 * Identity Link Admin Console: [https://auth.isoftplus.com/admin-console](https://auth.isoftplus.com/admin-console)
-* OpenID Connect Discovery: [https://auth.isoftplus.com/.well-known/openid-configuration](https://auth.isoftplus.com/admin-console)
+* OpenID Connect Discovery: [https://auth.isoftplus.com/.well-known/openid-configuration](https://auth.isoftplus.com/.well-known/openid-configuration)
 
 You can sign in to the admin-console demo environment using the following credentials:
 

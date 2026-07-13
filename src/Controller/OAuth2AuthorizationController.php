@@ -79,11 +79,10 @@ class OAuth2AuthorizationController extends AbstractController
         }
 
         $authRequest = $this->resolveAuthRequest($id);
+        $client = $this->clientRepository->getClientEntity($authRequest->getClientId());
 
-        // If the consent screen feature is enabled, redirect the user to the consent screen
-        // before completing the OAuth2 authorization request.
-        if ($this->getParameter('consent_screen_enabled') === true
-            && ($authRequest->getConsentApproved() === false || $authRequest->getConsentApproved() === null)) {
+        // Redirect the user to the consent screen before completing the OAuth2 authorization request.
+        if ($client->isConsentRequired() && !$authRequest->getConsentApproved()) {
             return $this->redirectToRoute('oauth2_auth_consent_screen', ['id' => $id]);
         }
 
@@ -124,10 +123,6 @@ class OAuth2AuthorizationController extends AbstractController
     #[Route('/oauth2/auth/consent-screen/{id}', name: 'oauth2_auth_consent_screen', methods: ['GET', 'POST'])]
     public function consentScreen(string $id, Request $request): Response
     {
-        if ($this->getParameter('consent_screen_enabled') === false) {
-            throw new RouteNotFoundException('Consent route is not available.');
-        }
-
         $authRequest = $this->resolveAuthRequest($id);
 
         $form = $this->formFactory->create(ConsentType::class);

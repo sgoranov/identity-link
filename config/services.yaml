@@ -8,7 +8,6 @@ parameters:
     fallback_db_user: '%env(DB_USER)%'
     fallback_db_password: '%env(DB_PASSWORD)%'
     login_two_fa_enabled: '%env(bool:LOGIN_TWO_FA_ENABLED)%'
-    consent_screen_enabled: '%env(bool:CONSENT_SCREEN_ENABLED)%'
     oidc_extra_claims: '%env(string:OIDC_EXTRA_CLAIMS)%'
     reset_password_url: '%env(string:RESET_PASSWORD_URL)%'
     user_query_endpoint: '%env(string:USER_QUERY_ENDPOINT)%'

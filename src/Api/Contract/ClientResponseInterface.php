@@ -10,4 +10,5 @@ interface ClientResponseInterface
     public function isPublic(): bool;
     public function getScopes(): array;
     public function getGrantTypes(): array;
+    public function isConsentRequired(): bool;
 }
