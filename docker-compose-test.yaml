@@ -11,6 +11,7 @@ services:
       APP_SECRET: test
       DB_USER: admin
       DB_PASSWORD: admin
+      OAUTH2_ENABLED_GRANTS: client_credentials,password,refresh_token,authorization_code,implicit
     depends_on:
       identity-link-database-server-test:
         condition: service_healthy

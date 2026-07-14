@@ -24,21 +24,21 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 
 class AuthorizationServerFactory
 {
+    private const ALLOWED_GRANTS = [
+        'authorization_code',
+        'client_credentials',
+        'refresh_token',
+        'password',
+        'implicit',
+    ];
+
     private string $accessToken_Ttl;
 
     private string $refreshTokenTtl;
 
     private string $authCodeTtl;
 
-    private bool $enableClientCredentialsGrant;
-
-    private bool $enablePasswordGrant;
-
-    private bool $enableRefreshTokenGrant;
-
-    private bool $enableAuthCodeGrant;
-
-    private bool $enableImplicitGrant;
+    private array $enabledGrants = [];
 
     public function __construct(
         private readonly AccessTokenRepository $accessTokenRepository,
@@ -70,29 +70,23 @@ class AuthorizationServerFactory
         $this->authCodeTtl = $authCodeTtl;
     }
 
-    public function enableClientCredentialsGrant(bool $enableClientCredentialsGrant): void
+    public function setEnabledGrantsFromString(string $grants): void
     {
-        $this->enableClientCredentialsGrant = $enableClientCredentialsGrant;
-    }
+        $parsedGrants = array_filter(
+            array_map('trim', explode(',', $grants))
+        );
 
-    public function enablePasswordGrant(bool $enablePasswordGrant): void
-    {
-        $this->enablePasswordGrant = $enablePasswordGrant;
-    }
+        foreach ($parsedGrants as $grant) {
+            if (!in_array($grant, self::ALLOWED_GRANTS, true)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Invalid OAuth2 grant type "%s" provided in configuration. Allowed values are: %s',
+                    $grant,
+                    implode(', ', self::ALLOWED_GRANTS)
+                ));
+            }
+        }
 
-    public function enableRefreshTokenGrant(bool $enableRefreshTokenGrant): void
-    {
-        $this->enableRefreshTokenGrant = $enableRefreshTokenGrant;
-    }
-
-    public function enableAuthCodeGrant(bool $enableAuthCodeGrant): void
-    {
-        $this->enableAuthCodeGrant = $enableAuthCodeGrant;
-    }
-
-    public function enableImplicitGrant(bool $enableImplicitGrant): void
-    {
-        $this->enableImplicitGrant = $enableImplicitGrant;
+        $this->enabledGrants = $parsedGrants;
     }
 
     public function create(): AuthorizationServer
@@ -122,33 +116,37 @@ class AuthorizationServerFactory
 
         $server->setEmitter($emitter);
 
-        if ($this->enableClientCredentialsGrant) {
-            $grantType = new ClientCredentialsGrant();
-            $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
-        }
+        foreach ($this->enabledGrants as $grantName) {
+            switch ($grantName) {
+                case 'client_credentials':
+                    $grantType = new ClientCredentialsGrant();
+                    $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
+                    break;
 
-        if ($this->enablePasswordGrant) {
-            $grantType = new PasswordGrant($this->userRepository, $this->refreshTokenRepository);
-            $grantType->setRefreshTokenTTL(new \DateInterval($this->refreshTokenTtl));
-            $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
-        }
+                case 'authorization_code':
+                    $grantType = new AuthCodeGrant($this->authCodeRepository, $this->refreshTokenRepository,
+                        new \DateInterval($this->authCodeTtl));
+                    $grantType->setRefreshTokenTTL(new \DateInterval($this->refreshTokenTtl));
+                    $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
+                    break;
 
-        if ($this->enableRefreshTokenGrant) {
-            $grantType = new RefreshTokenGrant($this->refreshTokenRepository);
-            $grantType->setRefreshTokenTTL(new \DateInterval($this->refreshTokenTtl));
-            $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
-        }
+                case 'refresh_token':
+                    $grantType = new RefreshTokenGrant($this->refreshTokenRepository);
+                    $grantType->setRefreshTokenTTL(new \DateInterval($this->refreshTokenTtl));
+                    $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
+                    break;
 
-        if ($this->enableAuthCodeGrant) {
-            $grantType = new AuthCodeGrant($this->authCodeRepository, $this->refreshTokenRepository,
-                new \DateInterval($this->authCodeTtl));
-            $grantType->setRefreshTokenTTL(new \DateInterval($this->refreshTokenTtl));
-            $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
-        }
+                case 'password':
+                    $grantType = new PasswordGrant($this->userRepository, $this->refreshTokenRepository);
+                    $grantType->setRefreshTokenTTL(new \DateInterval($this->refreshTokenTtl));
+                    $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
+                    break;
 
-        if ($this->enableImplicitGrant) {
-            $grantType = new ImplicitGrant(new \DateInterval($this->accessToken_Ttl));
-            $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
+                case 'implicit':
+                    $grantType = new ImplicitGrant(new \DateInterval($this->accessToken_Ttl));
+                    $server->enableGrantType($grantType, new \DateInterval($this->accessToken_Ttl));
+                    break;
+            }
         }
 
         return $server;
