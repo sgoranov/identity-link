@@ -19,12 +19,15 @@ class OidcDiscoveryController extends AbstractController
             'token_endpoint' => $urlGenerator->generate('oauth2_token', [], UrlGeneratorInterface::ABSOLUTE_URL),
             'userinfo_endpoint' => $urlGenerator->generate('oidc_user_info', [], UrlGeneratorInterface::ABSOLUTE_URL),
             'jwks_uri' => $urlGenerator->generate('oidc_jwks', [], UrlGeneratorInterface::ABSOLUTE_URL),
+            'introspection_endpoint' => $urlGenerator->generate('oauth2_token_introspect', [], UrlGeneratorInterface::ABSOLUTE_URL),
             'response_types_supported' => [
                 'code',
             ],
             'subject_types_supported' => ['public'],
             'id_token_signing_alg_values_supported' => ['RS256'],
             'code_challenge_methods_supported' => ['S256'],
+            "token_endpoint_auth_methods_supported" => ["client_secret_basic"],
+            "introspection_endpoint_auth_methods_supported" => ["client_secret_basic"]
         ]);
     }
 }
