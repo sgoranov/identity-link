@@ -6,11 +6,28 @@
     <div class="container my-5" style="max-width: 700px;">
         <div class="card shadow-sm rounded-3">
             <div class="card-body p-4">
-                <h1 class="h4 mb-3">{{ 'form_consent.title'|trans }}</h1>
+                <div class="d-flex align-items-center mb-4">
+                    {% if client.logoUrl %}
+                        <img
+                                src="{{ client.logoUrl }}"
+                                alt="{{ client.name }}"
+                                class="rounded me-3 border"
+                                style="width: 64px; height: 64px; object-fit: contain; padding: 4px;"
+                        >
+                    {% endif %}
 
-                <p class="text-muted">
-                    {{ 'form_consent.description'|trans({ '%client_name%': client.name }) }}
-                </p>
+                    <div>
+                        <h1 class="h4 mb-1">{{ 'form_consent.title'|trans }}</h1>
+                        <p class="text-muted mb-0">
+                            {% set clientName = client.applicationUrl
+                                ? '<a href="' ~ client.applicationUrl ~ '" target="_blank" rel="noopener noreferrer">' ~ client.name|e ~ '</a>'
+                                : client.name|e
+                            %}
+
+                            {{ 'form_consent.description'|trans({ '%client_name%': clientName })|raw  }}
+                        </p>
+                    </div>
+                </div>
 
                 <h5 class="mt-4 mb-3">{{ 'form_consent.permissions'|trans }}</h5>
                 <ul class="list-group mb-4">
@@ -30,6 +47,32 @@
                         </li>
                     {% endfor %}
                 </ul>
+
+                {% if client.privacyPolicyUrl or client.termsOfServiceUrl %}
+                    <p class="text-muted">
+                        {{ 'form_consent.data_info'|trans }}
+                    </p>
+
+                    {% if client.privacyPolicyUrl %}
+                        <a href="{{ client.privacyPolicyUrl }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            {{ 'form_consent.privacy_policy'|trans }}
+                        </a>
+                    {% endif %}
+
+                    {% if client.privacyPolicyUrl and client.termsOfServiceUrl %}
+                        &middot;
+                    {% endif %}
+
+                    {% if client.termsOfServiceUrl %}
+                        <a href="{{ client.termsOfServiceUrl }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            {{ 'form_consent.terms_of_service'|trans }}
+                        </a>
+                    {% endif %}
+                {% endif %}
 
                 {{ form_start(form) }}
                 <div class="d-flex gap-3 justify-content-end">

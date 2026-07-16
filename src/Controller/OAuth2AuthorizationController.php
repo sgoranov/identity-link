@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Api\Contract\ClientConnectorInterface;
 use App\Api\Contract\UserConnectorInterface;
 use App\Entity\AuthRequest;
 use App\Form\Type\ConsentType;
 use App\LeagueOAuth2\Entity\UserEntity;
-use App\LeagueOAuth2\Repository\ClientRepository;
 use App\Repository\AuthRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\AuthorizationServer;
@@ -22,7 +22,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 class OAuth2AuthorizationController extends AbstractController
 {
@@ -34,8 +33,8 @@ class OAuth2AuthorizationController extends AbstractController
         private readonly UserConnectorInterface $userConnector,
         private readonly AuthRequestRepository $authRequestRepository,
         private readonly EntityManagerInterface $entityManager,
-        private readonly ClientRepository $clientRepository,
         private readonly FormFactoryInterface $formFactory,
+        private readonly ClientConnectorInterface $clientConnector,
     )
     {
     }
@@ -79,7 +78,7 @@ class OAuth2AuthorizationController extends AbstractController
         }
 
         $authRequest = $this->resolveAuthRequest($id);
-        $client = $this->clientRepository->getClientEntity($authRequest->getClientId());
+        $client = $this->clientConnector->getClientById($authRequest->getClientId());
 
         // Redirect the user to the consent screen before completing the OAuth2 authorization request.
         if ($client->isConsentRequired() && !$authRequest->getConsentApproved()) {
@@ -159,9 +158,11 @@ class OAuth2AuthorizationController extends AbstractController
             return $this->redirectToRoute('oauth2_auth_complete', ['id' => $id]);
         }
 
+
+
         return $this->render('authorization/consent_screen.html.twig', [
             'form' => $form->createView(),
-            'client' => $this->clientRepository->getClientEntity($authRequest->getClientId()),
+            'client' => $this->clientConnector->getClientById($authRequest->getClientId()),
             'scopes' => $authRequest->getScopes(),
         ]);
     }

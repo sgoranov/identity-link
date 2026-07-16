@@ -32,7 +32,6 @@ class ClientRepository implements ClientRepositoryInterface
         $model->setPublic($client->isPublic());
         $model->setScopes($client->getScopes());
         $model->setGrantTypes($client->getGrantTypes());
-        $model->setConsentRequired($client->isConsentRequired());
 
         return $model;
     }

@@ -13,7 +13,6 @@ class ClientEntity implements ClientEntityInterface
     private bool $public;
     private array $scopes;
     private array $grantTypes;
-    private bool $consentRequired;
 
     public function getIdentifier(): string
     {
@@ -78,15 +77,5 @@ class ClientEntity implements ClientEntityInterface
     public function setPublic(bool $public): void
     {
         $this->public = $public;
-    }
-
-    public function isConsentRequired(): bool
-    {
-        return $this->consentRequired;
-    }
-
-    public function setConsentRequired(bool $consentRequired): void
-    {
-        $this->consentRequired = $consentRequired;
     }
 }

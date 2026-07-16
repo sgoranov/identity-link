@@ -17,6 +17,10 @@ class DbClientResponse implements ClientResponseInterface
     private array $scopes;
     private array $grantTypes;
     private bool $consentRequired;
+    private ?string $applicationUrl = null;
+    private ?string $termsOfServiceUrl = null;
+    private ?string $privacyPolicyUrl = null;
+    private ?string $logoUrl = null;
 
     public function getId(): string
     {
@@ -86,5 +90,45 @@ class DbClientResponse implements ClientResponseInterface
     public function setConsentRequired(bool $consentRequired): void
     {
         $this->consentRequired = $consentRequired;
+    }
+
+    public function getApplicationUrl(): ?string
+    {
+        return $this->applicationUrl;
+    }
+
+    public function setApplicationUrl(?string $applicationUrl): void
+    {
+        $this->applicationUrl = $applicationUrl;
+    }
+
+    public function getTermsOfServiceUrl(): ?string
+    {
+        return $this->termsOfServiceUrl;
+    }
+
+    public function setTermsOfServiceUrl(?string $termsOfServiceUrl): void
+    {
+        $this->termsOfServiceUrl = $termsOfServiceUrl;
+    }
+
+    public function getPrivacyPolicyUrl(): ?string
+    {
+        return $this->privacyPolicyUrl;
+    }
+
+    public function setPrivacyPolicyUrl(?string $privacyPolicyUrl): void
+    {
+        $this->privacyPolicyUrl = $privacyPolicyUrl;
+    }
+
+    public function getLogoUrl(): ?string
+    {
+        return $this->logoUrl;
+    }
+
+    public function setLogoUrl(?string $logoUrl): void
+    {
+        $this->logoUrl = $logoUrl;
     }
 }

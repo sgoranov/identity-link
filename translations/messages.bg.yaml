@@ -12,6 +12,9 @@ form_consent:
   description: "%client_name% желае достъп до вашия профил."
   permissions: "Това приложение ще може да:"
   no_permissions: "Няма изискани права."
+  data_info: "Научете как това приложение обработва вашите данни:"
+  privacy_policy: "Политика за поверителност"
+  terms_of_service: "Общи условия"
   allow: "Разрешавам"
   deny: "Отказвам"
 

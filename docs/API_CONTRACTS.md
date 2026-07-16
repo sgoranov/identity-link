@@ -32,6 +32,10 @@ Represents client data returned by the `ClientConnectorInterface`.
 - `getScopes(): array` - List of scopes the client is allowed
 - `getGrantTypes(): array` - List of allowed grant types
 - `isConsentRequired(): bool` - Whether the OAuth client requires user consent to be granted via the consent screen during the authorization flow
+- `getApplicationUrl(): ?string` - Returns the application's home page URL. This URL is intended for informational purposes, such as displaying application details to users or administrators, and is not used for redirect URI validation.
+- `getTermsOfServiceUrl(): ?string` - Returns the URL of the application's Terms of Service, if available. This may be presented on the consent screen or in client metadata.
+- `getPrivacyPolicyUrl(): ?string` - Returns the URL of the application's Privacy Policy, if available. This may be presented on the consent screen or in client metadata to inform users how their data is handled.
+- `getLogoUrl(): ?string` - Returns the URL of the application's logo, if available. The authorization server may use this to visually identify the client on consent screens or in administrative interfaces.
 
 ## GroupsResponseInterface
 

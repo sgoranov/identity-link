@@ -12,6 +12,9 @@ form_consent:
   description: "%client_name% would like to access your account."
   permissions: "This application will be able to:"
   no_permissions: "No permissions requested."
+  data_info: "Learn how this application handles your data:"
+  privacy_policy: "Privacy Policy"
+  terms_of_service: "Terms of Service"
   allow: "Allow"
   deny: "Deny"
 
