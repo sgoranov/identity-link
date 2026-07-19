@@ -5,62 +5,54 @@ namespace App\Controller;
 
 use App\Api\Contract\TwoFaConnectorInterface;
 use App\Api\Contract\UserConnectorInterface;
-use App\Entity\AuthRequest;
 use App\Form\Type\LoginType;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\LeagueOAuth2\Repository\ClientRepository;
-use App\Repository\AuthRequestRepository;
+use App\Security\AuthRequestResolver;
 use App\Security\Exception\RateLimitException;
-use App\Security\LoginDispatcherService;
+use App\Security\LoginFlowFactory;
 use App\Security\LoginStateEnum;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Form\FormFactoryInterface;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 class LoginController extends AbstractController
 {
     public function __construct(
-        private readonly ParameterBagInterface   $parameterBag,
-        private readonly AuthRequestRepository   $authRequestRepository,
-        private readonly ClientRepository        $clientRepository,
-        private readonly LoginDispatcherService  $dispatcherService,
-        private readonly FormFactoryInterface    $formFactory,
-        private readonly RateLimiterFactory      $loginIpLimiter,
-        private readonly RateLimiterFactory      $loginUsernameLimiter,
-        private readonly UserConnectorInterface  $userConnector,
-        private readonly EntityManagerInterface  $entityManager,
-        private readonly UrlGeneratorInterface   $urlGenerator,
+        private readonly ParameterBagInterface $parameterBag,
+        private readonly ClientRepository $clientRepository,
+        private readonly FormFactoryInterface $formFactory,
+        private readonly RateLimiterFactory $loginIpLimiter,
+        private readonly RateLimiterFactory $loginUsernameLimiter,
+        private readonly UserConnectorInterface $userConnector,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly UrlGeneratorInterface $urlGenerator,
         private readonly TwoFaConnectorInterface $twoFaConnector,
+        private readonly AuthRequestResolver $authRequestResolver,
+        private readonly LoginFlowFactory $loginFlowFactory,
     )
     {
     }
 
-    #[Route('/login/dispatch/{id}', name: 'login_dispatch', methods: ['GET'])]
-    public function dispatch(string $id): RedirectResponse
-    {
-        $nextState = $this->dispatcherService->getNextState();
-
-        if ($nextState === null) {
-            throw new BadRequestException('Invalid authentication request');
-        }
-
-        return $this->redirectToRoute($nextState->routeName(), ['id' => $id]);
-    }
-
-    #[Route('/login/password/{id}', name: 'login_with_password', methods: ['GET', 'POST'])]
+    #[Route('/login/password/{id}',
+        name: 'login_with_password',
+        requirements: ['id' => Requirement::UUID],
+        methods: ['GET', 'POST'])
+    ]
     public function login(string $id, Request $request): Response
     {
-        $authRequest = $this->resolveAuthRequest($id);
-        $this->isLoginStateAllowed('login_with_password');
+        $authRequest = $this->authRequestResolver->resolve($id);
+        $loginFlow = $this->loginFlowFactory->create($authRequest);
+        $loginFlow->assertStateAllowed(LoginStateEnum::PASSWORD);
 
         $client = $this->clientRepository->getClientEntity($authRequest->getClientId());
         $form = $this->formFactory->create(LoginType::class);
@@ -101,7 +93,8 @@ class LoginController extends AbstractController
             $this->entityManager->persist($authRequest);;
             $this->entityManager->flush();
 
-            return $this->redirectToRoute('login_dispatch', ['id' => $id]);
+            $nextState = $loginFlow->resolveNextState();
+            return $this->redirectToRoute($nextState->value, ['id' => $id]);
         }
 
         return $this->render('login/login.html.twig', [
@@ -112,11 +105,16 @@ class LoginController extends AbstractController
         ]);
     }
 
-    #[Route('/login/2fa/initiate/{id}', name: 'login_2fa_initiate', methods: ['GET'])]
+    #[Route('/login/2fa/initiate/{id}',
+        name: 'login_2fa_initiate',
+        requirements: ['id' => Requirement::UUID],
+        methods: ['GET'])
+    ]
     public function twoFaInitiate(string $id): RedirectResponse
     {
-        $authRequest = $this->resolveAuthRequest($id);
-        $this->isLoginStateAllowed('login_2fa_initiate');
+        $authRequest = $this->authRequestResolver->resolve($id);
+        $loginFlow = $this->loginFlowFactory->create($authRequest);
+        $loginFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_INITIATE);
 
         $redirectUrl = $this->urlGenerator->generate('login_2fa_complete', ['id' => $authRequest->getId()],
             UrlGeneratorInterface::ABSOLUTE_URL
@@ -136,11 +134,16 @@ class LoginController extends AbstractController
         );
     }
 
-    #[Route('/login/2fa/complete/{id}', name: 'login_2fa_complete', methods: ['GET'])]
+    #[Route('/login/2fa/complete/{id}',
+        name: 'login_2fa_complete',
+        requirements: ['id' => Requirement::UUID],
+        methods: ['GET'])
+    ]
     public function twoFaComplete(string $id, Request $request): RedirectResponse
     {
-        $authRequest = $this->resolveAuthRequest($id);
-        $this->isLoginStateAllowed('login_2fa_complete');
+        $authRequest = $this->authRequestResolver->resolve($id);
+        $loginFlow = $this->loginFlowFactory->create($authRequest);
+        $loginFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_COMPLETE);
 
         $twoFaId = $request->query->get('id');
         if (!is_string($twoFaId) || $twoFaId === '') {
@@ -156,37 +159,26 @@ class LoginController extends AbstractController
         $this->entityManager->persist($authRequest);;
         $this->entityManager->flush();
 
-        return $this->redirectToRoute('login_dispatch', ['id' => $id]);
+        $nextState = $loginFlow->resolveNextState();
+        return $this->redirectToRoute($nextState->value, ['id' => $id]);
     }
 
-    #[Route('/login/complete/{id}', name: 'login_complete', methods: ['GET'])]
+    #[Route('/login/complete/{id}',
+        name: 'login_complete',
+        requirements: ['id' => Requirement::UUID],
+        methods: ['GET'])
+    ]
     public function complete(string $id): RedirectResponse
     {
-        $authRequest = $this->resolveAuthRequest($id);
-        $this->isLoginStateAllowed('login_complete');
+        $authRequest = $this->authRequestResolver->resolve($id);
+        $loginFlow = $this->loginFlowFactory->create($authRequest);
+        $loginFlow->assertStateAllowed(LoginStateEnum::COMPLETED);
 
         $authRequest->setLoginState(LoginStateEnum::COMPLETED);
         $this->entityManager->persist($authRequest);
         $this->entityManager->flush();
 
         return $this->redirectToRoute('oauth2_auth_complete', ['id' => $id]);
-    }
-
-    private function isLoginStateAllowed(string $stateToValidate): void
-    {
-        if (false === $this->dispatcherService->isStateAllowed($stateToValidate)) {
-            throw new BadRequestException('Invalid login state');
-        }
-    }
-
-    private function resolveAuthRequest(string $id): AuthRequest
-    {
-        $authRequest = $this->authRequestRepository->findActive($id);
-        if (null === $authRequest) {
-            throw new BadRequestException('Invalid authentication request');
-        }
-
-        return $authRequest;
     }
 
     private function checkLoginRateLimits(?string $ip, string $username): void

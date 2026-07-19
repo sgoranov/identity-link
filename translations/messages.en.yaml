@@ -37,3 +37,13 @@ scopes:
   offline_access:
     label: "Stay signed in"
     description: "Allow the application to refresh your session without asking you to log in again."
+
+auth_request:
+  invalid: 'The requested login session is invalid or has been cleared.'
+  expired: 'Your login session has expired. Please try logging in again.'
+  consumed: 'This login session has already been completed. Please start a new login.'
+  return_to_application: 'Return to %application%'
+
+login_flow:
+  user_not_found: 'Your account could not be found. Please contact your administrator if you believe this is an error.'
+  invalid_state: 'Your login session is no longer valid. Please start the sign-in process again.'

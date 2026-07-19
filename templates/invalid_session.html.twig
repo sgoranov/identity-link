@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block content %}
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+        <div class="card shadow-sm p-4 text-center" style="max-width: 400px; width: 100%;">
+
+            <div class="alert alert-warning">
+                {{ message }}
+            </div>
+
+            {% if client and client.applicationUrl %}
+                <a href="{{ client.applicationUrl }}" class="btn btn-primary">
+                    {{ 'auth_request.return_to_application'|trans({
+                        '%application%': client.name
+                    }) }}
+                </a>
+            {% endif %}
+
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

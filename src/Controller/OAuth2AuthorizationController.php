@@ -8,7 +8,7 @@ use App\Api\Contract\UserConnectorInterface;
 use App\Entity\AuthRequest;
 use App\Form\Type\ConsentType;
 use App\LeagueOAuth2\Entity\UserEntity;
-use App\Repository\AuthRequestRepository;
+use App\Security\AuthRequestResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -17,7 +17,6 @@ use Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormFactoryInterface;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,10 +30,10 @@ class OAuth2AuthorizationController extends AbstractController
         private readonly HttpMessageFactoryInterface $httpMessageFactory,
         private readonly ResponseFactoryInterface $responseFactory,
         private readonly UserConnectorInterface $userConnector,
-        private readonly AuthRequestRepository $authRequestRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly FormFactoryInterface $formFactory,
         private readonly ClientConnectorInterface $clientConnector,
+        private readonly AuthRequestResolver $authRequestResolver,
     )
     {
     }
@@ -77,7 +76,7 @@ class OAuth2AuthorizationController extends AbstractController
             throw $this->createAccessDeniedException('User is not authenticated');
         }
 
-        $authRequest = $this->resolveAuthRequest($id);
+        $authRequest = $this->authRequestResolver->resolve($id);
         $client = $this->clientConnector->getClientById($authRequest->getClientId());
 
         // Redirect the user to the consent screen before completing the OAuth2 authorization request.
@@ -122,7 +121,7 @@ class OAuth2AuthorizationController extends AbstractController
     #[Route('/oauth2/auth/consent-screen/{id}', name: 'oauth2_auth_consent_screen', methods: ['GET', 'POST'])]
     public function consentScreen(string $id, Request $request): Response
     {
-        $authRequest = $this->resolveAuthRequest($id);
+        $authRequest = $this->authRequestResolver->resolve($id);
 
         $form = $this->formFactory->create(ConsentType::class);
         $form->handleRequest($request);
@@ -158,24 +157,10 @@ class OAuth2AuthorizationController extends AbstractController
             return $this->redirectToRoute('oauth2_auth_complete', ['id' => $id]);
         }
 
-
-
         return $this->render('authorization/consent_screen.html.twig', [
             'form' => $form->createView(),
             'client' => $this->clientConnector->getClientById($authRequest->getClientId()),
             'scopes' => $authRequest->getScopes(),
         ]);
-    }
-
-    private function resolveAuthRequest(string $id): AuthRequest
-    {
-        // Retrieves an active AuthRequest by ID.
-        // Throws a BadRequestException if the request is not found or has expired.
-        $authRequest = $this->authRequestRepository->findActive($id);
-        if (null === $authRequest) {
-            throw new BadRequestException('Invalid authentication request');
-        }
-
-        return $authRequest;
     }
 }

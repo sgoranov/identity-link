@@ -74,12 +74,9 @@ services:
     App\Security\AuthorizationEndpointAuthenticator:
         class: App\Security\AuthorizationEndpointAuthenticator
 
-    App\Security\LoginDispatcherService:
-      calls:
-        - method: setConfig
-          arguments:
-            -
-              login_two_fa_enabled: '%login_two_fa_enabled%'
+    App\Security\LoginFlowConfig:
+        arguments:
+            $twoFactorEnabled: '%login_two_fa_enabled%'
 
     App\LeagueOAuth2\Repository\AccessTokenRepository:
         class: App\LeagueOAuth2\Repository\AccessTokenRepository

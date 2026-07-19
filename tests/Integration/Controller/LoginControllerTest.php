@@ -28,14 +28,9 @@ class LoginControllerTest extends WebTestCase
             'state' => 'foobar',
         ]);
 
-        // expect to redirect to the login dispatch
-        // this will redirect to the login page
-        $this->assertResponseRedirects();
-        $client->request('GET', $client->getResponse()->headers->get('Location'));
-        $crawler = $client->followRedirect();
-
-        $location = $client->getResponse()->headers->get('Location');
-        $crawler = $client->request('GET', $location);
+        while ($client->getResponse()->isRedirect()) {
+            $crawler = $client->followRedirect();
+        }
 
         // submit the login form
         $form = $crawler->selectButton('login[submit]')->form([
@@ -65,14 +60,9 @@ class LoginControllerTest extends WebTestCase
             'state' => 'foobar',
         ]);
 
-        // expect to redirect to the login dispatch
-        // this will redirect to the login page
-        $this->assertResponseRedirects();
-        $client->request('GET', $client->getResponse()->headers->get('Location'));
-        $crawler = $client->followRedirect();
-
-        $location = $client->getResponse()->headers->get('Location');
-        $crawler = $client->request('GET', $location);
+        while ($client->getResponse()->isRedirect()) {
+            $crawler = $client->followRedirect();
+        }
 
         // submit the login form
         $form = $crawler->selectButton('login[submit]')->form([
