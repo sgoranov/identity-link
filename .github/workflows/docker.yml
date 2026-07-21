@@ -2,8 +2,8 @@ name: Docker
 
 on:
   push:
-    branches:
-      - develop
+    tags:
+      - '*.*.*'
 
 permissions:
   contents: read
@@ -29,4 +29,6 @@ jobs:
           context: .
           target: prod
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/identity-link-core:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/identity-link-core:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/identity-link-core:latest
