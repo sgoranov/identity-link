@@ -13,8 +13,12 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
+ENV APP_ENV=test
+ENV DB_USER=dummy
+ENV DB_PASSWORD=dummy
+
 COPY . .
-RUN composer install --no-interaction --no-scripts --no-progress
+RUN composer install --no-interaction --no-progress
 
 CMD ["vendor/bin/phpunit"]
 

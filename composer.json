@@ -30,6 +30,7 @@
         "steverhoades/oauth2-openid-connect-server": "^3.0",
         "strobotti/php-jwk": "^1.4",
         "symfony/asset": "6.4.*",
+        "symfony/asset-mapper": "6.4.*",
         "symfony/console": "6.4.*",
         "symfony/dotenv": "6.4.*",
         "symfony/event-dispatcher": "6.4.*",
@@ -94,7 +95,7 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"
@@ -113,9 +114,9 @@
         }
     },
     "require-dev": {
-        "dama/doctrine-test-bundle": "^8.4",
-        "doctrine/doctrine-fixtures-bundle": "^4.0",
-        "phpunit/phpunit": "^10.5",
+        "dama/doctrine-test-bundle": "^8",
+        "doctrine/doctrine-fixtures-bundle": "^4",
+        "phpunit/phpunit": "^10",
         "symfony/browser-kit": "6.4.*",
         "symfony/debug-bundle": "6.4.*",
         "symfony/maker-bundle": "^1.51",
