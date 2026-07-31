@@ -1,5 +1,6 @@
 monolog:
     channels:
+        - rest
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
 
 when@dev:
@@ -7,9 +8,9 @@ when@dev:
         handlers:
             main:
                 type: stream
-                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                path: php://stderr
                 level: debug
-                channels: ["!event"]
+                channels: ["!event", "!rest"]
             # uncomment to get logging in your browser
             # you may have to allow bigger header sizes in your Web server configuration
             #firephp:
@@ -22,20 +23,29 @@ when@dev:
                 type: console
                 process_psr_3_messages: false
                 channels: ["!event", "!doctrine", "!console"]
-
+            rest_log:
+                type: stream
+                path: php://stderr
+                level: debug
+                channels: [ "rest" ]
 when@test:
     monolog:
         handlers:
             main:
                 type: fingers_crossed
                 action_level: error
-                handler: nested
+                handler: main_output
                 excluded_http_codes: [404, 405]
-                channels: ["!event"]
-            nested:
+                channels: ["!event", "!rest"]
+            main_output:
                 type: stream
-                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                path: php://stderr
                 level: debug
+            rest_log:
+                type: stream
+                path: php://stderr
+                level: debug
+                channels: [ "rest" ]
 
 when@prod:
     monolog:
@@ -43,19 +53,32 @@ when@prod:
             main:
                 type: fingers_crossed
                 action_level: error
-                handler: nested
+                handler: main_output
                 excluded_http_codes: [404, 405]
-                buffer_size: 50 # How many messages should be saved? Prevent memory leaks
-            nested:
+                buffer_size: 50
+                channels: ["!event", "!rest", "!deprecation"]
+
+            main_output:
                 type: stream
                 path: php://stderr
                 level: debug
                 formatter: monolog.formatter.json
+
+            rest:
+                type: stream
+                path: php://stderr
+                level: debug
+                channels: ["rest"]
+                formatter: monolog.formatter.json
+
+            deprecation:
+                type: stream
+                path: php://stderr
+                level: notice
+                channels: ["deprecation"]
+                formatter: monolog.formatter.json
+
             console:
                 type: console
                 process_psr_3_messages: false
-                channels: ["!event", "!doctrine"]
-            deprecation:
-                type: stream
-                channels: [deprecation]
-                path: php://stderr
+                channels: ["!event", "!doctrine", "!rest", "!deprecation"]

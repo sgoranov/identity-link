@@ -134,3 +134,7 @@ services:
 
     Psr\Http\Message\ResponseFactoryInterface:
         class: Nyholm\Psr7\Factory\Psr17Factory
+
+    sgoranov\IdentityLinkShared\EventListener\RequestResponseLogger:
+        arguments:
+            $logger: '@monolog.logger.rest'
