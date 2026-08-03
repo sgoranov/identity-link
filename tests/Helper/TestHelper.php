@@ -58,7 +58,8 @@ final class TestHelper
         $client = $this->clientConnector->getClientById($accessToken->getClientIdentifier());
 
         $payload = [
-            'aud' => $client->getId(),
+            'iss' => $this->jwtTokenGenerator->getIssuer(),
+            'aud' => $client->getAudience(),
             'jti' => $accessToken->getIdentifier(),
             'iat' => (new \DateTimeImmutable('-1 second'))->format('U.u'),
             'nbf' => (new \DateTimeImmutable('-1 second'))->format('U.u'),

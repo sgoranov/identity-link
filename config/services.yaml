@@ -116,10 +116,11 @@ services:
             - '@App\Service\OidcExtraClaimsProvider'
 
     OpenIDConnectServer\IdTokenResponse:
-        class: OpenIDConnectServer\IdTokenResponse
+        class: App\LeagueOAuth2\ResponseType\IdTokenResponse
         arguments:
             - '@App\LeagueOAuth2\Repository\UserRepository'
             - '@OpenIDConnectServer\ClaimExtractor'
+            - '@App\Security\Jwt\JwtConfig'
 
     App\LeagueOAuth2\AuthorizationServerFactory:
         calls:

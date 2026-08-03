@@ -111,8 +111,8 @@ class SingleSignOffControllerTest extends WebTestCase
         $router = $client->getContainer()->get(RouterInterface::class);
 
         $token = $tokenGenerator->createTokenByPayload([
-            'aud' => 'identity-link',
-            'iss' => 'identity-link',
+            'aud' => $tokenGenerator->getAudience(),
+            'iss' => $tokenGenerator->getIssuer(),
             'iat' => microtime(true),
             'nbf' => microtime(true),
             'exp' => microtime(true) + 60,
