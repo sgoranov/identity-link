@@ -21,6 +21,7 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     private ?string $userIdentifier;
     private bool $isRevoked = false;
     private CryptKeyInterface $privateKey;
+    private string $issuer;
 
     /**
      * @var ScopeEntity[]
@@ -46,6 +47,7 @@ class AccessTokenEntity implements AccessTokenEntityInterface
 
         $builder = $builder->withHeader('kid', $this->privateKey->getId());
         $builder = $builder->permittedFor($client->getAudience());
+        $builder = $builder->issuedBy($this->issuer);
         $builder = $builder->identifiedBy($this->getIdentifier());
         $builder = $builder->issuedAt(new DateTimeImmutable());
         $builder = $builder->canOnlyBeUsedAfter(new DateTimeImmutable());
@@ -73,6 +75,11 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     public function setGroups(?array $groups): void
     {
         $this->groups = $groups;
+    }
+
+    public function setIssuer(string $issuer): void
+    {
+        $this->issuer = $issuer;
     }
 
     public function getIdentifier(): string

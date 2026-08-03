@@ -18,6 +18,7 @@ final class AccessTokenEntityTest extends TestCase
 
         $token = new AccessTokenEntity();
         $token->setClient($client);
+        $token->setIssuer('https://example.com/identity-link');
         $token->setIdentifier('token-id');
         $token->setUserIdentifier('user-id');
         $token->setScopes([]);
@@ -32,6 +33,7 @@ final class AccessTokenEntityTest extends TestCase
         $payload = $this->decodePayload($token->toString());
 
         $this->assertSame('https://example.com/identity-link', $payload['aud']);
+        $this->assertSame('https://example.com/identity-link', $payload['iss']);
         $this->assertSame('administration-ui', $payload['client_id']);
     }
 

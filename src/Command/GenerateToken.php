@@ -23,8 +23,6 @@ class GenerateToken extends Command
         $this
             ->setDescription('Generate JWT token')
 
-            ->addOption('iss', null, InputOption::VALUE_OPTIONAL, 'Issuer of the JWT', 'identity-link')
-            ->addOption('aud', null, InputOption::VALUE_OPTIONAL, 'Recipient for which the JWT is intended', 'identity-link')
             ->addOption('sub', null, InputOption::VALUE_OPTIONAL, 'Subject of the JWT (the user)', '')
             ->addOption('exp-time', null, InputOption::VALUE_OPTIONAL, 'Expiration time in seconds', 3600)
         ;
@@ -39,8 +37,6 @@ class GenerateToken extends Command
         }
 
         $jwt = $this->jwtTokenGenerator
-            ->setIssuer($input->getOption('iss'))
-            ->setAudience($input->getOption('aud'))
             ->setSubject($input->getOption('sub'))
             ->setGroups(['administrator'])
             ->setExpTime((int) $expTime)

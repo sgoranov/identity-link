@@ -24,8 +24,6 @@ abstract class AbstractConnector
         $token = $this->jwtTokenGenerator
             ->setGroups(['administrator'])
             ->setSubject('internal')
-            ->setAudience('identity-link')
-            ->setIssuer('identity-link')
             ->loadTokenFromCache();
 
         $options['headers']['Authorization'] = 'Bearer ' . $token;

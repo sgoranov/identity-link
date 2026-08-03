@@ -41,11 +41,21 @@ class JwtConfig
 
     public function getPublicKey(): ?string
     {
-        return $this->config['public'] ?? null;
+        return $this->config['key']['public'] ?? null;
     }
 
     public function getPrivateKey(): ?string
     {
-        return $this->config['private'] ?? null;
+        return $this->config['key']['private'] ?? null;
+    }
+
+    public function getIssuer(): string
+    {
+        return $this->config['issuer'];
+    }
+
+    public function getAudience(): string
+    {
+        return $this->config['audience'];
     }
 }

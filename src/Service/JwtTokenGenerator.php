@@ -10,8 +10,6 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class JwtTokenGenerator
 {
-    private string $issuer; // Identifies the entity that issued the JWT
-    private string $audience; // Identifies the recipients for whom the JWT is intended.
     private string $subject; // Identifies the subject of the JWT, typically the user or entity it represents.
     private int $expTime = 3600;
     private array $groups = [];
@@ -72,26 +70,12 @@ class JwtTokenGenerator
 
     public function getIssuer(): string
     {
-        return $this->issuer;
-    }
-
-    public function setIssuer(string $issuer): self
-    {
-        $this->issuer = $issuer;
-
-        return $this;
+        return $this->jwtConfig->getIssuer();
     }
 
     public function getAudience(): string
     {
-        return $this->audience;
-    }
-
-    public function setAudience(string $audience): self
-    {
-        $this->audience = $audience;
-
-        return $this;
+        return $this->jwtConfig->getAudience();
     }
 
     public function getSubject(): string
