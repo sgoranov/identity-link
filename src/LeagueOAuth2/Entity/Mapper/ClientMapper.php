@@ -15,6 +15,7 @@ class ClientMapper
         $client->setName($leagueEntity->getName());
         $client->setRedirectUri($leagueEntity->getRedirectUri());
         $client->setPublic($leagueEntity->isPublic());
+        $client->setAudience($leagueEntity->getAudience());
         $client->setScopes($leagueEntity->getScopes());
         $client->setGrantTypes($leagueEntity->getGrantTypes());
 

@@ -3,14 +3,13 @@ declare(strict_types=1);
 
 namespace App\LeagueOAuth2\Entity;
 
-use League\OAuth2\Server\Entities\ClientEntityInterface;
-
 class ClientEntity implements ClientEntityInterface
 {
     private string $id;
     private string $name;
     private array|string $redirectUri = '';
     private bool $public;
+    private string $audience;
     private array $scopes;
     private array $grantTypes;
 
@@ -77,5 +76,15 @@ class ClientEntity implements ClientEntityInterface
     public function setPublic(bool $public): void
     {
         $this->public = $public;
+    }
+
+    public function getAudience(): string
+    {
+        return $this->audience;
+    }
+
+    public function setAudience(string $audience): void
+    {
+        $this->audience = $audience;
     }
 }

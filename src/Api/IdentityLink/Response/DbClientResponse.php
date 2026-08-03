@@ -14,6 +14,7 @@ class DbClientResponse implements ClientResponseInterface
 
     #[SerializedName('isPublic')]
     private bool $public;
+    private string $audience;
     private array $scopes;
     private array $grantTypes;
     private bool $consentRequired;
@@ -60,6 +61,16 @@ class DbClientResponse implements ClientResponseInterface
     public function setPublic(bool $public): void
     {
         $this->public = $public;
+    }
+
+    public function getAudience(): string
+    {
+        return $this->audience;
+    }
+
+    public function setAudience(string $audience): void
+    {
+        $this->audience = $audience;
     }
 
     public function getScopes(): array

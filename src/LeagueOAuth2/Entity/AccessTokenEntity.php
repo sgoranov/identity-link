@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use Lcobucci\JWT\Token;
 use League\OAuth2\Server\CryptKeyInterface;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
-use League\OAuth2\Server\Entities\ClientEntityInterface;
+use League\OAuth2\Server\Entities\ClientEntityInterface as LeagueClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Entities\Traits\AccessTokenTrait;
 
@@ -26,7 +26,7 @@ class AccessTokenEntity implements AccessTokenEntityInterface
      * @var ScopeEntity[]
      */
     private array $scopes;
-    private ClientEntityInterface $client;
+    private LeagueClientEntityInterface $client;
 
     private ?array $groups = null;
 
@@ -34,16 +34,25 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     {
         $this->initJwtConfiguration();
 
+        $client = $this->getClient();
+        if (!$client instanceof ClientEntityInterface) {
+            throw new \LogicException(sprintf(
+                'Client entity "%s" must provide an audience.',
+                $client::class,
+            ));
+        }
+
         $builder = $this->jwtConfiguration->builder();
 
         $builder = $builder->withHeader('kid', $this->privateKey->getId());
-        $builder = $builder->permittedFor($this->getClient()->getIdentifier());
+        $builder = $builder->permittedFor($client->getAudience());
         $builder = $builder->identifiedBy($this->getIdentifier());
         $builder = $builder->issuedAt(new DateTimeImmutable());
         $builder = $builder->canOnlyBeUsedAfter(new DateTimeImmutable());
         $builder = $builder->expiresAt($this->getExpiryDateTime());
         $builder = $builder->relatedTo((string) $this->getUserIdentifier());
         $builder = $builder->withClaim('oid', (string) $this->getUserIdentifier());
+        $builder = $builder->withClaim('client_id', $client->getIdentifier());
         $builder = $builder->withClaim('scopes', $this->getScopes());
 
         if ($this->groups !== null) {
@@ -96,12 +105,12 @@ class AccessTokenEntity implements AccessTokenEntityInterface
         return $this->userIdentifier;
     }
 
-    public function getClient(): ClientEntityInterface
+    public function getClient(): LeagueClientEntityInterface
     {
         return $this->client;
     }
 
-    public function setClient(ClientEntityInterface $client): void
+    public function setClient(LeagueClientEntityInterface $client): void
     {
         $this->client = $client;
     }

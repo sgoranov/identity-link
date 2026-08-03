@@ -30,6 +30,7 @@ class ClientConnectorMock implements ClientConnectorInterface
                 GrantTypeEntity::REFRESH_TOKEN,
                 GrantTypeEntity::IMPLICIT,
             ]);
+            $response->setAudience('https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -46,6 +47,7 @@ class ClientConnectorMock implements ClientConnectorInterface
             $response->setGrantTypes([
                 GrantTypeEntity::AUTHORIZATION_CODE,
             ]);
+            $response->setAudience('https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -72,6 +74,7 @@ class ClientConnectorMock implements ClientConnectorInterface
                 GrantTypeEntity::REFRESH_TOKEN,
                 GrantTypeEntity::IMPLICIT,
             ]);
+            $response->setAudience('https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -86,6 +89,7 @@ class ClientConnectorMock implements ClientConnectorInterface
             $response->setGrantTypes([
                 GrantTypeEntity::AUTHORIZATION_CODE,
             ]);
+            $response->setAudience('https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -100,6 +104,7 @@ class ClientConnectorMock implements ClientConnectorInterface
             $response->setGrantTypes([
                 GrantTypeEntity::CLIENT_CREDENTIALS,
             ]);
+            $response->setAudience('https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
