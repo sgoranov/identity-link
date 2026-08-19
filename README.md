@@ -78,8 +78,8 @@ For step-by-step setup instructions, see [the development guide](https://github.
 
 ## Documentation
 
-- [API Contract Interfaces](docs/API_CONTRACTS.md)
 - [Authorization Model](docs/AUTHORIZATION_MODEL.md)
+- [API Contract Interfaces](docs/API_CONTRACTS.md)
 - [Theme Customization](docs/THEME_CUSTOMIZATION.md)
  
 ## License
