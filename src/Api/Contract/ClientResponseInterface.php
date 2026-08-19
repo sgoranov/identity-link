@@ -9,7 +9,6 @@ interface ClientResponseInterface
     public function getRedirectUri(): array|string;
     public function isPublic(): bool;
     public function getAudience(): string;
-    public function getScopes(): array;
     public function getGrantTypes(): array;
     public function isConsentRequired(): bool;
     public function getApplicationUrl(): ?string;

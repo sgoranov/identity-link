@@ -1,0 +1,111 @@
+resources:
+  # jwt_url resolves JWT_URL and identifies the resource whose scopes are declared below.
+  '%jwt_url%':
+    scopes:
+      openid:
+        description: Authenticate using OpenID Connect
+      profile:
+        description: Access the user's basic profile claims
+      email:
+        description: Access the user's email address and verification status
+      offline_access:
+        description: Request a refresh token for offline access
+
+      users.read:
+        description: View users and their account details
+      users.write:
+        description: Create and update users
+      users.delete:
+        description: Delete users
+      users.auth:
+        description: Authenticate users and validate user credentials
+      users.query:
+        description: Query all entity types exposed by the user service
+      users.self.update:
+        description: Update the authenticated user's own profile
+      users.groups.read:
+        description: View user groups and group memberships
+      users.groups.write:
+        description: Create and update user groups and group memberships
+      users.groups.delete:
+        description: Delete user groups and remove group memberships
+
+      clients.read:
+        description: View OAuth clients and their configuration
+      clients.write:
+        description: Create and update OAuth clients
+      clients.delete:
+        description: Delete OAuth clients
+      clients.auth:
+        description: Authenticate OAuth clients and validate client credentials
+      clients.query:
+        description: Query all entity types exposed by the client service
+      clients.groups.read:
+        description: View OAuth client groups and group memberships
+      clients.groups.write:
+        description: Create and update OAuth client groups and group memberships
+      clients.groups.delete:
+        description: Delete OAuth client groups and remove group memberships
+      clients.secrets.read:
+        description: View OAuth client secret metadata
+      clients.secrets.write:
+        description: Create and rotate OAuth client secrets
+      clients.secrets.delete:
+        description: Revoke and delete OAuth client secrets
+
+      2fa.read:
+        description: View users' two-factor authentication methods and status
+      2fa.write:
+        description: Enroll, update, and configure users' two-factor authentication methods
+      2fa.reset:
+        description: Reset users' two-factor authentication configuration
+
+    aliases:
+      oidc.default:
+        description: Request the standard OpenID Connect identity scopes
+        scopes:
+          - openid
+          - profile
+          - email
+          - offline_access
+
+      identity-link.core:
+        description: Grant the internal permissions required by Identity Link Core to communicate with the user, client, and two-factor authentication services
+        scopes:
+          - users.read
+          - users.query
+          - users.auth
+          - users.groups.read
+          - clients.read
+          - clients.query
+          - clients.auth
+          - clients.groups.read
+          - 2fa.read
+          - 2fa.write
+
+      identity-link.all:
+        description: Request all Identity Link scopes available to the client
+        scopes:
+          - users.read
+          - users.write
+          - users.delete
+          - users.auth
+          - users.query
+          - users.self.update
+          - users.groups.read
+          - users.groups.write
+          - users.groups.delete
+          - clients.read
+          - clients.write
+          - clients.delete
+          - clients.auth
+          - clients.query
+          - clients.groups.read
+          - clients.groups.write
+          - clients.groups.delete
+          - clients.secrets.read
+          - clients.secrets.write
+          - clients.secrets.delete
+          - 2fa.read
+          - 2fa.write
+          - 2fa.reset

@@ -38,7 +38,6 @@ class GenerateToken extends Command
 
         $jwt = $this->jwtTokenGenerator
             ->setSubject($input->getOption('sub'))
-            ->setGroups(['administrator'])
             ->setExpTime((int) $expTime)
             ->createToken();
 

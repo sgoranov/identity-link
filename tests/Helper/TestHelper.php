@@ -64,7 +64,7 @@ final class TestHelper
             'iat' => (new \DateTimeImmutable('-1 second'))->format('U.u'),
             'nbf' => (new \DateTimeImmutable('-1 second'))->format('U.u'),
             'exp' => $accessToken->getExpiryDateTime()->format('U.u'),
-            'scopes' => $accessToken->getScopes(),
+            'scope' => implode(' ', ScopeEntity::convertToStringArray($accessToken->getScopes())),
         ];
 
         if (!empty($accessToken->getUserIdentifier())) {

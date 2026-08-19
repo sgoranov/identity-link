@@ -10,7 +10,6 @@ class ClientEntity implements ClientEntityInterface
     private array|string $redirectUri = '';
     private bool $public;
     private string $audience;
-    private array $scopes;
     private array $grantTypes;
 
     public function getIdentifier(): string
@@ -46,16 +45,6 @@ class ClientEntity implements ClientEntityInterface
     public function isConfidential(): bool
     {
         return !$this->public;
-    }
-
-    public function getScopes(): array
-    {
-        return $this->scopes;
-    }
-
-    public function setScopes(array $scopes): void
-    {
-        $this->scopes = $scopes;
     }
 
     public function getGrantTypes(): array

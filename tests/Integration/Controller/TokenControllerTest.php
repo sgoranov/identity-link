@@ -88,6 +88,11 @@ final class TokenControllerTest extends WebTestCase
 
         $this->assertTrue($wasRequestAccessTokenEventDispatched);
 
+        $this->assertSame(
+            implode(' ', array_map('strval', $accessToken->getScopes())),
+            $jsonResponse['scope'],
+        );
+
         $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $accessToken->getClient()->getIdentifier());
         $this->assertNull($accessToken->getUserIdentifier());
     }

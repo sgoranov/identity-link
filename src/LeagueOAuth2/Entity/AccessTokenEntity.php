@@ -55,7 +55,10 @@ class AccessTokenEntity implements AccessTokenEntityInterface
         $builder = $builder->relatedTo((string) $this->getUserIdentifier());
         $builder = $builder->withClaim('oid', (string) $this->getUserIdentifier());
         $builder = $builder->withClaim('client_id', $client->getIdentifier());
-        $builder = $builder->withClaim('scopes', $this->getScopes());
+        $builder = $builder->withClaim('scope', implode(' ', array_map(
+            static fn (ScopeEntityInterface $scope): string => $scope->getIdentifier(),
+            $this->getScopes(),
+        )));
 
         if ($this->groups !== null) {
             $builder = $builder->withClaim('groups', $this->groups);

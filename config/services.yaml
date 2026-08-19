@@ -8,20 +8,14 @@ parameters:
     fallback_db_user: '%env(DB_USER)%'
     fallback_db_password: '%env(DB_PASSWORD)%'
     login_two_fa_enabled: '%env(bool:LOGIN_TWO_FA_ENABLED)%'
-    oidc_extra_claims: '%env(string:OIDC_EXTRA_CLAIMS)%'
     reset_password_url: '%env(string:RESET_PASSWORD_URL)%'
-    user_query_endpoint: '%env(string:USER_QUERY_ENDPOINT)%'
-    user_auth_endpoint: '%env(string:USER_AUTH_ENDPOINT)%'
-    user_fetch_endpoint: '%env(string:USER_FETCH_ENDPOINT)%'
-    client_auth_endpoint: '%env(string:CLIENT_AUTH_ENDPOINT)%'
-    client_query_endpoint: '%env(string:CLIENT_QUERY_ENDPOINT)%'
-    two_fa_auth_endpoint: '%env(string:TWO_FA_AUTH_ENDPOINT)%'
     two_fa_index_endpoint: '%env(string:TWO_FA_INDEX_ENDPOINT)%'
     jwt_include_groups_claim: '%env(bool:JWT_INCLUDE_GROUPS_CLAIM)%'
     jwt_groups_claim_limit: '%env(int:JWT_GROUPS_CLAIM_LIMIT)%'
+    jwt_url: '%env(string:JWT_URL)%'
     jwt:
-        issuer: '%env(string:JWT_URL)%'
-        audience: '%env(string:JWT_URL)%'
+        issuer: '%jwt_url%'
+        audience: '%jwt_url%'
         key:
             public: 'file://%env(JWT_PUBLIC_KEY_PATH)%'
             private: 'file://%env(JWT_PRIVATE_KEY_PATH)%'
@@ -71,6 +65,9 @@ services:
         arguments:
             $config: '%jwt%'
 
+    App\Security\Authorization\Loader\AuthorizationLoaderInterface:
+        alias: App\Security\Authorization\Loader\FileAuthorizationLoader
+
     App\Security\EncryptionKeyLoader:
       class: App\Security\EncryptionKeyLoader
       calls:
@@ -90,30 +87,25 @@ services:
 
     App\Api\Contract\UserConnectorInterface:
         class: App\Api\IdentityLink\Connector\DbUserConnector
-        calls:
-            - setUserAuthEndpoint: [ '%user_auth_endpoint%' ]
-            - setUserFetchEndpoint: [ '%user_fetch_endpoint%' ]
-            - setQueryEndpoint: [ '%user_query_endpoint%' ]
+        arguments:
+            $queryEndpoint: '%env(string:USER_QUERY_ENDPOINT)%'
+            $userAuthEndpoint: '%env(string:USER_AUTH_ENDPOINT)%'
+            $userFetchEndpoint: '%env(string:USER_FETCH_ENDPOINT)%'
+            $scopeEndpoint: '%env(string:USER_SCOPE_ENDPOINT)%'
 
     App\Api\Contract\ClientConnectorInterface:
         class: App\Api\IdentityLink\Connector\DbClientConnector
-        calls:
-            - setClientAuthEndpoint: [ '%client_auth_endpoint%' ]
-            - setQueryEndpoint: [ '%client_query_endpoint%' ]
+        arguments:
+            $clientAuthEndpoint: '%env(string:CLIENT_AUTH_ENDPOINT)%'
+            $queryEndpoint: '%env(string:CLIENT_QUERY_ENDPOINT)%'
+            $scopeEndpoint: '%env(string:CLIENT_SCOPE_ENDPOINT)%'
 
     App\Api\Contract\TwoFaConnectorInterface:
         class: App\Api\IdentityLink\Connector\TwoFaConnector
-        calls:
-            - setAuthEndpoint: [ '%two_fa_auth_endpoint%' ]
-
-    App\Service\OidcExtraClaimsProvider:
         arguments:
-            $parameterBag: '@parameter_bag'
+            $authEndpoint: '%env(string:TWO_FA_AUTH_ENDPOINT)%'
 
-    OpenIDConnectServer\ClaimExtractor:
-        class: OpenIDConnectServer\ClaimExtractor
-        arguments:
-            - '@App\Service\OidcExtraClaimsProvider'
+    OpenIDConnectServer\ClaimExtractor: ~
 
     OpenIDConnectServer\IdTokenResponse:
         class: App\LeagueOAuth2\ResponseType\IdTokenResponse

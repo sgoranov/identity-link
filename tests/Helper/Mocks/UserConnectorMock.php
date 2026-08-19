@@ -59,4 +59,9 @@ class UserConnectorMock implements UserConnectorInterface
 
         return $response;
     }
+
+    public function getScopes(string $id, string $audience): array
+    {
+        return ['openid'];
+    }
 }

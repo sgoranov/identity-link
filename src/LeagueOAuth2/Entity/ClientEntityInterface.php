@@ -14,9 +14,6 @@ interface ClientEntityInterface extends LeagueClientEntityInterface
     public function getAudience(): string;
 
     /** @return list<string> */
-    public function getScopes(): array;
-
-    /** @return list<string> */
     public function getGrantTypes(): array;
 
     public function isPublic(): bool;

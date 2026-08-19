@@ -13,4 +13,6 @@ interface UserConnectorInterface
     public function getUserById(string $id): ?UserResponseInterface;
 
     public function getGroups(string $id, int $limit): GroupsResponseInterface;
+
+    public function getScopes(string $id, string $audience): array;
 }
