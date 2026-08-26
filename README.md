@@ -1,7 +1,6 @@
 # Identity Link
 
 ![License](https://img.shields.io/github/license/sgoranov/identity-link)
-![Last Commit](https://img.shields.io/github/last-commit/sgoranov/identity-link)
 ![Issues](https://img.shields.io/github/issues/sgoranov/identity-link)
 [![PHPUnit Tests](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml)
 [![Security Audit](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml)
