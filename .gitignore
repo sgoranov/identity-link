@@ -19,7 +19,7 @@ config/authorization/*
 !/local_theme/public/.gitkeep
 !/local_theme/translations/
 !/local_theme/translations/.gitkeep
-!config/authorization/10-identity-link.yaml
+!config/authorization/.gitkeep
 ###< symfony/framework-bundle ###
 
 ###> phpunit/phpunit ###

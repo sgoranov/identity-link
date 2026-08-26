@@ -10,6 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 final class FileAuthorizationLoader implements AuthorizationLoaderInterface
 {
     private const CONFIG_DIRECTORY = 'config/authorization';
+    private const CONFIG_FILE = 'config/authorization.yaml';
 
     public function __construct(
         private readonly string $projectDir,
@@ -59,6 +60,10 @@ final class FileAuthorizationLoader implements AuthorizationLoaderInterface
     /** @return list<string> */
     private function configurationFiles(): array
     {
+        $defaultConfig = rtrim($this->projectDir, DIRECTORY_SEPARATOR)
+            . DIRECTORY_SEPARATOR
+            . self::CONFIG_FILE;
+
         $directory = rtrim($this->projectDir, DIRECTORY_SEPARATOR)
             . DIRECTORY_SEPARATOR
             . self::CONFIG_DIRECTORY;
@@ -70,7 +75,7 @@ final class FileAuthorizationLoader implements AuthorizationLoaderInterface
 
         sort($files, SORT_STRING);
 
-        return $files;
+        return file_exists($defaultConfig) ? [$defaultConfig, ...$files] : $files;
     }
 
     private function isMapping(mixed $value): bool

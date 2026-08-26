@@ -76,7 +76,7 @@ still contain groups.
 
 Authorization configuration is loaded from YAML files in `config/authorization`. Files are processed in lexical
 filename order and merged, so later files can add resources or refine earlier definitions. The built-in Identity Link
-resource is defined in `10-identity-link.yaml`.
+resource is defined in `config/authorization.yaml`.
 
 Additional files can declare new audiences and their scopes:
 
