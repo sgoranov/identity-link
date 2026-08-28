@@ -22,10 +22,7 @@ abstract class AbstractConnector
     protected function fetchData(string $method, string $endpoint, array $options = []): ?string
     {
         $token = $this->jwtTokenGenerator
-            ->setGroups(['administrator'])
             ->setSubject('internal')
-            ->setAudience('identity-link')
-            ->setIssuer('identity-link')
             ->loadTokenFromCache();
 
         $options['headers']['Authorization'] = 'Bearer ' . $token;

@@ -10,4 +10,6 @@ interface ClientConnectorInterface
     public function getClientById(string $id): ?ClientResponseInterface;
 
     public function getGroups(string $uuid, int $limit): GroupsResponseInterface;
+
+    public function getScopes(string $id, string $audience): array;
 }

@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use Lcobucci\JWT\Token;
 use League\OAuth2\Server\CryptKeyInterface;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
-use League\OAuth2\Server\Entities\ClientEntityInterface;
+use League\OAuth2\Server\Entities\ClientEntityInterface as LeagueClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Entities\Traits\AccessTokenTrait;
 
@@ -21,12 +21,13 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     private ?string $userIdentifier;
     private bool $isRevoked = false;
     private CryptKeyInterface $privateKey;
+    private string $issuer;
 
     /**
      * @var ScopeEntity[]
      */
     private array $scopes;
-    private ClientEntityInterface $client;
+    private LeagueClientEntityInterface $client;
 
     private ?array $groups = null;
 
@@ -34,17 +35,30 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     {
         $this->initJwtConfiguration();
 
+        $client = $this->getClient();
+        if (!$client instanceof ClientEntityInterface) {
+            throw new \LogicException(sprintf(
+                'Client entity "%s" must provide an audience.',
+                $client::class,
+            ));
+        }
+
         $builder = $this->jwtConfiguration->builder();
 
         $builder = $builder->withHeader('kid', $this->privateKey->getId());
-        $builder = $builder->permittedFor($this->getClient()->getIdentifier());
+        $builder = $builder->permittedFor($client->getAudience());
+        $builder = $builder->issuedBy($this->issuer);
         $builder = $builder->identifiedBy($this->getIdentifier());
         $builder = $builder->issuedAt(new DateTimeImmutable());
         $builder = $builder->canOnlyBeUsedAfter(new DateTimeImmutable());
         $builder = $builder->expiresAt($this->getExpiryDateTime());
         $builder = $builder->relatedTo((string) $this->getUserIdentifier());
         $builder = $builder->withClaim('oid', (string) $this->getUserIdentifier());
-        $builder = $builder->withClaim('scopes', $this->getScopes());
+        $builder = $builder->withClaim('client_id', $client->getIdentifier());
+        $builder = $builder->withClaim('scope', implode(' ', array_map(
+            static fn (ScopeEntityInterface $scope): string => $scope->getIdentifier(),
+            $this->getScopes(),
+        )));
 
         if ($this->groups !== null) {
             $builder = $builder->withClaim('groups', $this->groups);
@@ -64,6 +78,11 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     public function setGroups(?array $groups): void
     {
         $this->groups = $groups;
+    }
+
+    public function setIssuer(string $issuer): void
+    {
+        $this->issuer = $issuer;
     }
 
     public function getIdentifier(): string
@@ -96,12 +115,12 @@ class AccessTokenEntity implements AccessTokenEntityInterface
         return $this->userIdentifier;
     }
 
-    public function getClient(): ClientEntityInterface
+    public function getClient(): LeagueClientEntityInterface
     {
         return $this->client;
     }
 
-    public function setClient(ClientEntityInterface $client): void
+    public function setClient(LeagueClientEntityInterface $client): void
     {
         $this->client = $client;
     }

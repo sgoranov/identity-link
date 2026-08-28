@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Security\Authorization\AuthorizationRegistry;
+use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use App\Security\Jwt\JwtConfig;
 use Firebase\JWT\JWT;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -10,17 +12,18 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class JwtTokenGenerator
 {
-    private string $issuer; // Identifies the entity that issued the JWT
-    private string $audience; // Identifies the recipients for whom the JWT is intended.
     private string $subject; // Identifies the subject of the JWT, typically the user or entity it represents.
     private int $expTime = 3600;
-    private array $groups = [];
+    private array $scopes = ['identity-link.core'];
+    private readonly AuthorizationRegistry $authorizationRegistry;
 
     public function __construct(
         private readonly JwtConfig $jwtConfig,
         private readonly CacheInterface $cache,
+        AuthorizationLoaderInterface $authorizationLoader,
     )
     {
+        $this->authorizationRegistry = $authorizationLoader->load();
     }
 
     public static function isJWT(string $token): bool
@@ -54,7 +57,7 @@ class JwtTokenGenerator
             'iat' => time(),
             'nbf' => time(),
             'exp' => time() + $this->getExpTime(),
-            'groups' => $this->getGroups(),
+            'scope' => implode(' ', $this->getScopes()),
         ]);
     }
 
@@ -72,26 +75,12 @@ class JwtTokenGenerator
 
     public function getIssuer(): string
     {
-        return $this->issuer;
-    }
-
-    public function setIssuer(string $issuer): self
-    {
-        $this->issuer = $issuer;
-
-        return $this;
+        return $this->jwtConfig->getIssuer();
     }
 
     public function getAudience(): string
     {
-        return $this->audience;
-    }
-
-    public function setAudience(string $audience): self
-    {
-        $this->audience = $audience;
-
-        return $this;
+        return $this->jwtConfig->getAudience();
     }
 
     public function getSubject(): string
@@ -118,14 +107,14 @@ class JwtTokenGenerator
         return $this;
     }
 
-    public function getGroups(): array
+    public function getScopes(): array
     {
-        return $this->groups;
+        return $this->authorizationRegistry->expandScopes($this->getAudience(), $this->scopes);
     }
 
-    public function setGroups(array $groups): self
+    public function setScopes(array $scopes): self
     {
-        $this->groups = $groups;
+        $this->scopes = $scopes;
 
         return $this;
     }
@@ -137,7 +126,7 @@ class JwtTokenGenerator
             $this->getSubject(),
             $this->getIssuer(),
             $this->getExpTime(),
-            implode(' ', $this->getGroups())
+            implode(' ', $this->getScopes())
         ]));
     }
 }

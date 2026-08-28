@@ -14,9 +14,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class TwoFaConnector extends AbstractConnector implements TwoFaConnectorInterface
 {
-    private string $authEndpoint;
-
     public function __construct(
+        private readonly string $authEndpoint,
         private readonly JwtTokenGenerator $jwtTokenGenerator,
         private readonly LoggerInterface $logger,
         private readonly SerializerInterface $serializer,
@@ -69,10 +68,5 @@ class TwoFaConnector extends AbstractConnector implements TwoFaConnectorInterfac
         }
 
         return null;
-    }
-
-    public function setAuthEndpoint(string $authEndpoint): void
-    {
-        $this->authEndpoint = $authEndpoint;
     }
 }

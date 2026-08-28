@@ -3,34 +3,33 @@ declare(strict_types=1);
 
 namespace App\LeagueOAuth2\Repository;
 
+use App\Api\Contract\ClientConnectorInterface;
+use App\Api\Contract\UserConnectorInterface;
+use App\LeagueOAuth2\Entity\ClientEntityInterface as IdentityLinkClientEntityInterface;
 use App\LeagueOAuth2\Entity\ScopeEntity;
-use App\Service\OidcExtraClaimsProvider;
+use App\Repository\AuthCodeRepository;
+use App\Security\Authorization\AuthorizationRegistry;
+use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class ScopeRepository implements ScopeRepositoryInterface
 {
-    private array $allowedScopes = [
-        'openid',
-        'profile',
-        'email',
-        'phone',
-        'address',
-        'offline_access',
-    ];
+    private readonly AuthorizationRegistry $authorizationRegistry;
 
-    public function __construct(OidcExtraClaimsProvider $extraClaimsProvider)
-    {
-        $this->allowedScopes = array_unique(
-            array_merge($this->allowedScopes, array_keys($extraClaimsProvider->getClaims())));
+    public function __construct(
+        private readonly ClientConnectorInterface $clientConnector,
+        private readonly UserConnectorInterface $userConnector,
+        private readonly AuthCodeRepository $authCodeRepository,
+        AuthorizationLoaderInterface $authorizationLoader
+    ) {
+        $this->authorizationRegistry = $authorizationLoader->load();
     }
 
     public function getScopeEntityByIdentifier(string $identifier): ?ScopeEntityInterface
     {
-        // validate the scope
-        if (!in_array($identifier, $this->allowedScopes, true)) {
+        if (!$this->authorizationRegistry->containsScopeOrAlias($identifier)) {
             return null;
         }
 
@@ -45,23 +44,63 @@ class ScopeRepository implements ScopeRepositoryInterface
         ?string $authCodeId = null
     ): array
     {
-        $availableScopes = $clientEntity->getScopes();
-
-        if (empty($availableScopes)) {
-            return $scopes;
+        if (!$clientEntity instanceof IdentityLinkClientEntityInterface) {
+            throw new \LogicException(sprintf(
+                'Client entity must implement %s.',
+                IdentityLinkClientEntityInterface::class,
+            ));
         }
 
-        if (empty($scopes)) {
-            return $availableScopes;
+        $audience = $clientEntity->getAudience();
+        $availableScopes = $this->authorizationRegistry->expandScopes(
+            $audience,
+            array_map('strval', $scopes)
+        );
+
+        if ($authCodeId !== null) {
+            // Restrict token scopes to those granted by the authorization code. For example,
+            // if the authorization request granted A, B, and C, a later request for A, B, C, and D drops D.
+            $authCode = $this->authCodeRepository->getByIdentifier($authCodeId);
+            $availableScopes = $this->filterScopes(
+                $availableScopes,
+                $this->authorizationRegistry->expandScopes(
+                    $audience,
+                    array_map('trim', json_decode($authCode->getScopes(), true))
+                ),
+            );
         }
 
-        $availableScopesAsStrings = array_map('strval', $availableScopes);
-        foreach ($scopes as $scope) {
-            if (!in_array((string) $scope, $availableScopesAsStrings, true)) {
-                throw new \InvalidArgumentException(sprintf('Invalid scope %s passed.', $scope));
-            }
+        // Restrict the remaining scopes to those assigned to the client.
+        $availableScopes = $this->filterScopes(
+            $availableScopes,
+            $this->authorizationRegistry->expandScopes(
+                $audience,
+                $this->clientConnector->getScopes($clientEntity->getIdentifier(), $audience)
+            ),
+        );
+
+        if ($userIdentifier !== null) {
+            // For non-client-credentials flows, restrict the remaining scopes to those assigned to the user.
+            $availableScopes = $this->filterScopes(
+                $availableScopes,
+                $this->authorizationRegistry->expandScopes(
+                    $audience,
+                    $this->userConnector->getScopes($userIdentifier, $audience)
+                ),
+            );
         }
 
-        return $scopes;
+        return array_map(
+            static fn (string $scope): ScopeEntityInterface => new ScopeEntity($scope),
+            $availableScopes,
+        );
+    }
+
+    private function filterScopes(array $scopes, array $availableScopes): array
+    {
+        return array_values(array_filter(
+            $scopes,
+            static fn (string $scope): bool => in_array($scope, $availableScopes, true),
+        ));
     }
 }

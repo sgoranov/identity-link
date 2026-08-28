@@ -16,31 +16,17 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class DbUserConnector extends AbstractConnector implements UserConnectorInterface
 {
-    private string $queryEndpoint;
-    private string $userAuthEndpoint;
-    private string $userFetchEndpoint;
-
     public function __construct(
+        private readonly string $queryEndpoint,
+        private readonly string $userAuthEndpoint,
+        private readonly string $userFetchEndpoint,
+        private readonly string $scopeEndpoint,
         private readonly JwtTokenGenerator $jwtTokenGenerator,
         private readonly LoggerInterface $logger,
         private readonly SerializerInterface $serializer,
     )
     {
         parent::__construct($this->jwtTokenGenerator, $this->logger);
-    }
-    public function setUserAuthEndpoint(string $userAuthEndpoint): void
-    {
-        $this->userAuthEndpoint = $userAuthEndpoint;
-    }
-
-    public function setUserFetchEndpoint(string $userFetchEndpoint): void
-    {
-        $this->userFetchEndpoint = $userFetchEndpoint;
-    }
-
-    public function setQueryEndpoint(string $queryEndpoint): void
-    {
-        $this->queryEndpoint = $queryEndpoint;
     }
 
     public function getUserById(string $id): ?DbUserResponse
@@ -120,5 +106,19 @@ class DbUserConnector extends AbstractConnector implements UserConnectorInterfac
         ]);
 
         return $response;
+    }
+
+    public function getScopes(string $id, string $audience): array
+    {
+        $endpoint = str_replace('{id}', rawurlencode($id), $this->scopeEndpoint);
+        $url = $endpoint . '?' . http_build_query(['audience' => $audience]);
+
+        if (($content = $this->fetchData('GET', $url)) === null) {
+            throw new \Exception('Unable to fetch user scopes');
+        }
+
+        $data = json_decode($content, true);
+
+        return $data['response']['scopes'] ?? [];
     }
 }

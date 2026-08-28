@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Security\Jwt\JwtConfig;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
@@ -10,11 +11,16 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class OidcDiscoveryController extends AbstractController
 {
+    public function __construct(
+        private readonly JwtConfig $jwtConfig,
+    ) {
+    }
+
     #[Route('/.well-known/openid-configuration', name: 'oidc_discovery', methods: ['GET'])]
     public function discovery(UrlGeneratorInterface $urlGenerator): JsonResponse
     {
         return new JsonResponse([
-            'issuer' => 'https://' . $_SERVER['HTTP_HOST'],
+            'issuer' => $this->jwtConfig->getIssuer(),
             'authorization_endpoint' => $urlGenerator->generate('oauth2_auth', [], UrlGeneratorInterface::ABSOLUTE_URL),
             'token_endpoint' => $urlGenerator->generate('oauth2_token', [], UrlGeneratorInterface::ABSOLUTE_URL),
             'userinfo_endpoint' => $urlGenerator->generate('oidc_user_info', [], UrlGeneratorInterface::ABSOLUTE_URL),

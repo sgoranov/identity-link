@@ -58,12 +58,13 @@ final class TestHelper
         $client = $this->clientConnector->getClientById($accessToken->getClientIdentifier());
 
         $payload = [
-            'aud' => $client->getId(),
+            'iss' => $this->jwtTokenGenerator->getIssuer(),
+            'aud' => $client->getAudience(),
             'jti' => $accessToken->getIdentifier(),
             'iat' => (new \DateTimeImmutable('-1 second'))->format('U.u'),
             'nbf' => (new \DateTimeImmutable('-1 second'))->format('U.u'),
             'exp' => $accessToken->getExpiryDateTime()->format('U.u'),
-            'scopes' => $accessToken->getScopes(),
+            'scope' => implode(' ', ScopeEntity::convertToStringArray($accessToken->getScopes())),
         ];
 
         if (!empty($accessToken->getUserIdentifier())) {

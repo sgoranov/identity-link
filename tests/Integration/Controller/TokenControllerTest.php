@@ -32,9 +32,12 @@ use App\DataFixtures\AppFixtures;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
+use App\Security\Jwt\JwtConfig;
 use App\Security\User;
 use App\Tests\Helper\TestHelper;
 use Doctrine\ORM\EntityManagerInterface;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use League\OAuth2\Server\RequestAccessTokenEvent;
 use League\OAuth2\Server\RequestEvent;
 use League\OAuth2\Server\RequestRefreshTokenEvent;
@@ -84,6 +87,11 @@ final class TokenControllerTest extends WebTestCase
         $this->assertArrayNotHasKey('refresh_token', $jsonResponse);
 
         $this->assertTrue($wasRequestAccessTokenEventDispatched);
+
+        $this->assertSame(
+            implode(' ', array_map('strval', $accessToken->getScopes())),
+            $jsonResponse['scope'],
+        );
 
         $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $accessToken->getClient()->getIdentifier());
         $this->assertNull($accessToken->getUserIdentifier());
@@ -397,38 +405,48 @@ final class TokenControllerTest extends WebTestCase
 
     public function testAuthorizationCodeFlowReturnsIdToken(): void
     {
-        $client = static::createClient();
-        $testHelper = $client->getContainer()->get(TestHelper::class);
-        $router = $client->getContainer()->get(RouterInterface::class);
-        $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
-
-        list($authCode) = $authCodeRepository->findBy(['identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER]);
-
-        $client->request('POST', $router->generate('oauth2_token'), [
-            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
-            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
-            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
-            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
-            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
-        ]);
-
-        $response = $client->getResponse();
-
-        $this->assertSame(200, $response->getStatusCode());
-        $jsonResponse = json_decode($response->getContent(), true);
-
-        $this->assertArrayHasKey('id_token', $jsonResponse);
-        $this->assertNotEmpty($jsonResponse['id_token']);
+        [$idToken, $jwtConfig] = $this->requestIdToken();
 
         // Decode ID token to inspect claims
-        [$header, $payload, $signature] = explode('.', $jsonResponse['id_token']);
+        [$header, $payload] = explode('.', $idToken);
+        $decodedHeader = json_decode(base64_decode(strtr($header, '-_', '+/')), true);
         $decodedPayload = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
 
+        $this->assertSame('RS256', $decodedHeader['alg']);
+        $this->assertSame($jwtConfig->getKid(), $decodedHeader['kid']);
         $this->assertArrayHasKey('sub', $decodedPayload);
         $this->assertSame(AppFixtures::USER_IDENTIFIER, $decodedPayload['sub']);
-        $this->assertArrayHasKey('iss', $decodedPayload);
-        $this->assertArrayHasKey('aud', $decodedPayload);
+        $this->assertSame($jwtConfig->getIssuer(), $decodedPayload['iss']);
+        $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $decodedPayload['aud']);
         $this->assertArrayHasKey('exp', $decodedPayload);
+    }
+
+    public function testAuthorizationCodeFlowReturnsVerifiableIdToken(): void
+    {
+        [$idToken, $jwtConfig] = $this->requestIdToken();
+        $publicKey = file_get_contents($jwtConfig->getPublicKey());
+
+        $this->assertNotFalse($publicKey);
+
+        $decoded = JWT::decode($idToken, new Key($publicKey, 'RS256'));
+
+        $this->assertSame($jwtConfig->getIssuer(), $decoded->iss);
+        $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $decoded->aud);
+        $this->assertSame(AppFixtures::USER_IDENTIFIER, $decoded->sub);
+    }
+
+    public function testAuthorizationCodeFlowUsesClientAndResourceAudiencesForDifferentTokens(): void
+    {
+        [$idToken, $jwtConfig, $accessToken] = $this->requestIdToken();
+        $idTokenPayload = $this->decodeJwtPayload($idToken);
+        $accessTokenPayload = $this->decodeJwtPayload($accessToken);
+
+        // The relying-party client consumes the ID token.
+        $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $idTokenPayload['aud']);
+
+        // The protected resource consumes the access token.
+        $this->assertSame($jwtConfig->getAudience(), $accessTokenPayload['aud']);
+        $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $accessTokenPayload['client_id']);
     }
 
     public function testAuthorizationCodeFlowIncludesNonceInIdToken(): void
@@ -516,5 +534,51 @@ final class TokenControllerTest extends WebTestCase
 
         $jsonResponse = json_decode($response->getContent(), true);
         $this->assertArrayNotHasKey('id_token', $jsonResponse);
+    }
+
+    /** @return array{string, JwtConfig, string} */
+    private function requestIdToken(): array
+    {
+        $client = static::createClient();
+        $container = $client->getContainer();
+        $testHelper = $container->get(TestHelper::class);
+        $router = $container->get(RouterInterface::class);
+        $authCodeRepository = $container->get(AuthCodeRepository::class);
+
+        list($authCode) = $authCodeRepository->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        $response = $client->getResponse();
+        $this->assertSame(200, $response->getStatusCode());
+
+        $jsonResponse = json_decode($response->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertArrayHasKey('id_token', $jsonResponse);
+        $this->assertNotEmpty($jsonResponse['id_token']);
+
+        return [
+            $jsonResponse['id_token'],
+            $container->get(JwtConfig::class),
+            $jsonResponse['access_token'],
+        ];
+    }
+
+    private function decodeJwtPayload(string $jwt): array
+    {
+        $payload = explode('.', $jwt)[1];
+
+        return json_decode(
+            base64_decode(strtr($payload, '-_', '+/')),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
     }
 }

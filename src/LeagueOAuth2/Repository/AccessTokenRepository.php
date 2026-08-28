@@ -9,6 +9,7 @@ use App\Entity\AccessToken;
 use App\LeagueOAuth2\Entity\AccessTokenEntity;
 use App\LeagueOAuth2\Entity\Mapper\AccessTokenMapper;
 use App\Repository\AccessTokenRepository as Repository;
+use App\Security\Jwt\JwtConfig;
 use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
@@ -24,6 +25,7 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         private readonly AccessTokenMapper $accessTokenMapper,
         private readonly ClientConnectorInterface $clientConnector,
         private readonly UserConnectorInterface $userConnector,
+        private readonly JwtConfig $jwtConfig,
     )
     {
     }
@@ -38,6 +40,7 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
     {
         $token = new AccessTokenEntity();
         $token->setClient($clientEntity);
+        $token->setIssuer($this->jwtConfig->getIssuer());
         $token->setUserIdentifier($userIdentifier);
         $token->setScopes($scopes);
         $token->setIsRevoked(false);

@@ -30,7 +30,7 @@ class ClientRepository implements ClientRepositoryInterface
         $model->setName($client->getName());
         $model->setRedirectUri($client->getRedirectUri());
         $model->setPublic($client->isPublic());
-        $model->setScopes($client->getScopes());
+        $model->setAudience($client->getAudience());
         $model->setGrantTypes($client->getGrantTypes());
 
         return $model;

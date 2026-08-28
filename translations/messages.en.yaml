@@ -27,16 +27,93 @@ scopes:
     description: "Access your name, nickname, avatar, and other basic profile details."
   email:
     label: "Email address"
-    description: "Access your email address."
-  phone:
-    label: "Phone number"
-    description: "Access your phone number."
-  address:
-    label: "Address"
-    description: "Access your postal address."
+    description: "Access your email address and verification status."
   offline_access:
     label: "Stay signed in"
     description: "Allow the application to refresh your session without asking you to log in again."
+  identity-link:
+    core:
+      label: "Identity Link Core permissions"
+      description: "Grant the internal permissions required by Identity Link Core to communicate with supporting services."
+    all:
+      label: "All Identity Link permissions"
+      description: "Request all Identity Link permissions available to this application."
+  users:
+    read:
+      label: "View users"
+      description: "View users and their account details."
+    write:
+      label: "Manage users"
+      description: "Create and update users."
+    delete:
+      label: "Delete users"
+      description: "Delete users."
+    auth:
+      label: "Authenticate users"
+      description: "Authenticate users and validate user credentials."
+    query:
+      label: "Query user service data"
+      description: "Query every entity type exposed by the user service."
+    self:
+      update:
+        label: "Update your profile"
+        description: "Update the authenticated user's own profile."
+    groups:
+      read:
+        label: "View user groups"
+        description: "View user groups and group memberships."
+      write:
+        label: "Manage user groups"
+        description: "Create and update user groups and group memberships."
+      delete:
+        label: "Delete user groups"
+        description: "Delete user groups and remove group memberships."
+  clients:
+    read:
+      label: "View OAuth clients"
+      description: "View OAuth clients and their configuration."
+    write:
+      label: "Manage OAuth clients"
+      description: "Create and update OAuth clients."
+    delete:
+      label: "Delete OAuth clients"
+      description: "Delete OAuth clients."
+    auth:
+      label: "Authenticate OAuth clients"
+      description: "Authenticate OAuth clients and validate client credentials."
+    query:
+      label: "Query client service data"
+      description: "Query every entity type exposed by the client service."
+    groups:
+      read:
+        label: "View OAuth client groups"
+        description: "View OAuth client groups and group memberships."
+      write:
+        label: "Manage OAuth client groups"
+        description: "Create and update OAuth client groups and group memberships."
+      delete:
+        label: "Delete OAuth client groups"
+        description: "Delete OAuth client groups and remove group memberships."
+    secrets:
+      read:
+        label: "View OAuth client secrets"
+        description: "View OAuth client secret metadata."
+      write:
+        label: "Manage OAuth client secrets"
+        description: "Create and rotate OAuth client secrets."
+      delete:
+        label: "Delete OAuth client secrets"
+        description: "Revoke and delete OAuth client secrets."
+  2fa:
+    read:
+      label: "View two-factor authentication"
+      description: "View users' two-factor authentication methods and status."
+    write:
+      label: "Manage two-factor authentication"
+      description: "Enroll, update, and configure users' two-factor authentication methods."
+    reset:
+      label: "Reset two-factor authentication"
+      description: "Reset users' two-factor authentication configuration."
 
 auth_request:
   invalid: 'The requested login session is invalid or has been cleared.'

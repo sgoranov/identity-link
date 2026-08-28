@@ -42,7 +42,8 @@ class OidcUserInfoController extends AbstractController
             );
         }
 
-        $data = $claimExtractor->extract($accessToken['scopes'], $user->getClaims());
+        $scopes = preg_split('/\s+/', trim((string) ($accessToken['scope'] ?? '')), flags: PREG_SPLIT_NO_EMPTY) ?: [];
+        $data = $claimExtractor->extract($scopes, $user->getClaims());
         $data['sub'] = $user->getId();
 
         return new JsonResponse($data);

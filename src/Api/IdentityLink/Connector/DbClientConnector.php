@@ -16,26 +16,16 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class DbClientConnector extends AbstractConnector implements ClientConnectorInterface
 {
-    private string $queryEndpoint;
-    private string $clientAuthEndpoint;
-
     public function __construct(
+        private readonly string $clientAuthEndpoint,
+        private readonly string $queryEndpoint,
+        private readonly string $scopeEndpoint,
         private readonly JwtTokenGenerator $jwtTokenGenerator,
         private readonly LoggerInterface $logger,
         private readonly SerializerInterface $serializer,
     )
     {
         parent::__construct($this->jwtTokenGenerator, $this->logger);
-    }
-
-    public function setClientAuthEndpoint(string $clientAuthEndpoint): void
-    {
-        $this->clientAuthEndpoint = $clientAuthEndpoint;
-    }
-
-    public function setQueryEndpoint(string $queryEndpoint): void
-    {
-        $this->queryEndpoint = $queryEndpoint;
     }
 
     public function getClientByClientCredentials($clientIdentifier, $clientSecret, $grantType): ?ClientResponseInterface
@@ -122,5 +112,19 @@ class DbClientConnector extends AbstractConnector implements ClientConnectorInte
         ]);
 
         return $response;
+    }
+
+    public function getScopes(string $id, string $audience): array
+    {
+        $endpoint = str_replace('{id}', rawurlencode($id), $this->scopeEndpoint);
+        $url = $endpoint . '?' . http_build_query(['audience' => $audience]);
+
+        if (($content = $this->fetchData('GET', $url)) === null) {
+            throw new \Exception('Unable to fetch client scopes');
+        }
+
+        $data = json_decode($content, true);
+
+        return $data['response']['scopes'] ?? [];
     }
 }

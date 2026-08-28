@@ -1,125 +1,122 @@
-<mxfile host="app.diagrams.net">
-  <diagram name="Page-1" id="x4lJv_5D3qJeNFbzbqJR">
-    <mxGraphModel dx="2197" dy="1823" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+<mxfile host="app.diagrams.net" modified="2026-08-19T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram name="Identity Link Architecture" id="identity-link-architecture">
+    <mxGraphModel dx="1400" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1400" math="0" shadow="0" background="#FFFFFF">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="obYorNC8pEpNs_z5_JDt-73" connectable="0" parent="1" style="group" value="" vertex="1">
-          <mxGeometry height="540" width="1170" x="-730" y="310" as="geometry" />
+
+        <mxCell id="title" value="Identity Link Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=28;fontStyle=1;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="300" y="30" width="600" height="45" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-60" parent="obYorNC8pEpNs_z5_JDt-73" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CCFFCC;fontColor=#ffffff;strokeColor=#2D7600;" value="" vertex="1">
-          <mxGeometry height="560" width="1170" y="-50" as="geometry" />
+        <mxCell id="subtitle" value="Secure, modular identity and access management" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=14;fontColor=#64748B;" vertex="1" parent="1">
+          <mxGeometry x="300" y="72" width="600" height="28" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-5" parent="obYorNC8pEpNs_z5_JDt-73" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#97D077;" value="&lt;h1&gt;Nginx&lt;/h1&gt;Serving as the &lt;b data-path-to-node=&quot;2,0&quot; data-index-in-node=&quot;21&quot;&gt;primary entry point&lt;/b&gt; for the Application Layer, Nginx acts as a high-performance reverse proxy and static file server. It efficiently manages all incoming client traffic, enforcing initial request handling before distributing load to the underlying backend services." vertex="1">
-          <mxGeometry height="175.77" width="260" x="40" y="10" as="geometry" />
+
+        <mxCell id="ui-label" value="USER INTERFACE &amp;amp; ACCESS MANAGEMENT" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1D4ED8;spacingLeft=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="120" width="400" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-59" parent="obYorNC8pEpNs_z5_JDt-73" style="rounded=1;align=center;verticalAlign=top;whiteSpace=wrap;html=1;fillColor=#67AB9F;" value="&lt;h1&gt;Core&lt;/h1&gt;Oauth2 and OpenID connect support" vertex="1">
-          <mxGeometry height="166.15384615384616" width="190" x="75" y="305.34538461538466" as="geometry" />
+        <mxCell id="ui-container" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="150" width="1000" height="210" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-62" connectable="0" parent="obYorNC8pEpNs_z5_JDt-73" style="group" value="" vertex="1">
-          <mxGeometry height="362.88" width="685" x="460" y="120" as="geometry" />
+        <mxCell id="console" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;font style=&quot;font-size:18px;&quot;&gt;&lt;b&gt;Identity Link Console&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#64748b&quot;&gt;React administration dashboard&lt;/font&gt;&lt;br&gt;&lt;br&gt;• Manage users, clients and groups&lt;br&gt;• Configure access and credentials&lt;br&gt;• Review assignments and policies&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;strokeWidth=1;fontFamily=Helvetica;fontSize=13;fontColor=#111827;align=left;verticalAlign=top;spacing=18;spacingLeft=72;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="145" y="185" width="390" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-64" parent="obYorNC8pEpNs_z5_JDt-73" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Security&lt;/h1&gt;&lt;p&gt;REST API communication is secured via JWT (JSON Web Tokens). Each service independently verifies the token signature by retrieving public keys from the JWKS (JSON Web Key Set) endpoint provided by the Core.&lt;/p&gt;" vertex="1">
-          <mxGeometry height="207.6923076923077" width="180" x="270" y="185.77384615384622" as="geometry" />
+        <mxCell id="console-icon" value="UI" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0B67D8;strokeColor=#0B67D8;fontColor=#FFFFFF;fontStyle=1;fontSize=12;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="165" y="205" width="42" height="42" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-67" edge="1" parent="obYorNC8pEpNs_z5_JDt-73" source="obYorNC8pEpNs_z5_JDt-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="obYorNC8pEpNs_z5_JDt-59">
+        <mxCell id="bff" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;font style=&quot;font-size:18px;&quot;&gt;&lt;b&gt;Backend-for-Frontend&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#64748b&quot;&gt;Secure server-side intermediary&lt;/font&gt;&lt;br&gt;&lt;br&gt;• OIDC login and encrypted sessions&lt;br&gt;• Keeps tokens out of the browser&lt;br&gt;• Proxies authenticated API requests&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;strokeWidth=1;fontFamily=Helvetica;fontSize=13;fontColor=#111827;align=left;verticalAlign=top;spacing=18;spacingLeft=72;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="665" y="185" width="390" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="bff-icon" value="BFF" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0B67D8;strokeColor=#0B67D8;fontColor=#FFFFFF;fontStyle=1;fontSize=10;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="685" y="205" width="42" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="console-bff" value="HTTPS" edge="1" parent="1" source="console" target="bff" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#111827;strokeWidth=1;startArrow=block;startFill=1;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#1D4ED8;labelBackgroundColor=#FFFFFF;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-63" edge="1" parent="obYorNC8pEpNs_z5_JDt-73" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.002;entryY=0.578;entryDx=0;entryDy=0;endArrow=classic;endFill=1;entryPerimeter=0;">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="300" y="409.95" />
-              <mxPoint x="300" y="409.95" />
-            </Array>
-            <mxPoint x="265" y="409.997619047619" as="sourcePoint" />
-            <mxPoint x="461.3700000000001" y="410.41000000000025" as="targetPoint" />
-          </mxGeometry>
+
+        <mxCell id="app-label" value="APPLICATION LAYER" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1D4ED8;spacingLeft=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="405" width="300" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-66" edge="1" parent="obYorNC8pEpNs_z5_JDt-73" source="obYorNC8pEpNs_z5_JDt-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="obYorNC8pEpNs_z5_JDt-61" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="780" y="108" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="app-container" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="435" width="1060" height="700" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-85" connectable="0" parent="obYorNC8pEpNs_z5_JDt-73" style="group" value="" vertex="1">
-          <mxGeometry height="362.3822222222222" width="685" x="460" y="151.5" as="geometry" />
+        <mxCell id="nginx" value="&lt;div style=&quot;text-align:center;&quot;&gt;&lt;font style=&quot;font-size:15px;&quot;&gt;&lt;b&gt;Nginx&lt;/b&gt;&lt;/font&gt;&amp;nbsp;&amp;nbsp;&lt;font color=&quot;#64748b&quot;&gt;Reverse proxy • TLS termination • Static assets&lt;/font&gt;&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;strokeWidth=1;fontFamily=Helvetica;fontSize=12;fontColor=#111827;align=center;verticalAlign=middle;spacing=12;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="465" width="560" height="65" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-92" connectable="0" parent="obYorNC8pEpNs_z5_JDt-85" style="group" value="" vertex="1">
-          <mxGeometry height="362.3822222222222" width="685" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-61" parent="obYorNC8pEpNs_z5_JDt-92" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B9E0A5;" value="" vertex="1">
-          <mxGeometry height="320" width="685" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-56" parent="obYorNC8pEpNs_z5_JDt-92" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#9AC7BF;" value="&lt;h1&gt;2FA&lt;/h1&gt;Provides optional two-factor authentication via TOTP" vertex="1">
-          <mxGeometry height="151.68" width="170" x="480" y="128.32" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-57" parent="obYorNC8pEpNs_z5_JDt-92" style="rounded=1;align=center;verticalAlign=top;whiteSpace=wrap;html=1;fillColor=#9AC7BF;" value="&lt;h1&gt;Clients&lt;/h1&gt;Manages registered OAuth2 clients, secrets, and their access policies" vertex="1">
-          <mxGeometry height="150" width="190" x="260" y="130" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-58" parent="obYorNC8pEpNs_z5_JDt-92" style="rounded=1;align=center;verticalAlign=top;whiteSpace=wrap;html=1;fillColor=#9AC7BF;" value="&lt;h1&gt;Users&lt;/h1&gt;Handles user registration, storage, and authentication" vertex="1">
-          <mxGeometry height="140" width="190" x="40" y="130" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-90" parent="obYorNC8pEpNs_z5_JDt-92" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Modular Design&lt;/h1&gt;&lt;p&gt;Each microservice can be seamlessly swapped with an alternative implementation. A well-documented contract interface ensures compatibility and simplifies the integration of new components.&lt;/p&gt;" vertex="1">
-          <mxGeometry height="120" width="610" x="40" y="10" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-86" parent="obYorNC8pEpNs_z5_JDt-73" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;h1&gt;Application Layer&lt;/h1&gt;The Application Layer facilitates seamless traffic management and secure service orchestration. Utilizing Nginx as a high-performance entry point, the system routes requests to a centralized Core for OAuth2 and OpenID Connect authentication. This layer is built on a modular microservices architecture-including dedicated modules for Users, Clients, and 2FA ensuring that each component remains decoupled, independently scalable, and easily replaceable through well-defined contract interfaces." vertex="1">
-          <mxGeometry height="98.18181818181817" width="752.4637681159419" x="295" y="-40" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-94" edge="1" parent="1" source="obYorNC8pEpNs_z5_JDt-61" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.689;entryY=-0.001;entryDx=0;entryDy=0;entryPerimeter=0;" target="obYorNC8pEpNs_z5_JDt-49">
+        <mxCell id="ui-app" value="" edge="1" parent="1" source="ui-container" target="app-container" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#111827;strokeWidth=1;startArrow=block;startFill=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-80" edge="1" parent="1" source="obYorNC8pEpNs_z5_JDt-59" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="obYorNC8pEpNs_z5_JDt-49">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="-560" y="860" />
-              <mxPoint x="-560" y="860" />
-            </Array>
-          </mxGeometry>
+
+        <mxCell id="core" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;font style=&quot;font-size:20px;&quot;&gt;&lt;b&gt;Core&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:13px;&quot; color=&quot;#dbeafe&quot;&gt;OpenID Connect / OAuth 2.0 engine&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px;&quot;&gt;Authorization Server &amp;nbsp;•&amp;nbsp; Token Issuer &amp;nbsp;•&amp;nbsp; OIDC Provider&lt;/font&gt;&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#0B67D8;gradientColor=#1479E8;gradientDirection=south;strokeColor=#0758BB;strokeWidth=1;fontFamily=Helvetica;fontSize=13;fontColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=72;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="575" width="680" height="135" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-97" connectable="0" parent="1" style="group" value="" vertex="1">
-          <mxGeometry height="260" width="1180" x="-740" y="880" as="geometry" />
+        <mxCell id="core-lock-shackle" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#FFFFFF;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="293" y="628" width="16" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-49" parent="obYorNC8pEpNs_z5_JDt-97" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" value="" vertex="1">
-          <mxGeometry height="260" width="1180" as="geometry" />
+        <mxCell id="core-lock-body" value="" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FFFFFF;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="289" y="641" width="24" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-50" parent="obYorNC8pEpNs_z5_JDt-97" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;h1&gt;Storage Layer&lt;/h1&gt;We use Redis to handle session storage and caching; by centralizing this data, all application instances can share the same state seamlessly. For our core data needs, we use PostgreSQL as a reliable relational database." vertex="1">
-          <mxGeometry height="90" width="480" x="30" y="75" as="geometry" />
+        <mxCell id="core-lock-keyhole" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0B67D8;strokeColor=#0B67D8;" vertex="1" parent="1">
+          <mxGeometry x="299" y="648" width="4" height="4" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-29" parent="obYorNC8pEpNs_z5_JDt-97" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;" value="&lt;div&gt;&lt;h1&gt;Redis&lt;/h1&gt;Implemented as a centralized session and cache store, allowing multiple horizontally scaled instances to share state and maintain session persistence.&lt;/div&gt;" vertex="1">
-          <mxGeometry height="220" width="220" x="550" y="10" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-96" parent="obYorNC8pEpNs_z5_JDt-97" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;" value="&lt;div&gt;&lt;h1&gt;DB&lt;/h1&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;A scalable architecture utilizing&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt; &lt;/span&gt;&lt;b style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;one or more database servers, abstracted by the Doctrine ORM&lt;/b&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;. Doctrine is used to decouple the application logic from the database schema, allowing for easier maintenance and database portability.&lt;/span&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="220" width="320" x="790" y="10" as="geometry" />
-        </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-47" edge="1" parent="obYorNC8pEpNs_z5_JDt-97" source="obYorNC8pEpNs_z5_JDt-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" target="obYorNC8pEpNs_z5_JDt-29">
+        <mxCell id="nginx-core" value="" edge="1" parent="1" source="nginx" target="core" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#111827;strokeWidth=1;endArrow=block;endFill=1;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-106" connectable="0" parent="1" style="group" value="" vertex="1">
-          <mxGeometry height="350" width="1170" x="-730" y="-120" as="geometry" />
+
+        <mxCell id="providers-label" value="MODULAR PROVIDERS" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1D4ED8;spacingLeft=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="805" width="300" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-99" parent="obYorNC8pEpNs_z5_JDt-106" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="" vertex="1">
-          <mxGeometry height="350" width="1170" as="geometry" />
+        <mxCell id="users" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;font style=&quot;font-size:16px;&quot;&gt;&lt;b&gt;User Provider&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;br&gt;• Authenticate users&lt;br&gt;• Retrieve profiles&lt;br&gt;• Resolve groups and scopes&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;strokeWidth=1;fontFamily=Helvetica;fontSize=12;fontColor=#111827;align=left;verticalAlign=top;spacing=16;spacingLeft=72;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="850" width="300" height="150" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-100" parent="obYorNC8pEpNs_z5_JDt-106" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;User Interface &amp;amp; Access Management&lt;/h1&gt;&lt;p&gt;This suite of components provides a secure, intuitive environment for system administration. By combining a modern React-based dashboard with a secure Backend-for-Frontend (BFF) architecture, the platform ensures that administrative tasks are both efficient and protected.&lt;/p&gt;" vertex="1">
-          <mxGeometry height="120" width="1110" x="20" y="20" as="geometry" />
+        <mxCell id="users-icon" value="U" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0B67D8;strokeColor=#0B67D8;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="120" y="870" width="42" height="42" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-101" parent="obYorNC8pEpNs_z5_JDt-106" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#f8cecc;strokeColor=#b85450;" value="&lt;h1&gt;Identity Link Console&lt;/h1&gt;The Identity Link Console is the centralized administrative dashboard for the platform. It provides a comprehensive interface for managing users, clients, groups, and secrets. Administrators can use the console to configure granular access controls, review role assignments, and manage client credentials through a single, streamlined workspace." vertex="1">
-          <mxGeometry height="200" width="360" x="780" y="130" as="geometry" />
+        <mxCell id="clients" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;font style=&quot;font-size:16px;&quot;&gt;&lt;b&gt;Client Provider&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;br&gt;• OAuth clients and secrets&lt;br&gt;• Redirect URIs and policies&lt;br&gt;• Resolve groups and scopes&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;strokeWidth=1;fontFamily=Helvetica;fontSize=12;fontColor=#111827;align=left;verticalAlign=top;spacing=16;spacingLeft=72;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="450" y="850" width="300" height="150" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-103" parent="obYorNC8pEpNs_z5_JDt-106" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;h1&gt;Backend-for-Frontend&lt;/h1&gt;&lt;div&gt;The Backend-for-Frontend (BFF) serves as the secure intermediary between the Console and the core services. It implements the BFF Security Pattern by:&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;Authentication&lt;/b&gt; - executing the OIDC login flow and managing secure, encrypted session cookies.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;Security&lt;/b&gt; - offloading sensitive token handling from the browser to the server-side to prevent XSS and token theft.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;API Gateway&lt;/b&gt; - proxying requests to backend microservices while automatically attaching the necessary OAuth2 access tokens.&lt;/div&gt;" vertex="1">
-          <mxGeometry height="200" width="700" x="20" y="130" as="geometry" />
+        <mxCell id="clients-icon" value="C" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0B67D8;strokeColor=#0B67D8;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="470" y="870" width="42" height="42" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-105" edge="1" parent="obYorNC8pEpNs_z5_JDt-106" source="obYorNC8pEpNs_z5_JDt-103" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;startArrow=classic;startFill=1;" target="obYorNC8pEpNs_z5_JDt-101">
+        <mxCell id="mfa" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;font style=&quot;font-size:16px;&quot;&gt;&lt;b&gt;MFA Provider&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;br&gt;• TOTP authenticator apps&lt;br&gt;• Email one-time passwords&lt;br&gt;• Optional second factor&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;strokeWidth=1;fontFamily=Helvetica;fontSize=12;fontColor=#111827;align=left;verticalAlign=top;spacing=16;spacingLeft=72;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="850" width="300" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="mfa-icon" value="2FA" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0B67D8;strokeColor=#0B67D8;fontColor=#FFFFFF;fontStyle=1;fontSize=10;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="820" y="870" width="42" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="core-users" value="REST + JWT" edge="1" parent="1" source="core" target="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#111827;strokeWidth=1;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#1D4ED8;labelBackgroundColor=#FFFFFF;exitX=0.25;exitY=1;entryX=0.5;entryY=0;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="obYorNC8pEpNs_z5_JDt-104" edge="1" parent="1" source="obYorNC8pEpNs_z5_JDt-103" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="obYorNC8pEpNs_z5_JDt-5">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="-560" y="240" />
-              <mxPoint x="-560" y="240" />
-            </Array>
-          </mxGeometry>
+        <mxCell id="core-clients" value="REST + JWT" edge="1" parent="1" source="core" target="clients" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#111827;strokeWidth=1;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#1D4ED8;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="core-mfa" value="REST + JWT" edge="1" parent="1" source="core" target="mfa" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#111827;strokeWidth=1;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#1D4ED8;labelBackgroundColor=#FFFFFF;exitX=0.75;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="custom" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;b&gt;Custom Provider&lt;/b&gt;&lt;br&gt;Implement the provider contract and connect it to Core. Extend Identity Link without modifying the core code.&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;strokeWidth=1;dashed=1;dashPattern=5 4;fontFamily=Helvetica;fontSize=12;fontColor=#111827;align=left;verticalAlign=middle;spacingLeft=65;" vertex="1" parent="1">
+          <mxGeometry x="280" y="1040" width="640" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="custom-icon" value="+" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0B67D8;strokeColor=#0B67D8;fontColor=#FFFFFF;fontStyle=1;fontSize=22;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="300" y="1057" width="42" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="providers-custom" value="" edge="1" parent="1" source="clients" target="custom" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2563EB;strokeWidth=1;dashed=1;dashPattern=5 4;endArrow=none;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="storage-label" value="STORAGE LAYER" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontStyle=1;fontColor=#1D4ED8;spacingLeft=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="1160" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="storage-container" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="1190" width="1000" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;font style=&quot;font-size:16px;&quot;&gt;&lt;b&gt;Redis&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#64748b&quot;&gt;Shared sessions and cache&lt;/font&gt;&lt;br&gt;&lt;br&gt;Centralized state for horizontally scaled instances.&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;strokeWidth=1;fontFamily=Helvetica;fontSize=12;fontColor=#111827;align=left;verticalAlign=top;spacing=16;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="145" y="1215" width="390" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="db" value="&lt;div style=&quot;text-align:left;&quot;&gt;&lt;font style=&quot;font-size:16px;&quot;&gt;&lt;b&gt;PostgreSQL&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#64748b&quot;&gt;Relational data storage&lt;/font&gt;&lt;br&gt;&lt;br&gt;Database access abstracted through Doctrine ORM.&lt;/div&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;strokeWidth=1;fontFamily=Helvetica;fontSize=12;fontColor=#111827;align=left;verticalAlign=top;spacing=16;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1215" width="390" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="app-storage" value="" edge="1" parent="1" source="app-container" target="storage-container" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#111827;strokeWidth=1;startArrow=block;startFill=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

@@ -20,6 +20,8 @@ Manages OAuth2 client retrieval and group membership queries.
 - `getGroups(string $uuid, int $limit): GroupsResponseInterface`  
   Retrieve groups associated with a client or user by UUID.
 
+- `getScopes(string $id, string $audience): array`
+  Return the scope identifiers assigned to the client for the specified audience.
 
 ## ClientResponseInterface
 
@@ -29,7 +31,7 @@ Represents client data returned by the `ClientConnectorInterface`.
 - `getName(): string` - Returns client name
 - `getRedirectUri(): array|string` - Returns a redirect URI or a list of allowed redirect URIs for the client
 - `isPublic(): bool` - Whether the client is public or confidential
-- `getScopes(): array` - List of scopes the client is allowed
+- `getAudience(): string` - Returns the protected-resource identifier used as the access token's `aud` claim. Each client currently targets exactly one audience.
 - `getGrantTypes(): array` - List of allowed grant types
 - `isConsentRequired(): bool` - Whether the OAuth client requires user consent to be granted via the consent screen during the authorization flow
 - `getApplicationUrl(): ?string` - Returns the application's home page URL. This URL is intended for informational purposes, such as displaying application details to users or administrators, and is not used for redirect URI validation.
@@ -73,6 +75,9 @@ Manages user retrieval and authentication.
 - `getGroups(string $id, int $limit): GroupsResponseInterface`  
   Retrieve groups associated with a user.
 
+- `getScopes(string $id, string $audience): array`
+  Return the scope identifiers assigned to the user for the specified audience.
+
 ## UserResponseInterface
 
 Represents user data returned by `UserConnectorInterface`.
@@ -85,3 +90,7 @@ Represents user data returned by `UserConnectorInterface`.
 
 Implement these interfaces in your custom services to integrate with Identity Link's core authorization flows, 
 ensuring flexible and secure user and client management.
+
+Scope assignments are retrieved by the connector interfaces because they depend on both an identity and an audience.
+During scope finalization, the server restricts requested scopes to those configured for the audience and assigned to
+the client. For user-based grants, it also restricts them to scopes assigned to the user.
