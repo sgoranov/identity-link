@@ -12,6 +12,12 @@ use App\LeagueOAuth2\Entity\GrantTypeEntity;
 
 class ClientConnectorMock implements ClientConnectorInterface
 {
+    private ?string $audienceOverride = null;
+
+    public function setAudienceOverride(?string $audience): void
+    {
+        $this->audienceOverride = $audience;
+    }
 
     public function getClientByClientCredentials($clientIdentifier, $clientSecret, $grantType): ?ClientResponseInterface
     {
@@ -30,7 +36,7 @@ class ClientConnectorMock implements ClientConnectorInterface
                 GrantTypeEntity::REFRESH_TOKEN,
                 GrantTypeEntity::IMPLICIT,
             ]);
-            $response->setAudience('https://example.com/identity-link');
+            $response->setAudience($this->audienceOverride ?? 'https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -47,7 +53,7 @@ class ClientConnectorMock implements ClientConnectorInterface
             $response->setGrantTypes([
                 GrantTypeEntity::AUTHORIZATION_CODE,
             ]);
-            $response->setAudience('https://example.com/identity-link');
+            $response->setAudience($this->audienceOverride ?? 'https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -74,7 +80,7 @@ class ClientConnectorMock implements ClientConnectorInterface
                 GrantTypeEntity::REFRESH_TOKEN,
                 GrantTypeEntity::IMPLICIT,
             ]);
-            $response->setAudience('https://example.com/identity-link');
+            $response->setAudience($this->audienceOverride ?? 'https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;

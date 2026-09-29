@@ -35,7 +35,7 @@ class AuthorizationRegistry
     {
         $resource = $this->resources[$audience] ?? null;
         if (!is_array($resource)) {
-            throw new \InvalidArgumentException(sprintf('Unknown audience "%s".', $audience));
+            throw new UnknownAudienceException(sprintf('Unknown audience "%s".', $audience));
         }
 
         return [
@@ -52,7 +52,7 @@ class AuthorizationRegistry
     {
         $resource = $this->resources[$audience] ?? null;
         if (!is_array($resource)) {
-            throw new \InvalidArgumentException(sprintf('Unknown audience "%s".', $audience));
+            throw new UnknownAudienceException(sprintf('Unknown audience "%s".', $audience));
         }
 
         $expanded = [];

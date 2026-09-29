@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Security\Authorization;
 
 use App\Security\Authorization\AuthorizationRegistry;
+use App\Security\Authorization\UnknownAudienceException;
 use PHPUnit\Framework\TestCase;
 
 final class AuthorizationRegistryTest extends TestCase
@@ -40,7 +41,7 @@ final class AuthorizationRegistryTest extends TestCase
 
     public function testRejectsMetadataRequestForUnknownAudience(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(UnknownAudienceException::class);
         $this->expectExceptionMessage('Unknown audience "unknown".');
 
         (new AuthorizationRegistry())->getScopesAndAliases('unknown');

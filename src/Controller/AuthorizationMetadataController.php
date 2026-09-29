@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Security\Authorization\AuthorizationRegistry;
+use App\Security\Authorization\UnknownAudienceException;
 use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -41,7 +42,7 @@ final class AuthorizationMetadataController extends AbstractController
 
         try {
             return new JsonResponse($this->authorizationRegistry->getScopesAndAliases($audience));
-        } catch (\InvalidArgumentException) {
+        } catch (UnknownAudienceException) {
             return new JsonResponse(
                 ['error' => sprintf('Unknown audience "%s".', $audience)],
                 Response::HTTP_NOT_FOUND,

@@ -13,6 +13,7 @@ use App\Repository\AuthCodeRepository;
 use App\Security\Authorization\AuthorizationRegistry;
 use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use PHPUnit\Framework\TestCase;
 
 final class ScopeRepositoryTest extends TestCase
@@ -80,6 +81,16 @@ final class ScopeRepositoryTest extends TestCase
                 self::AUTH_CODE_ID,
             ),
         );
+    }
+
+    public function testAuthorizationCodeFlowReturnsInvalidTargetForUnknownAudience(): void
+    {
+        $this->assertUnknownAudienceReturnsInvalidTarget('authorization_code');
+    }
+
+    public function testClientCredentialsFlowReturnsInvalidTargetForUnknownAudience(): void
+    {
+        $this->assertUnknownAudienceReturnsInvalidTarget('client_credentials');
     }
 
     public function testReturnsNoScopesWhenClientHasNoAssignedScopes(): void
@@ -193,10 +204,11 @@ final class ScopeRepositoryTest extends TestCase
         string $grantType,
         ?string $userIdentifier = null,
         ?string $authCodeId = null,
+        string $audience = self::AUDIENCE,
     ): array {
         $client = new ClientEntity();
         $client->setIdentifier(self::CLIENT_ID);
-        $client->setAudience(self::AUDIENCE);
+        $client->setAudience($audience);
 
         return array_map(
             'strval',
@@ -208,6 +220,23 @@ final class ScopeRepositoryTest extends TestCase
                 $authCodeId,
             ),
         );
+    }
+
+    private function assertUnknownAudienceReturnsInvalidTarget(string $grantType): void
+    {
+        try {
+            $this->finalize(
+                $this->createRepository(),
+                [],
+                $grantType,
+                audience: 'https://unknown.example',
+            );
+            self::fail('Expected unknown audience to be rejected.');
+        } catch (OAuthServerException $exception) {
+            self::assertSame('invalid_target', $exception->getErrorType());
+            self::assertSame(400, $exception->getHttpStatusCode());
+            self::assertSame('The requested audience is not supported.', $exception->getHint());
+        }
     }
 
     private function createRegistry(): AuthorizationRegistry

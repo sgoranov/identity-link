@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Controller;
 
+use App\Api\Contract\ClientConnectorInterface;
 use App\DataFixtures\AppFixtures;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\Repository\AuthCodeRepository;
@@ -35,6 +36,7 @@ use App\Repository\RefreshTokenRepository;
 use App\Security\Jwt\JwtConfig;
 use App\Security\User;
 use App\Tests\Helper\TestHelper;
+use App\Tests\Helper\Mocks\ClientConnectorMock;
 use Doctrine\ORM\EntityManagerInterface;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -95,6 +97,29 @@ final class TokenControllerTest extends WebTestCase
 
         $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $accessToken->getClient()->getIdentifier());
         $this->assertNull($accessToken->getUserIdentifier());
+    }
+
+    public function testClientCredentialsRequestRejectsUnknownAudience(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setAudienceOverride('https://unknown.example');
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::CLIENT_CREDENTIALS,
+        ]);
+
+        $response = $client->getResponse();
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        self::assertSame(400, $response->getStatusCode());
+        self::assertSame('invalid_target', $jsonResponse['error']);
+        self::assertSame('The requested resource is invalid.', $jsonResponse['error_description']);
+        self::assertSame('The requested audience is not supported.', $jsonResponse['hint']);
     }
 
     public function testSuccessfulPasswordRequest(): void
@@ -269,6 +294,34 @@ final class TokenControllerTest extends WebTestCase
         $this->assertLessThanOrEqual(3600, $jsonResponse['expires_in']);
         $this->assertGreaterThan(0, $jsonResponse['expires_in']);
         $this->assertNotEmpty($jsonResponse['access_token']);
+    }
+
+    public function testAuthorizationCodeTokenRequestRejectsUnknownAudience(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setAudienceOverride('https://unknown.example');
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
+        list($authCode) = $authCodeRepository->findBy(['identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER]);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        $response = $client->getResponse();
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        self::assertSame(400, $response->getStatusCode());
+        self::assertSame('invalid_target', $jsonResponse['error']);
+        self::assertSame('The requested resource is invalid.', $jsonResponse['error_description']);
+        self::assertSame('The requested audience is not supported.', $jsonResponse['hint']);
     }
 
     public function testSuccessfulAuthorizationCodeRequestWithPublicClient(): void
