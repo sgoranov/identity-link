@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "901108ff14a6fca59b0cde8f39c5ebb0",
+    "content-hash": "fc975561b8f2a1dde296f1731019e6f0",
     "packages": [
         {
             "name": "bjeavons/zxcvbn-php",
@@ -2746,16 +2746,16 @@
         },
         {
             "name": "sgoranov/identity-link-shared",
-            "version": "1.0.0",
+            "version": "dev-develop",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sgoranov/identity-link-shared.git",
-                "reference": "03b4fcef057838dfe4ca6524a555e418acb70fbf"
+                "reference": "5dbfc1fcf05ce636d154394c370102b4da2fe46d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sgoranov/identity-link-shared/zipball/03b4fcef057838dfe4ca6524a555e418acb70fbf",
-                "reference": "03b4fcef057838dfe4ca6524a555e418acb70fbf",
+                "url": "https://api.github.com/repos/sgoranov/identity-link-shared/zipball/5dbfc1fcf05ce636d154394c370102b4da2fe46d",
+                "reference": "5dbfc1fcf05ce636d154394c370102b4da2fe46d",
                 "shasum": ""
             },
             "require": {
@@ -2824,10 +2824,10 @@
                 "MIT"
             ],
             "support": {
-                "source": "https://github.com/sgoranov/identity-link-shared/tree/1.0.0",
+                "source": "https://github.com/sgoranov/identity-link-shared/tree/develop",
                 "issues": "https://github.com/sgoranov/identity-link-shared/issues"
             },
-            "time": "2026-08-13T07:41:58+00:00"
+            "time": "2026-09-30T10:49:59+00:00"
         },
         {
             "name": "steverhoades/oauth2-openid-connect-server",
@@ -10709,7 +10709,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "sgoranov/identity-link-shared": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
