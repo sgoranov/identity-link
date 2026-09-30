@@ -13,6 +13,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -34,6 +35,7 @@ class OAuth2AuthorizationController extends AbstractController
         private readonly FormFactoryInterface $formFactory,
         private readonly ClientConnectorInterface $clientConnector,
         private readonly AuthRequestResolver $authRequestResolver,
+        private readonly LoggerInterface $logger,
     )
     {
     }
@@ -64,6 +66,11 @@ class OAuth2AuthorizationController extends AbstractController
             return new RedirectResponse($this->generateUrl('oauth2_auth_complete', ['id' => $authRequest->getId()]));
 
         } catch (OAuthServerException $e) {
+            $this->logger->warning('OAuth2 authorization request failed.', [
+                'error_type' => $e->getErrorType(),
+                'http_status' => $e->getHttpStatusCode(),
+            ]);
+
             return $this->httpFoundationFactory->createResponse($e->generateHttpResponse($psrResponse));
         }
     }
@@ -108,12 +115,19 @@ class OAuth2AuthorizationController extends AbstractController
 
             $final = $this->server->completeAuthorizationRequest($validated, $psrResponse);
 
+            $this->logger->info('OAuth2 authorization code issued.');
+
             $authRequest->consume();
             $this->entityManager->persist($authRequest);
             $this->entityManager->flush();
 
             return $this->httpFoundationFactory->createResponse($final);
         } catch (OAuthServerException $e) {
+            $this->logger->warning('OAuth2 authorization request failed.', [
+                'error_type' => $e->getErrorType(),
+                'http_status' => $e->getHttpStatusCode(),
+            ]);
+
             return $this->httpFoundationFactory->createResponse($e->generateHttpResponse($psrResponse));
         }
     }
