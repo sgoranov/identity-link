@@ -16,7 +16,7 @@ services:
       identity-link-database-server-test:
         condition: service_healthy
     networks:
-      - identity-link-network
+      - identity-link-test-network
 
   identity-link-core-test-debug:
     extends:
@@ -42,8 +42,8 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: identity-link
     networks:
-      - identity-link-network
+      - identity-link-test-network
 
 networks:
-  identity-link-network:
+  identity-link-test-network:
     driver: bridge
