@@ -13,10 +13,17 @@ use App\LeagueOAuth2\Entity\GrantTypeEntity;
 class ClientConnectorMock implements ClientConnectorInterface
 {
     private ?string $audienceOverride = null;
+    private array $scopes = ['openid'];
 
     public function setAudienceOverride(?string $audience): void
     {
         $this->audienceOverride = $audience;
+    }
+
+    /** @param list<string> $scopes */
+    public function setScopes(array $scopes): void
+    {
+        $this->scopes = $scopes;
     }
 
     public function getClientByClientCredentials($clientIdentifier, $clientSecret, $grantType): ?ClientResponseInterface
@@ -129,6 +136,6 @@ class ClientConnectorMock implements ClientConnectorInterface
 
     public function getScopes(string $id, string $audience): array
     {
-        return ['openid'];
+        return $this->scopes;
     }
 }

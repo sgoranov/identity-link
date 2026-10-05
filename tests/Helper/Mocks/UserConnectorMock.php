@@ -12,6 +12,13 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 
 class UserConnectorMock implements UserConnectorInterface
 {
+    private array $scopes = ['openid'];
+
+    /** @param list<string> $scopes */
+    public function setScopes(array $scopes): void
+    {
+        $this->scopes = $scopes;
+    }
 
     public function getUserByUserCredentials(
         $username, $password, $grantType, ClientEntityInterface $clientEntity): ?UserResponseInterface
@@ -62,6 +69,6 @@ class UserConnectorMock implements UserConnectorInterface
 
     public function getScopes(string $id, string $audience): array
     {
-        return ['openid'];
+        return $this->scopes;
     }
 }

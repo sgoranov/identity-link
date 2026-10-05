@@ -37,6 +37,8 @@ use App\Security\Jwt\JwtConfig;
 use App\Security\User;
 use App\Tests\Helper\TestHelper;
 use App\Tests\Helper\Mocks\ClientConnectorMock;
+use App\Tests\Helper\Mocks\UserConnectorMock;
+use App\Api\Contract\UserConnectorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -44,6 +46,7 @@ use League\OAuth2\Server\RequestAccessTokenEvent;
 use League\OAuth2\Server\RequestEvent;
 use League\OAuth2\Server\RequestRefreshTokenEvent;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -587,6 +590,142 @@ final class TokenControllerTest extends WebTestCase
 
         $jsonResponse = json_decode($response->getContent(), true);
         $this->assertArrayNotHasKey('id_token', $jsonResponse);
+    }
+
+    public function testNoIdTokenWhenClientHasNoOpenIdConnectScopes(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setScopes([]);
+
+        $this->requestAuthorizationCodeTokenWithScopes($client, [
+            'openid',
+            'profile',
+            'email',
+            'offline_access',
+        ], false, [], ['openid']);
+    }
+
+    public function testIdTokenWhenClientGroupGrantsOpenIdConnectScopes(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        // The connector represents scopes inherited from the client's group.
+        $clientConnector->setScopes([
+            'openid',
+            'profile',
+            'email',
+            'offline_access',
+        ]);
+
+        $this->requestAuthorizationCodeTokenWithScopes($client, [
+            'openid',
+            'profile',
+            'email',
+            'offline_access',
+        ], true);
+    }
+
+    public function testIdTokenClaimsRequireClientUserAndRequestedScopes(): void
+    {
+        $client = static::createClient();
+        $scopes = ['openid', 'profile', 'email', 'offline_access'];
+        $response = $this->requestAuthorizationCodeTokenWithScopes($client, $scopes, true, $scopes, $scopes, $scopes);
+        $payload = $this->decodeJwtPayload($response['id_token']);
+
+        self::assertSame('User Name', $payload['name']);
+        self::assertSame('username@email.com', $payload['email']);
+    }
+
+    /**
+     * @dataProvider missingClaimScopeProvider
+     * @param list<string> $clientScopes
+     * @param list<string> $userScopes
+     * @param list<string> $requestedScopes
+     */
+    public function testIdTokenClaimsAreOmittedWhenScopesAreMissing(
+        array $clientScopes,
+        array $userScopes,
+        array $requestedScopes,
+    ): void {
+        $client = static::createClient();
+        $response = $this->requestAuthorizationCodeTokenWithScopes(
+            $client,
+            ['openid', 'profile', 'email', 'offline_access'],
+            true,
+            $clientScopes,
+            $userScopes,
+            $requestedScopes,
+        );
+        $payload = $this->decodeJwtPayload($response['id_token']);
+
+        self::assertArrayNotHasKey('name', $payload);
+        self::assertArrayNotHasKey('email', $payload);
+    }
+
+    /** @return array<string, array{list<string>, list<string>, list<string>}> */
+    public static function missingClaimScopeProvider(): array
+    {
+        $all = ['openid', 'profile', 'email', 'offline_access'];
+        $withoutProfileAndEmail = ['openid', 'offline_access'];
+
+        return [
+            'client' => [$withoutProfileAndEmail, $all, $all],
+            'user' => [$all, $withoutProfileAndEmail, $all],
+            'requested' => [$all, $all, $withoutProfileAndEmail],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function requestAuthorizationCodeTokenWithScopes(
+        KernelBrowser $client,
+        array $scopes,
+        bool $expectIdToken,
+        ?array $clientScopes = null,
+        ?array $userScopes = null,
+        ?array $requestedScopes = null,
+    ): array {
+        $container = $client->getContainer();
+        $clientConnector = $container->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setScopes($clientScopes ?? ['openid', 'profile', 'email', 'offline_access']);
+        $userConnector = $container->get(UserConnectorInterface::class);
+        self::assertInstanceOf(UserConnectorMock::class, $userConnector);
+        $userConnector->setScopes($userScopes ?? ['openid']);
+        $testHelper = $container->get(TestHelper::class);
+        $router = $container->get(RouterInterface::class);
+        $authCodeRepository = $container->get(AuthCodeRepository::class);
+        $entityManager = $container->get(EntityManagerInterface::class);
+
+        [$authCode] = $authCodeRepository->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        $authCode->setScopes(json_encode($requestedScopes ?? $scopes, JSON_THROW_ON_ERROR));
+        $entityManager->persist($authCode);
+        $entityManager->flush();
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+
+        $jsonResponse = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        if ($expectIdToken) {
+            self::assertArrayHasKey('id_token', $jsonResponse);
+            self::assertNotEmpty($jsonResponse['id_token']);
+        } else {
+            self::assertArrayNotHasKey('id_token', $jsonResponse);
+        }
+
+        return $jsonResponse;
     }
 
     /** @return array{string, JwtConfig, string} */
