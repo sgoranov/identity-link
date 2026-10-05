@@ -4,8 +4,11 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
 cd "$PROJECT_ROOT"
 
+# Keep this stack isolated from other Compose applications using this checkout.
+COMPOSE_ARGS=(-p identity-link-test-debug -f docker-compose-test.yaml)
+
 echo "Cleaning up previous debug session..."
-docker compose -f docker-compose-test.yaml down --remove-orphans
+docker compose "${COMPOSE_ARGS[@]}" down
 
 echo "Starting debug environment..."
-docker compose -f docker-compose-test.yaml run --build --rm identity-link-core-test-debug
+docker compose "${COMPOSE_ARGS[@]}" run --build --rm identity-link-core-test-debug
