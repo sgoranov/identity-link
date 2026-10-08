@@ -21,7 +21,7 @@ security:
     # Note: Only the *first* access control that matches will be used
     access_control:
          - { path: ^/.well-known/openid-configuration, roles: PUBLIC_ACCESS }
-         # The authorization and login routes are guarded by the state of their AuthRequest (see AuthorizationFlow)
+         # The authorization and login routes are guarded by the state of their AuthorizationSession (see AuthorizationFlow)
          - { path: ^/oauth2/auth, roles: PUBLIC_ACCESS }
          - { path: ^/oauth2/token, roles: PUBLIC_ACCESS }
          - { path: ^/login, roles: PUBLIC_ACCESS }

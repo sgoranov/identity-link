@@ -5,10 +5,10 @@ namespace App\Controller;
 
 use App\Api\Contract\ClientConnectorInterface;
 use App\Api\Contract\UserConnectorInterface;
-use App\Entity\AuthRequest;
+use App\Entity\AuthorizationSession;
 use App\Form\Type\ConsentType;
 use App\LeagueOAuth2\Entity\UserEntity;
-use App\Security\AuthRequestResolver;
+use App\Security\AuthorizationSessionResolver;
 use App\Security\Exception\UserNotFoundException;
 use App\Security\AuthorizationFlowFactory;
 use Doctrine\ORM\EntityManagerInterface;
@@ -36,7 +36,7 @@ class OAuth2AuthorizationController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly FormFactoryInterface $formFactory,
         private readonly ClientConnectorInterface $clientConnector,
-        private readonly AuthRequestResolver $authRequestResolver,
+        private readonly AuthorizationSessionResolver $authorizationSessionResolver,
         private readonly LoggerInterface $logger,
         private readonly AuthorizationFlowFactory $authorizationFlowFactory,
     )
@@ -59,16 +59,16 @@ class OAuth2AuthorizationController extends AbstractController
 
             // Every authorization request starts a new login: persist a short-lived snapshot
             // and redirect to the first step of the authorization flow
-            $authRequest = new AuthRequest();
-            $authRequest->setQueryParams($request->query->all());
-            $authRequest->setClientId($validated->getClient()->getIdentifier());
-            $authRequest->setScopes($validated->getScopes());;
+            $authorizationSession = new AuthorizationSession();
+            $authorizationSession->setQueryParams($request->query->all());
+            $authorizationSession->setClientId($validated->getClient()->getIdentifier());
+            $authorizationSession->setScopes($validated->getScopes());;
 
-            $this->entityManager->persist($authRequest);
+            $this->entityManager->persist($authorizationSession);
             $this->entityManager->flush();
 
-            $firstState = $this->authorizationFlowFactory->create($authRequest)->resolveNextState();
-            return $this->redirectToRoute($firstState->value, ['id' => $authRequest->getId()]);
+            $firstState = $this->authorizationFlowFactory->create($authorizationSession)->resolveNextState();
+            return $this->redirectToRoute($firstState->value, ['id' => $authorizationSession->getId()]);
 
         } catch (OAuthServerException $e) {
             $this->logger->warning('OAuth2 authorization request failed.', [
@@ -84,18 +84,18 @@ class OAuth2AuthorizationController extends AbstractController
     public function complete(string $id, Request $request): Response
     {
         // The user is the one identified by the login flow of this authorization request
-        $authRequest = $this->authRequestResolver->resolve($id);
-        $this->authorizationFlowFactory->create($authRequest)->assertCompleted();
+        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
+        $this->authorizationFlowFactory->create($authorizationSession)->assertCompleted();
 
-        $client = $this->clientConnector->getClientById($authRequest->getClientId());
+        $client = $this->clientConnector->getClientById($authorizationSession->getClientId());
 
         // Redirect the user to the consent screen before completing the OAuth2 authorization request.
-        if ($client->isConsentRequired() && !$authRequest->getConsentApproved()) {
+        if ($client->isConsentRequired() && !$authorizationSession->getConsentApproved()) {
             return $this->redirectToRoute('oauth2_auth_consent_screen', ['id' => $id]);
         }
 
         $psrRequest =  $this->httpMessageFactory->createRequest(
-            $request->duplicate($authRequest->getQueryParams(), null, ['_route' => 'oauth2_auth_complete'])
+            $request->duplicate($authorizationSession->getQueryParams(), null, ['_route' => 'oauth2_auth_complete'])
         );
         $psrResponse = $this->responseFactory->createResponse();
 
@@ -109,9 +109,9 @@ class OAuth2AuthorizationController extends AbstractController
 
             // Verify the user again just before completing the authorization.
             // This ensures the user still exists and is valid (e.g., the account may have been deleted or disabled)
-            $currentUser = $this->userConnector->getUserById($authRequest->getUserIdentifier());
+            $currentUser = $this->userConnector->getUserById($authorizationSession->getUserIdentifier());
             if ($currentUser === null) {
-                throw new UserNotFoundException($authRequest, $authRequest->getUserIdentifier());
+                throw new UserNotFoundException($authorizationSession, $authorizationSession->getUserIdentifier());
             }
 
             $userEntity = new UserEntity();
@@ -124,8 +124,8 @@ class OAuth2AuthorizationController extends AbstractController
 
             $this->logger->info('OAuth2 authorization code issued.');
 
-            $authRequest->consume();
-            $this->entityManager->persist($authRequest);
+            $authorizationSession->consume();
+            $this->entityManager->persist($authorizationSession);
             $this->entityManager->flush();
 
             return $this->httpFoundationFactory->createResponse($final);
@@ -142,8 +142,8 @@ class OAuth2AuthorizationController extends AbstractController
     #[Route('/oauth2/auth/consent-screen/{id}', name: 'oauth2_auth_consent_screen', methods: ['GET', 'POST'])]
     public function consentScreen(string $id, Request $request): Response
     {
-        $authRequest = $this->authRequestResolver->resolve($id);
-        $this->authorizationFlowFactory->create($authRequest)->assertCompleted();
+        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
+        $this->authorizationFlowFactory->create($authorizationSession)->assertCompleted();
 
         $form = $this->formFactory->create(ConsentType::class);
         $form->handleRequest($request);
@@ -152,12 +152,12 @@ class OAuth2AuthorizationController extends AbstractController
 
             if ($form->get('deny')->isClicked()) {
 
-                $authRequest->consume();
-                $authRequest->setConsentApproved(false);
-                $this->entityManager->persist($authRequest);
+                $authorizationSession->consume();
+                $authorizationSession->setConsentApproved(false);
+                $this->entityManager->persist($authorizationSession);
                 $this->entityManager->flush();
 
-                $params = $authRequest->getQueryParams();
+                $params = $authorizationSession->getQueryParams();
                 $redirectUri = $params['redirect_uri'] ?? null;
                 $state = $params['state'] ?? null;
 
@@ -172,8 +172,8 @@ class OAuth2AuthorizationController extends AbstractController
                 return new RedirectResponse($redirectUrl);
             }
 
-            $authRequest->setConsentApproved(true);
-            $this->entityManager->persist($authRequest);
+            $authorizationSession->setConsentApproved(true);
+            $this->entityManager->persist($authorizationSession);
             $this->entityManager->flush();
 
             return $this->redirectToRoute('oauth2_auth_complete', ['id' => $id]);
@@ -181,8 +181,8 @@ class OAuth2AuthorizationController extends AbstractController
 
         return $this->render('authorization/consent_screen.html.twig', [
             'form' => $form->createView(),
-            'client' => $this->clientConnector->getClientById($authRequest->getClientId()),
-            'scopes' => $authRequest->getScopes(),
+            'client' => $this->clientConnector->getClientById($authorizationSession->getClientId()),
+            'scopes' => $authorizationSession->getScopes(),
         ]);
     }
 }

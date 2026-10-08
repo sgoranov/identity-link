@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Api\Contract\UserConnectorInterface;
-use App\Entity\AuthRequest;
+use App\Entity\AuthorizationSession;
 
 class AuthorizationFlowFactory
 {
@@ -15,12 +15,12 @@ class AuthorizationFlowFactory
     {
     }
 
-    public function create(AuthRequest $authRequest): AuthorizationFlow
+    public function create(AuthorizationSession $authorizationSession): AuthorizationFlow
     {
         return new AuthorizationFlow(
             $this->authorizationFlowConfig,
             $this->userConnector,
-            $authRequest,
+            $authorizationSession,
         );
     }
 }

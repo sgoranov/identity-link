@@ -3,15 +3,15 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Repository\AuthRequestRepository;
+use App\Repository\AuthorizationSessionRepository;
 use App\Security\LoginStateEnum;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: AuthRequestRepository::class)]
-#[ORM\Table(name: 'auth_request')]
-#[ORM\Index(columns: ['expires_at'], name: 'idx_auth_request_expires_at')]
-#[ORM\Index(columns: ['consumed'], name: 'idx_auth_request_consumed')]
-class AuthRequest
+#[ORM\Entity(repositoryClass: AuthorizationSessionRepository::class)]
+#[ORM\Table(name: 'authorization_session')]
+#[ORM\Index(columns: ['expires_at'], name: 'idx_authorization_session_expires_at')]
+#[ORM\Index(columns: ['consumed'], name: 'idx_authorization_session_consumed')]
+class AuthorizationSession
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]

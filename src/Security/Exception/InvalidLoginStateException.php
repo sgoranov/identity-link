@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace App\Security\Exception;
 
-use App\Entity\AuthRequest;
+use App\Entity\AuthorizationSession;
 use App\Security\LoginStateEnum;
 
 class InvalidLoginStateException extends AuthorizationFlowException
 {
-    public function __construct(AuthRequest $authRequest, public readonly LoginStateEnum $state)
+    public function __construct(AuthorizationSession $authorizationSession, public readonly LoginStateEnum $state)
     {
-        parent::__construct($authRequest);
+        parent::__construct($authorizationSession);
     }
 }

@@ -115,7 +115,7 @@ scopes:
       label: "Reset two-factor authentication"
       description: "Reset users' two-factor authentication configuration."
 
-auth_request:
+authorization_session:
   invalid: 'The requested login session is invalid or has been cleared.'
   expired: 'Your login session has expired. Please try logging in again.'
   consumed: 'This login session has already been completed. Please start a new login.'

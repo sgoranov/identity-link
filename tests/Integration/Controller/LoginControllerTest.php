@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
-use App\Entity\AuthRequest;
+use App\Entity\AuthorizationSession;
 use App\Security\LoginStateEnum;
 use App\Tests\Helper\SessionHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -40,11 +40,11 @@ class LoginControllerTest extends WebTestCase
         $client->submit($form);
 
         $em = $client->getContainer()->get('doctrine')->getManager();
-        list($authRequest) = $em->getRepository(AuthRequest::class)->findAll();
+        list($authorizationSession) = $em->getRepository(AuthorizationSession::class)->findAll();
 
-        $this->assertEquals(LoginStateEnum::PASSWORD->value, $authRequest->getLoginState()->value, 'Login state should be PASSWORD.');
-        $this->assertNull($authRequest->getConsentApproved(), 'Consent was still not approved.');
-        $this->assertFalse($authRequest->isConsumed(), 'AuthRequest should be marked as false.');
+        $this->assertEquals(LoginStateEnum::PASSWORD->value, $authorizationSession->getLoginState()->value, 'Login state should be PASSWORD.');
+        $this->assertNull($authorizationSession->getConsentApproved(), 'Consent was still not approved.');
+        $this->assertFalse($authorizationSession->isConsumed(), 'AuthorizationSession should be marked as false.');
     }
 
     public function testBadCredentialsLoginRequest(): void

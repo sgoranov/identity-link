@@ -5,8 +5,8 @@ namespace App\Tests\Unit\Security;
 
 use App\Api\Contract\UserConnectorInterface;
 use App\Api\Contract\UserResponseInterface;
-use App\Entity\AuthRequest;
-use App\Repository\AuthRequestRepository;
+use App\Entity\AuthorizationSession;
+use App\Repository\AuthorizationSessionRepository;
 use App\Security\Exception\InvalidLoginStateException;
 use App\Security\Exception\UserNotFoundException;
 use App\Security\AuthorizationFlow;
@@ -19,7 +19,7 @@ class AuthorizationFlowTest extends TestCase
     public function testInitialStateStartsWithPassword(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(null, null),
+            $this->createAuthorizationSession(null, null),
             expectUserLookup: false,
         );
 
@@ -32,7 +32,7 @@ class AuthorizationFlowTest extends TestCase
     public function testNextStateRequiresTwoFaWhenGloballyAndUserEnabled(): void
     {
         $dispatcher = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::PASSWORD, 'user-id'),
+            $this->createAuthorizationSession(LoginStateEnum::PASSWORD, 'user-id'),
         );
 
         $this->assertSame(LoginStateEnum::TWO_FACTOR_INITIATE, $dispatcher->resolveNextState());
@@ -41,7 +41,7 @@ class AuthorizationFlowTest extends TestCase
     public function testTwoFaFlowProgressesInOrderWhenUserEnabled(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::TWO_FACTOR_INITIATE, 'user-id'),
+            $this->createAuthorizationSession(LoginStateEnum::TWO_FACTOR_INITIATE, 'user-id'),
         );
 
         $this->assertSame(LoginStateEnum::TWO_FACTOR_COMPLETE, $flow->resolveNextState());
@@ -52,7 +52,7 @@ class AuthorizationFlowTest extends TestCase
     public function testCompleteIsAllowedAfterTwoFaCompletes(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::TWO_FACTOR_COMPLETE, 'user-id'),
+            $this->createAuthorizationSession(LoginStateEnum::TWO_FACTOR_COMPLETE, 'user-id'),
         );
 
         $this->assertSame(LoginStateEnum::COMPLETED, $flow->resolveNextState());
@@ -63,7 +63,7 @@ class AuthorizationFlowTest extends TestCase
     public function testNextStateSkipsTwoFaWhenUserDisabled(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::PASSWORD, 'user-id'),
+            $this->createAuthorizationSession(LoginStateEnum::PASSWORD, 'user-id'),
             twoFaEnabled: false,
         );
 
@@ -73,7 +73,7 @@ class AuthorizationFlowTest extends TestCase
     public function testTwoFaRoutesAreNotAllowedWhenUserDisabled(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::PASSWORD, 'user-id'),
+            $this->createAuthorizationSession(LoginStateEnum::PASSWORD, 'user-id'),
             twoFaEnabled: false,
         );
 
@@ -84,7 +84,7 @@ class AuthorizationFlowTest extends TestCase
     public function testCompleteIsNotAllowedBeforeTwoFaWhenUserEnabled(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::PASSWORD, 'user-id'),
+            $this->createAuthorizationSession(LoginStateEnum::PASSWORD, 'user-id'),
         );
 
         $this->expectException(InvalidLoginStateException::class);
@@ -94,7 +94,7 @@ class AuthorizationFlowTest extends TestCase
     public function testGlobalTwoFaDisabledSkipsTwoFaWithoutLoadingUser(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::PASSWORD, 'user-id'),
+            $this->createAuthorizationSession(LoginStateEnum::PASSWORD, 'user-id'),
             globalTwoFaEnabled: false,
             expectUserLookup: false,
         );
@@ -107,7 +107,7 @@ class AuthorizationFlowTest extends TestCase
     public function testMissingUserIdentifierDefaultsToRequiringTwoFaWithoutLoadingUser(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::PASSWORD, null),
+            $this->createAuthorizationSession(LoginStateEnum::PASSWORD, null),
             expectUserLookup: false,
         );
 
@@ -117,7 +117,7 @@ class AuthorizationFlowTest extends TestCase
     public function testMissingUserThrowsException(): void
     {
         $dispatcher = $this->createAuthorizationFlow(
-            $this->createAuthRequest(
+            $this->createAuthorizationSession(
                 LoginStateEnum::PASSWORD,
                 'user-id',
             ),
@@ -132,7 +132,7 @@ class AuthorizationFlowTest extends TestCase
     public function testCompletedFlowIsAccepted(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::COMPLETED, 'user-id'),
+            $this->createAuthorizationSession(LoginStateEnum::COMPLETED, 'user-id'),
             expectUserLookup: false,
         );
 
@@ -146,7 +146,7 @@ class AuthorizationFlowTest extends TestCase
     public function testUncompletedFlowIsRejected(?LoginStateEnum $loginState): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest($loginState, $loginState === null ? null : 'user-id'),
+            $this->createAuthorizationSession($loginState, $loginState === null ? null : 'user-id'),
             expectUserLookup: false,
         );
 
@@ -168,7 +168,7 @@ class AuthorizationFlowTest extends TestCase
     public function testCompletedFlowWithoutUserIsRejected(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthRequest(LoginStateEnum::COMPLETED, null),
+            $this->createAuthorizationSession(LoginStateEnum::COMPLETED, null),
             expectUserLookup: false,
         );
 
@@ -177,7 +177,7 @@ class AuthorizationFlowTest extends TestCase
     }
 
     private function createAuthorizationFlow(
-        ?AuthRequest $authRequest,
+        ?AuthorizationSession $authorizationSession,
         bool $globalTwoFaEnabled = true,
         ?bool $twoFaEnabled = true,
         bool $expectUserLookup = true,
@@ -187,7 +187,7 @@ class AuthorizationFlowTest extends TestCase
                 twoFactorEnabled: $globalTwoFaEnabled,
             ),
             $this->createUserConnector($twoFaEnabled, $expectUserLookup),
-            $authRequest,
+            $authorizationSession,
         );
     }
 
@@ -221,12 +221,12 @@ class AuthorizationFlowTest extends TestCase
         return $userConnector;
     }
 
-    private function createAuthRequest(?LoginStateEnum $loginState, ?string $userIdentifier): AuthRequest
+    private function createAuthorizationSession(?LoginStateEnum $loginState, ?string $userIdentifier): AuthorizationSession
     {
-        $authRequest = new AuthRequest();
-        $authRequest->setLoginState($loginState);
-        $authRequest->setUserIdentifier($userIdentifier);
+        $authorizationSession = new AuthorizationSession();
+        $authorizationSession->setLoginState($loginState);
+        $authorizationSession->setUserIdentifier($userIdentifier);
 
-        return $authRequest;
+        return $authorizationSession;
     }
 }

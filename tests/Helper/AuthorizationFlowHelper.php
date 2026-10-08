@@ -62,8 +62,8 @@ trait AuthorizationFlowHelper
         $twoFaUrl = $client->getResponse()->headers->get('Location');
         $twoFaId = basename((string) parse_url($twoFaUrl, \PHP_URL_PATH));
 
-        $authRequestId = $client->getRequest()->attributes->get('id');
-        $client->request('GET', $router->generate('login_2fa_complete', ['id' => $authRequestId]), ['id' => $twoFaId]);
+        $authorizationSessionId = $client->getRequest()->attributes->get('id');
+        $client->request('GET', $router->generate('login_2fa_complete', ['id' => $authorizationSessionId]), ['id' => $twoFaId]);
     }
 
     private function followRedirects(KernelBrowser $client): Crawler

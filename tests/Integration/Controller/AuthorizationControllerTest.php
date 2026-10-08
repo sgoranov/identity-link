@@ -30,7 +30,7 @@ namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
-use App\Entity\AuthRequest;
+use App\Entity\AuthorizationSession;
 use App\Repository\AuthCodeRepository;
 use App\Security\LoginStateEnum;
 use App\Tests\Helper\AuthorizationFlowHelper;
@@ -79,13 +79,13 @@ class AuthorizationControllerTest extends WebTestCase
         $this->assertArrayHasKey('state', $query);
         $this->assertEquals('foobar', $query['state']);
 
-        // at this point the auth request must be consumed
+        // at this point the authorization session must be consumed
         $em = $client->getContainer()->get('doctrine')->getManager();
-        list($authRequest) = $em->getRepository(AuthRequest::class)->findAll();
+        list($authorizationSession) = $em->getRepository(AuthorizationSession::class)->findAll();
 
-        $this->assertSame(LoginStateEnum::COMPLETED, $authRequest->getLoginState(), 'Login state should be COMPLETED.');
-        $this->assertTrue($authRequest->getConsentApproved(), 'Consent should be approved.');
-        $this->assertTrue($authRequest->isConsumed(), 'AuthRequest should be marked as consumed.');
+        $this->assertSame(LoginStateEnum::COMPLETED, $authorizationSession->getLoginState(), 'Login state should be COMPLETED.');
+        $this->assertTrue($authorizationSession->getConsentApproved(), 'Consent should be approved.');
+        $this->assertTrue($authorizationSession->isConsumed(), 'AuthorizationSession should be marked as consumed.');
     }
 
     /**
@@ -151,7 +151,7 @@ class AuthorizationControllerTest extends WebTestCase
         ]);
         $crawler = $client->followRedirect();
         $this->assertSame('login_with_password', $client->getRequest()->attributes->get('_route'));
-        $authRequestId = $client->getRequest()->attributes->get('id');
+        $authorizationSessionId = $client->getRequest()->attributes->get('id');
 
         if ($passwordSubmitted) {
             // the user mock has 2FA enabled by default, so the login stops before the 2FA step
@@ -160,18 +160,18 @@ class AuthorizationControllerTest extends WebTestCase
                 'login[password]' => AppFixtures::USER_PASSWORD,
             ]);
             $client->submit($form);
-            $this->assertResponseRedirects($router->generate('login_2fa_initiate', ['id' => $authRequestId]));
+            $this->assertResponseRedirects($router->generate('login_2fa_initiate', ['id' => $authorizationSessionId]));
         }
 
-        $client->request('GET', $router->generate($route, ['id' => $authRequestId]));
+        $client->request('GET', $router->generate($route, ['id' => $authorizationSessionId]));
 
         $this->assertResponseStatusCodeSame(400);
         $location = (string) $client->getResponse()->headers->get('Location');
         $this->assertStringNotContainsString('code=', $location);
 
         $em = $client->getContainer()->get('doctrine')->getManager();
-        $authRequest = $em->getRepository(AuthRequest::class)->find($authRequestId);
-        $this->assertFalse($authRequest->isConsumed(), 'AuthRequest must not be consumed before the login is completed.');
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertFalse($authorizationSession->isConsumed(), 'AuthorizationSession must not be consumed before the login is completed.');
     }
 
     public function testSuccessfulCodeRequestWithAlternateRedirectUri(): void

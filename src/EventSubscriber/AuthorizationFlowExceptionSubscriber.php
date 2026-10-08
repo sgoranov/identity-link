@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace App\EventSubscriber;
 
 use App\Api\Contract\ClientConnectorInterface;
-use App\Security\Exception\AuthRequestException;
-use App\Security\Exception\ConsumedAuthRequestException;
-use App\Security\Exception\ExpiredAuthRequestException;
-use App\Security\Exception\InvalidAuthRequestException;
+use App\Security\Exception\AuthorizationSessionException;
+use App\Security\Exception\ConsumedAuthorizationSessionException;
+use App\Security\Exception\ExpiredAuthorizationSessionException;
+use App\Security\Exception\InvalidAuthorizationSessionException;
 use App\Security\Exception\InvalidLoginStateException;
 use App\Security\Exception\AuthorizationFlowException;
 use App\Security\Exception\UserNotFoundException;
@@ -46,8 +46,8 @@ class AuthorizationFlowExceptionSubscriber implements EventSubscriberInterface
             $exception instanceof InvalidLoginStateException => 'authorization_flow.invalid_state',
         };
 
-        $authRequest = $exception->authRequest;
-        $client = $this->clientConnector->getClientById($authRequest->getClientId());
+        $authorizationSession = $exception->authorizationSession;
+        $client = $this->clientConnector->getClientById($authorizationSession->getClientId());
 
         $response = new Response(
             $this->twig->render('invalid_session.html.twig', [

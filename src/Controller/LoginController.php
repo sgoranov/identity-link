@@ -8,7 +8,7 @@ use App\Api\Contract\UserConnectorInterface;
 use App\Form\Type\LoginType;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\LeagueOAuth2\Repository\ClientRepository;
-use App\Security\AuthRequestResolver;
+use App\Security\AuthorizationSessionResolver;
 use App\Security\Exception\RateLimitException;
 use App\Security\AuthorizationFlowFactory;
 use App\Security\LoginStateEnum;
@@ -37,7 +37,7 @@ class LoginController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly TwoFaConnectorInterface $twoFaConnector,
-        private readonly AuthRequestResolver $authRequestResolver,
+        private readonly AuthorizationSessionResolver $authorizationSessionResolver,
         private readonly AuthorizationFlowFactory $authorizationFlowFactory,
     )
     {
@@ -50,11 +50,11 @@ class LoginController extends AbstractController
     ]
     public function login(string $id, Request $request): Response
     {
-        $authRequest = $this->authRequestResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authRequest);
+        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
+        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
         $authorizationFlow->assertStateAllowed(LoginStateEnum::PASSWORD);
 
-        $client = $this->clientRepository->getClientEntity($authRequest->getClientId());
+        $client = $this->clientRepository->getClientEntity($authorizationSession->getClientId());
         $form = $this->formFactory->create(LoginType::class);
         $form->handleRequest($request);
 
@@ -88,9 +88,9 @@ class LoginController extends AbstractController
                 return $this->redirectToRoute('login_with_password', ['id' => $id]);
             }
 
-            $authRequest->setLoginState(LoginStateEnum::PASSWORD);
-            $authRequest->setUserIdentifier($user->getId());
-            $this->entityManager->persist($authRequest);;
+            $authorizationSession->setLoginState(LoginStateEnum::PASSWORD);
+            $authorizationSession->setUserIdentifier($user->getId());
+            $this->entityManager->persist($authorizationSession);;
             $this->entityManager->flush();
 
             $nextState = $authorizationFlow->resolveNextState();
@@ -99,7 +99,7 @@ class LoginController extends AbstractController
 
         return $this->render('login/login.html.twig', [
             'form' => $this->createForm(LoginType::class),
-            'scopes' => $authRequest->getScopes(),
+            'scopes' => $authorizationSession->getScopes(),
             'client_name' => $client->getName(),
             'resetPasswordUrl' => str_replace('{id}', $id, $this->parameterBag->get('reset_password_url')),
         ]);
@@ -112,21 +112,21 @@ class LoginController extends AbstractController
     ]
     public function twoFaInitiate(string $id): RedirectResponse
     {
-        $authRequest = $this->authRequestResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authRequest);
+        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
+        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
         $authorizationFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_INITIATE);
 
-        $redirectUrl = $this->urlGenerator->generate('login_2fa_complete', ['id' => $authRequest->getId()],
+        $redirectUrl = $this->urlGenerator->generate('login_2fa_complete', ['id' => $authorizationSession->getId()],
             UrlGeneratorInterface::ABSOLUTE_URL
         );
 
-        $twoFaId = $this->twoFaConnector->initiateAuthenticationRequest($authRequest->getUserIdentifier(), $redirectUrl);
+        $twoFaId = $this->twoFaConnector->initiateAuthenticationRequest($authorizationSession->getUserIdentifier(), $redirectUrl);
         if (null === $twoFaId) {
             throw new \RuntimeException('Unable to initiate two-factor authentication.');
         }
 
-        $authRequest->setLoginState(LoginStateEnum::TWO_FACTOR_INITIATE);
-        $this->entityManager->persist($authRequest);;
+        $authorizationSession->setLoginState(LoginStateEnum::TWO_FACTOR_INITIATE);
+        $this->entityManager->persist($authorizationSession);;
         $this->entityManager->flush();
 
         return new RedirectResponse(
@@ -141,8 +141,8 @@ class LoginController extends AbstractController
     ]
     public function twoFaComplete(string $id, Request $request): RedirectResponse
     {
-        $authRequest = $this->authRequestResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authRequest);
+        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
+        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
         $authorizationFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_COMPLETE);
 
         $twoFaId = $request->query->get('id');
@@ -151,12 +151,12 @@ class LoginController extends AbstractController
         }
 
         $twoFaResponse = $this->twoFaConnector->validateAuthenticationRequest($twoFaId);
-        if (null === $twoFaResponse || $twoFaResponse->getUserId() !== $authRequest->getUserIdentifier()) {
+        if (null === $twoFaResponse || $twoFaResponse->getUserId() !== $authorizationSession->getUserIdentifier()) {
             throw new \RuntimeException('Invalid two-factor authentication response.');
         }
 
-        $authRequest->setLoginState(LoginStateEnum::TWO_FACTOR_COMPLETE);
-        $this->entityManager->persist($authRequest);;
+        $authorizationSession->setLoginState(LoginStateEnum::TWO_FACTOR_COMPLETE);
+        $this->entityManager->persist($authorizationSession);;
         $this->entityManager->flush();
 
         $nextState = $authorizationFlow->resolveNextState();
@@ -170,12 +170,12 @@ class LoginController extends AbstractController
     ]
     public function complete(string $id): RedirectResponse
     {
-        $authRequest = $this->authRequestResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authRequest);
+        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
+        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
         $authorizationFlow->assertStateAllowed(LoginStateEnum::COMPLETED);
 
-        $authRequest->setLoginState(LoginStateEnum::COMPLETED);
-        $this->entityManager->persist($authRequest);
+        $authorizationSession->setLoginState(LoginStateEnum::COMPLETED);
+        $this->entityManager->persist($authorizationSession);
         $this->entityManager->flush();
 
         return $this->redirectToRoute('oauth2_auth_complete', ['id' => $id]);

@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace App\Security\Exception;
 
-use App\Entity\AuthRequest;
+use App\Entity\AuthorizationSession;
 
 abstract class AuthorizationFlowException extends \RuntimeException
 {
     public function __construct(
-        public readonly ?AuthRequest $authRequest = null
+        public readonly ?AuthorizationSession $authorizationSession = null
     )
     {
         parent::__construct();
