@@ -43,9 +43,6 @@ class AuthorizationSession
     #[ORM\Column(type: 'string', length: 100, nullable: true)]
     private ?string $userIdentifier = null;
 
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    private ?bool $consentApproved = null;
-
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -132,15 +129,5 @@ class AuthorizationSession
     public function setUserIdentifier(?string $userIdentifier): void
     {
         $this->userIdentifier = $userIdentifier;
-    }
-
-    public function getConsentApproved(): ?bool
-    {
-        return $this->consentApproved;
-    }
-
-    public function setConsentApproved(?bool $consentApproved): void
-    {
-        $this->consentApproved = $consentApproved;
     }
 }

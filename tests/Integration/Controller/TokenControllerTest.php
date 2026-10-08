@@ -820,11 +820,8 @@ final class TokenControllerTest extends WebTestCase
 
         $client->submit($crawler->selectButton('consent[allow]')->form());
 
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-
         $query = [];
-        parse_str((string) parse_url($client->getResponse()->headers->get('Location'), \PHP_URL_QUERY), $query);
+        parse_str((string) parse_url($this->followRedirectsToClient($client), \PHP_URL_QUERY), $query);
         $this->assertArrayHasKey('code', $query);
 
         $client->request('POST', $router->generate('oauth2_token'), [

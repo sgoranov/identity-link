@@ -15,6 +15,7 @@ enum AuthorizationStateEnum: string
     case PASSWORD = 'login_with_password';
     case TWO_FACTOR_INITIATE = 'login_2fa_initiate';
     case TWO_FACTOR_COMPLETE = 'login_2fa_complete';
+    case CONSENT = 'oauth2_auth_consent_screen';
     case COMPLETED = 'login_complete';
 
     public static function indexOf(self $state, array $flow): int|false

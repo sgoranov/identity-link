@@ -9,7 +9,6 @@ use App\Security\AuthorizationStateEnum;
 use App\Tests\Helper\SessionHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 class LoginControllerTest extends WebTestCase
 {
@@ -43,7 +42,6 @@ class LoginControllerTest extends WebTestCase
         list($authorizationSession) = $em->getRepository(AuthorizationSession::class)->findAll();
 
         $this->assertEquals(AuthorizationStateEnum::PASSWORD->value, $authorizationSession->getAuthorizationState()->value, 'Login state should be PASSWORD.');
-        $this->assertNull($authorizationSession->getConsentApproved(), 'Consent was still not approved.');
         $this->assertFalse($authorizationSession->isConsumed(), 'AuthorizationSession should be marked as false.');
     }
 

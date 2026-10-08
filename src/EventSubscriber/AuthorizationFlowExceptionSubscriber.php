@@ -4,12 +4,9 @@ declare(strict_types=1);
 namespace App\EventSubscriber;
 
 use App\Api\Contract\ClientConnectorInterface;
-use App\Security\Exception\AuthorizationSessionException;
-use App\Security\Exception\ConsumedAuthorizationSessionException;
-use App\Security\Exception\ExpiredAuthorizationSessionException;
-use App\Security\Exception\InvalidAuthorizationSessionException;
 use App\Security\Exception\InvalidAuthorizationStateException;
 use App\Security\Exception\AuthorizationFlowException;
+use App\Security\Exception\ClientNotFoundException;
 use App\Security\Exception\UserNotFoundException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -43,6 +40,7 @@ class AuthorizationFlowExceptionSubscriber implements EventSubscriberInterface
 
         $messageKey = match (true) {
             $exception instanceof UserNotFoundException => 'authorization_flow.user_not_found',
+            $exception instanceof ClientNotFoundException => 'authorization_flow.client_not_found',
             $exception instanceof InvalidAuthorizationStateException => 'authorization_flow.invalid_state',
         };
 

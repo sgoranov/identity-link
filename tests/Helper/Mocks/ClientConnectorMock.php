@@ -14,10 +14,16 @@ class ClientConnectorMock implements ClientConnectorInterface
 {
     private ?string $audienceOverride = null;
     private array $scopes = ['openid'];
+    private bool $consentRequired = true;
 
     public function setAudienceOverride(?string $audience): void
     {
         $this->audienceOverride = $audience;
+    }
+
+    public function setConsentRequired(bool $consentRequired): void
+    {
+        $this->consentRequired = $consentRequired;
     }
 
     /** @param list<string> $scopes */
@@ -32,7 +38,7 @@ class ClientConnectorMock implements ClientConnectorInterface
 
             $response = new DbClientResponse();
             $response->setPublic(false);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI);
@@ -53,7 +59,7 @@ class ClientConnectorMock implements ClientConnectorInterface
 
             $response = new DbClientResponse();
             $response->setPublic(false);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS);
@@ -76,7 +82,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         if ($id === AppFixtures::PRIVATE_CLIENT_IDENTIFIER) {
 
             $response->setPublic(false);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI);
@@ -95,7 +101,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         } elseif ($id === AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER) {
 
             $response->setPublic(false);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS);
@@ -110,7 +116,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         } elseif ($id === AppFixtures::PUBLIC_CLIENT_IDENTIFIER) {
 
             $response->setPublic(true);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::PUBLIC_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::PUBLIC_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::PUBLIC_CLIENT_REDIRECT_URI);

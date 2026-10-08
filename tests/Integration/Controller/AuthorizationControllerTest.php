@@ -28,12 +28,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Controller;
 
+use App\Api\Contract\ClientConnectorInterface;
 use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
 use App\Entity\AuthorizationSession;
 use App\Repository\AuthCodeRepository;
 use App\Security\AuthorizationStateEnum;
 use App\Tests\Helper\AuthorizationFlowHelper;
+use App\Tests\Helper\Mocks\ClientConnectorMock;
 use App\Tests\Helper\TestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
@@ -67,10 +69,8 @@ class AuthorizationControllerTest extends WebTestCase
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
 
-        // after the consent approval, the client is redirected to the authorization endpoint
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
+        // after the consent approval, the flow completes and the user is redirected back to the client
+        $url = $this->followRedirectsToClient($client);
         $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
 
         $query = [];
@@ -83,8 +83,7 @@ class AuthorizationControllerTest extends WebTestCase
         $em = $client->getContainer()->get('doctrine')->getManager();
         list($authorizationSession) = $em->getRepository(AuthorizationSession::class)->findAll();
 
-        $this->assertSame(AuthorizationStateEnum::COMPLETED, $authorizationSession->getAuthorizationState(), 'Login state should be COMPLETED.');
-        $this->assertTrue($authorizationSession->getConsentApproved(), 'Consent should be approved.');
+        $this->assertSame(AuthorizationStateEnum::COMPLETED, $authorizationSession->getAuthorizationState(), 'Authorization state should be COMPLETED.');
         $this->assertTrue($authorizationSession->isConsumed(), 'AuthorizationSession should be marked as consumed.');
     }
 
@@ -106,8 +105,7 @@ class AuthorizationControllerTest extends WebTestCase
         $crawler = $this->authorizeWithLogin($client, $authorizationParams, $twoFaEnabled);
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
+        $url = $this->followRedirectsToClient($client);
         $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
         $this->assertStringContainsString('code=', $url);
 
@@ -174,6 +172,105 @@ class AuthorizationControllerTest extends WebTestCase
         $this->assertFalse($authorizationSession->isConsumed(), 'AuthorizationSession must not be consumed before the login is completed.');
     }
 
+    public function testClientWithoutConsentReceivesCodeWithoutConsentScreen(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setConsentRequired(false);
+
+        $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+
+        $url = $this->followRedirectsToClient($client);
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
+        $this->assertStringContainsString('code=', $url);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function stepsAfterConsentProvider(): array
+    {
+        return [
+            'complete the flow' => ['login_complete'],
+            'issue the code' => ['oauth2_auth_complete'],
+        ];
+    }
+
+    /**
+     * @dataProvider stepsAfterConsentProvider
+     */
+    public function testStepsAfterConsentRequireConsent(string $route): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        // the login is done and the consent screen is shown, but consent is not given yet
+        $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+        $this->assertSame('oauth2_auth_consent_screen', $client->getRequest()->attributes->get('_route'));
+        $authorizationSessionId = $client->getRequest()->attributes->get('id');
+
+        $client->request('GET', $router->generate($route, ['id' => $authorizationSessionId]));
+
+        $this->assertResponseStatusCodeSame(400);
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertFalse($authorizationSession->isConsumed(), 'No code must be issued before consent.');
+    }
+
+    public function testConsentCannotBeGivenTwice(): void
+    {
+        $client = static::createClient();
+
+        $crawler = $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+        $consentUrl = $client->getRequest()->getUri();
+
+        // give consent, but stop before the flow completes
+        $client->submit($crawler->selectButton('consent[allow]')->form());
+        $this->assertResponseRedirects();
+
+        $client->request('GET', $consentUrl);
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testDeniedConsentReturnsErrorToClient(): void
+    {
+        $client = static::createClient();
+
+        $crawler = $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+        ]);
+        $authorizationSessionId = $client->getRequest()->attributes->get('id');
+
+        $client->submit($crawler->selectButton('consent[deny]')->form());
+
+        $url = $this->followRedirectsToClient($client);
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
+
+        $query = [];
+        parse_str((string) parse_url($url, \PHP_URL_QUERY), $query);
+        $this->assertSame('access_denied', $query['error'] ?? null);
+        $this->assertSame('foobar', $query['state'] ?? null);
+        $this->assertArrayNotHasKey('code', $query);
+
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertTrue($authorizationSession->isConsumed(), 'A denied authorization session must not be usable again.');
+    }
+
     public function testSuccessfulCodeRequestWithAlternateRedirectUri(): void
     {
         $client = static::createClient();
@@ -190,9 +287,7 @@ class AuthorizationControllerTest extends WebTestCase
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
 
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
+        $url = $this->followRedirectsToClient($client);
         $this->assertStringStartsWith($redirectUri, $url);
     }
 
@@ -225,10 +320,8 @@ class AuthorizationControllerTest extends WebTestCase
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
 
-        // after the consent approval, the client is redirected to the authorization endpoint
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
+        // after the consent approval, the flow completes and the user is redirected back to the client
+        $url = $this->followRedirectsToClient($client);
 
         $this->assertStringStartsWith(AppFixtures::PUBLIC_CLIENT_REDIRECT_URI, $url);
 

@@ -3,17 +3,21 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use App\Api\Contract\ClientConnectorInterface;
 use App\Api\Contract\UserConnectorInterface;
 use App\Entity\AuthorizationSession;
+use App\Security\Exception\ClientNotFoundException;
 use App\Security\Exception\InvalidAuthorizationStateException;
 use App\Security\Exception\UserNotFoundException;
 
 class AuthorizationFlow
 {
+    private ?AuthorizationFlowCache $cache = null;
 
     public function __construct(
         private readonly AuthorizationFlowConfig $authorizationFlowConfig,
         private readonly UserConnectorInterface $userConnector,
+        private readonly ClientConnectorInterface $clientConnector,
         private readonly AuthorizationSession $authorizationSession,
     )
     {
@@ -32,7 +36,7 @@ class AuthorizationFlow
      */
     public function resolveNextState(): ?AuthorizationStateEnum
     {
-        $authorizationFlow = $this->buildAuthorizationFlow();
+        $authorizationFlow = $this->getAuthorizationFlow();
         $currentState = $this->authorizationSession->getAuthorizationState();
 
         // If no state yet, the first step in flow is the only valid one
@@ -58,7 +62,7 @@ class AuthorizationFlow
      */
     public function assertStateAllowed(AuthorizationStateEnum $state): void
     {
-        $authorizationFlow = $this->buildAuthorizationFlow();
+        $authorizationFlow = $this->getAuthorizationFlow();
 
         if ($this->authorizationSession->getAuthorizationState() === null) {
             // If no state yet, the first step in flow is the only valid one
@@ -81,12 +85,12 @@ class AuthorizationFlow
     }
 
     /**
-     * Ensures that the login flow for the current authorization session has
-     * been completed and the user is identified.
+     * Ensures that the authorization flow for the current authorization session
+     * has been completed and the user is identified.
      *
-     * The steps after the login (consent and issuing the authorization code)
-     * rely on the user stored in the AuthorizationSession, so they must not be reached
-     * before every login step has passed.
+     * Issuing the authorization code relies on the user stored in the
+     * AuthorizationSession and on the consent given, so it must not be reached
+     * before every step of the flow (including consent, when required) has passed.
      */
     public function assertCompleted(): void
     {
@@ -96,6 +100,23 @@ class AuthorizationFlow
         }
     }
 
+    /**
+     * Returns the steps of the authorization flow, building them on first use.
+     *
+     * @return list<AuthorizationStateEnum>
+     */
+    private function getAuthorizationFlow(): array
+    {
+        // Rebuild when the user has changed, see AuthorizationFlowCache::isValidFor()
+        $userIdentifier = $this->authorizationSession->getUserIdentifier();
+        if (!$this->cache?->isValidFor($userIdentifier)) {
+            $this->cache = new AuthorizationFlowCache($this->buildAuthorizationFlow(), $userIdentifier);
+        }
+
+        return $this->cache->steps;
+    }
+
+    /** @return list<AuthorizationStateEnum> */
     private function buildAuthorizationFlow(): array
     {
         $authorizationFlow = [AuthorizationStateEnum::PASSWORD];
@@ -103,6 +124,10 @@ class AuthorizationFlow
         if ($this->authorizationFlowConfig->twoFactorEnabled && $this->isTwoFaEnabledForUser()) {
             $authorizationFlow[] = AuthorizationStateEnum::TWO_FACTOR_INITIATE;
             $authorizationFlow[] = AuthorizationStateEnum::TWO_FACTOR_COMPLETE;
+        }
+
+        if ($this->isConsentRequiredForClient()) {
+            $authorizationFlow[] = AuthorizationStateEnum::CONSENT;
         }
 
         $authorizationFlow[] = AuthorizationStateEnum::COMPLETED;
@@ -130,5 +155,19 @@ class AuthorizationFlow
         }
 
         return $user->twoFaEnabled();
+    }
+
+    private function isConsentRequiredForClient(): bool
+    {
+        $clientIdentifier = $this->authorizationSession->getClientId();
+        $client = $this->clientConnector->getClientById($clientIdentifier);
+        if ($client === null) {
+            // The client was validated when the authorization session was created
+            // but no longer exists. Abort and let AuthorizationFlowExceptionSubscriber
+            // present a user-friendly error page.
+            throw new ClientNotFoundException($this->authorizationSession, $clientIdentifier);
+        }
+
+        return $client->isConsentRequired();
     }
 }

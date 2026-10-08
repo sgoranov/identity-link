@@ -66,13 +66,36 @@ trait AuthorizationFlowHelper
         $client->request('GET', $router->generate('login_2fa_complete', ['id' => $authorizationSessionId]), ['id' => $twoFaId]);
     }
 
+    /**
+     * Follows the redirects inside Identity Link (login and authorization routes) and returns
+     * the URL the browser is finally sent to, i.e. the client's redirect URI with the code or error.
+     */
+    private function followRedirectsToClient(KernelBrowser $client): string
+    {
+        $this->followRedirects($client);
+        self::assertTrue($client->getResponse()->isRedirect(), 'Expected a redirect back to the client.');
+
+        return (string) $client->getResponse()->headers->get('Location');
+    }
+
+    /**
+     * Follows the redirects inside Identity Link and stops at the first page, or at a redirect
+     * leaving the login and authorization routes (e.g. back to the client).
+     */
     private function followRedirects(KernelBrowser $client): Crawler
     {
         $crawler = $client->getCrawler();
-        while ($client->getResponse()->isRedirect()) {
+        while ($client->getResponse()->isRedirect() && $this->isFlowRedirect($client)) {
             $crawler = $client->followRedirect();
         }
 
         return $crawler;
+    }
+
+    private function isFlowRedirect(KernelBrowser $client): bool
+    {
+        $path = (string) parse_url((string) $client->getResponse()->headers->get('Location'), \PHP_URL_PATH);
+
+        return str_starts_with($path, '/login/') || str_starts_with($path, '/oauth2/auth/');
     }
 }

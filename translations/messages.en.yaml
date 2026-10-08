@@ -123,4 +123,5 @@ authorization_session:
 
 authorization_flow:
   user_not_found: 'Your account could not be found. Please contact your administrator if you believe this is an error.'
+  client_not_found: 'The application you are signing in to could not be found. Please contact your administrator.'
   invalid_state: 'Your login session is no longer valid. Please start the sign-in process again.'
