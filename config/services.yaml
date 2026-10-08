@@ -74,7 +74,7 @@ services:
       calls:
         - setEncryptionKeyPath: [ '%encryption_key%' ]
 
-    App\Security\LoginFlowConfig:
+    App\Security\AuthorizationFlowConfig:
         arguments:
             $twoFactorEnabled: '%login_two_fa_enabled%'
 

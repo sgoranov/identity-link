@@ -10,7 +10,7 @@ use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\LeagueOAuth2\Repository\ClientRepository;
 use App\Security\AuthRequestResolver;
 use App\Security\Exception\RateLimitException;
-use App\Security\LoginFlowFactory;
+use App\Security\AuthorizationFlowFactory;
 use App\Security\LoginStateEnum;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -38,7 +38,7 @@ class LoginController extends AbstractController
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly TwoFaConnectorInterface $twoFaConnector,
         private readonly AuthRequestResolver $authRequestResolver,
-        private readonly LoginFlowFactory $loginFlowFactory,
+        private readonly AuthorizationFlowFactory $authorizationFlowFactory,
     )
     {
     }
@@ -51,8 +51,8 @@ class LoginController extends AbstractController
     public function login(string $id, Request $request): Response
     {
         $authRequest = $this->authRequestResolver->resolve($id);
-        $loginFlow = $this->loginFlowFactory->create($authRequest);
-        $loginFlow->assertStateAllowed(LoginStateEnum::PASSWORD);
+        $authorizationFlow = $this->authorizationFlowFactory->create($authRequest);
+        $authorizationFlow->assertStateAllowed(LoginStateEnum::PASSWORD);
 
         $client = $this->clientRepository->getClientEntity($authRequest->getClientId());
         $form = $this->formFactory->create(LoginType::class);
@@ -93,7 +93,7 @@ class LoginController extends AbstractController
             $this->entityManager->persist($authRequest);;
             $this->entityManager->flush();
 
-            $nextState = $loginFlow->resolveNextState();
+            $nextState = $authorizationFlow->resolveNextState();
             return $this->redirectToRoute($nextState->value, ['id' => $id]);
         }
 
@@ -113,8 +113,8 @@ class LoginController extends AbstractController
     public function twoFaInitiate(string $id): RedirectResponse
     {
         $authRequest = $this->authRequestResolver->resolve($id);
-        $loginFlow = $this->loginFlowFactory->create($authRequest);
-        $loginFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_INITIATE);
+        $authorizationFlow = $this->authorizationFlowFactory->create($authRequest);
+        $authorizationFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_INITIATE);
 
         $redirectUrl = $this->urlGenerator->generate('login_2fa_complete', ['id' => $authRequest->getId()],
             UrlGeneratorInterface::ABSOLUTE_URL
@@ -142,8 +142,8 @@ class LoginController extends AbstractController
     public function twoFaComplete(string $id, Request $request): RedirectResponse
     {
         $authRequest = $this->authRequestResolver->resolve($id);
-        $loginFlow = $this->loginFlowFactory->create($authRequest);
-        $loginFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_COMPLETE);
+        $authorizationFlow = $this->authorizationFlowFactory->create($authRequest);
+        $authorizationFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_COMPLETE);
 
         $twoFaId = $request->query->get('id');
         if (!is_string($twoFaId) || $twoFaId === '') {
@@ -159,7 +159,7 @@ class LoginController extends AbstractController
         $this->entityManager->persist($authRequest);;
         $this->entityManager->flush();
 
-        $nextState = $loginFlow->resolveNextState();
+        $nextState = $authorizationFlow->resolveNextState();
         return $this->redirectToRoute($nextState->value, ['id' => $id]);
     }
 
@@ -171,8 +171,8 @@ class LoginController extends AbstractController
     public function complete(string $id): RedirectResponse
     {
         $authRequest = $this->authRequestResolver->resolve($id);
-        $loginFlow = $this->loginFlowFactory->create($authRequest);
-        $loginFlow->assertStateAllowed(LoginStateEnum::COMPLETED);
+        $authorizationFlow = $this->authorizationFlowFactory->create($authRequest);
+        $authorizationFlow->assertStateAllowed(LoginStateEnum::COMPLETED);
 
         $authRequest->setLoginState(LoginStateEnum::COMPLETED);
         $this->entityManager->persist($authRequest);

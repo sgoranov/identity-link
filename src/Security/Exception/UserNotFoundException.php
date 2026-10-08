@@ -5,7 +5,7 @@ namespace App\Security\Exception;
 
 use App\Entity\AuthRequest;
 
-final class UserNotFoundException extends LoginFlowException
+final class UserNotFoundException extends AuthorizationFlowException
 {
     public function __construct(AuthRequest $authRequest, public readonly string $userIdentifier)
     {

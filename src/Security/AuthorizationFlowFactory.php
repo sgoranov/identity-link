@@ -6,19 +6,19 @@ namespace App\Security;
 use App\Api\Contract\UserConnectorInterface;
 use App\Entity\AuthRequest;
 
-class LoginFlowFactory
+class AuthorizationFlowFactory
 {
     public function __construct(
-        private readonly LoginFlowConfig $loginFlowConfig,
+        private readonly AuthorizationFlowConfig $authorizationFlowConfig,
         private readonly UserConnectorInterface $userConnector,
     )
     {
     }
 
-    public function create(AuthRequest $authRequest): LoginFlow
+    public function create(AuthRequest $authRequest): AuthorizationFlow
     {
-        return new LoginFlow(
-            $this->loginFlowConfig,
+        return new AuthorizationFlow(
+            $this->authorizationFlowConfig,
             $this->userConnector,
             $authRequest,
         );

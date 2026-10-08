@@ -10,7 +10,7 @@ use App\Form\Type\ConsentType;
 use App\LeagueOAuth2\Entity\UserEntity;
 use App\Security\AuthRequestResolver;
 use App\Security\Exception\UserNotFoundException;
-use App\Security\LoginFlowFactory;
+use App\Security\AuthorizationFlowFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -38,7 +38,7 @@ class OAuth2AuthorizationController extends AbstractController
         private readonly ClientConnectorInterface $clientConnector,
         private readonly AuthRequestResolver $authRequestResolver,
         private readonly LoggerInterface $logger,
-        private readonly LoginFlowFactory $loginFlowFactory,
+        private readonly AuthorizationFlowFactory $authorizationFlowFactory,
     )
     {
     }
@@ -58,7 +58,7 @@ class OAuth2AuthorizationController extends AbstractController
             }
 
             // Every authorization request starts a new login: persist a short-lived snapshot
-            // and redirect to the first step of the login flow
+            // and redirect to the first step of the authorization flow
             $authRequest = new AuthRequest();
             $authRequest->setQueryParams($request->query->all());
             $authRequest->setClientId($validated->getClient()->getIdentifier());
@@ -67,7 +67,7 @@ class OAuth2AuthorizationController extends AbstractController
             $this->entityManager->persist($authRequest);
             $this->entityManager->flush();
 
-            $firstState = $this->loginFlowFactory->create($authRequest)->resolveNextState();
+            $firstState = $this->authorizationFlowFactory->create($authRequest)->resolveNextState();
             return $this->redirectToRoute($firstState->value, ['id' => $authRequest->getId()]);
 
         } catch (OAuthServerException $e) {
@@ -85,7 +85,7 @@ class OAuth2AuthorizationController extends AbstractController
     {
         // The user is the one identified by the login flow of this authorization request
         $authRequest = $this->authRequestResolver->resolve($id);
-        $this->loginFlowFactory->create($authRequest)->assertCompleted();
+        $this->authorizationFlowFactory->create($authRequest)->assertCompleted();
 
         $client = $this->clientConnector->getClientById($authRequest->getClientId());
 
@@ -143,7 +143,7 @@ class OAuth2AuthorizationController extends AbstractController
     public function consentScreen(string $id, Request $request): Response
     {
         $authRequest = $this->authRequestResolver->resolve($id);
-        $this->loginFlowFactory->create($authRequest)->assertCompleted();
+        $this->authorizationFlowFactory->create($authRequest)->assertCompleted();
 
         $form = $this->formFactory->create(ConsentType::class);
         $form->handleRequest($request);

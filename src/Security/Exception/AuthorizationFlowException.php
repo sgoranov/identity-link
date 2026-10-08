@@ -5,7 +5,7 @@ namespace App\Security\Exception;
 
 use App\Entity\AuthRequest;
 
-abstract class LoginFlowException extends \RuntimeException
+abstract class AuthorizationFlowException extends \RuntimeException
 {
     public function __construct(
         public readonly ?AuthRequest $authRequest = null

@@ -8,11 +8,11 @@ use App\Entity\AuthRequest;
 use App\Security\Exception\InvalidLoginStateException;
 use App\Security\Exception\UserNotFoundException;
 
-class LoginFlow
+class AuthorizationFlow
 {
 
     public function __construct(
-        private readonly LoginFlowConfig $loginFlowConfig,
+        private readonly AuthorizationFlowConfig $authorizationFlowConfig,
         private readonly UserConnectorInterface $userConnector,
         private readonly AuthRequest $authRequest,
     )
@@ -20,9 +20,9 @@ class LoginFlow
     }
 
     /**
-     * Determines the next step in the login flow for the current authentication request.
+     * Determines the next step in the authorization flow for the current authentication request.
      *
-     * The login flow is defined dynamically (via buildLoginFlow()) depending on system configuration
+     * The authorization flow is defined dynamically (via buildAuthorizationFlow()) depending on system configuration
      *
      * If no login state is currently stored in the AuthRequest, this method will return
      * the first step in the flow.
@@ -32,16 +32,16 @@ class LoginFlow
      */
     public function resolveNextState(): ?LoginStateEnum
     {
-        $loginFlow = $this->buildLoginFlow();
+        $authorizationFlow = $this->buildAuthorizationFlow();
         $currentState = $this->authRequest->getLoginState();
 
         // If no state yet, the first step in flow is the only valid one
         if (null === $currentState) {
-            return $loginFlow[0];
+            return $authorizationFlow[0];
         }
 
-        $currentIndex = LoginStateEnum::indexOf($currentState, $loginFlow);
-        return $loginFlow[$currentIndex + 1] ?? LoginStateEnum::COMPLETED;
+        $currentIndex = LoginStateEnum::indexOf($currentState, $authorizationFlow);
+        return $authorizationFlow[$currentIndex + 1] ?? LoginStateEnum::COMPLETED;
     }
 
     /**
@@ -53,27 +53,27 @@ class LoginFlow
      * successfully completing the password step).
      *
      * If the authentication request has no current login state, only the first
-     * state in the configured login flow is considered valid. Otherwise, only
+     * state in the configured authorization flow is considered valid. Otherwise, only
      * the immediate next state in the flow is allowed.
      */
     public function assertStateAllowed(LoginStateEnum $state): void
     {
-        $loginFlow = $this->buildLoginFlow();
+        $authorizationFlow = $this->buildAuthorizationFlow();
 
         if ($this->authRequest->getLoginState() === null) {
             // If no state yet, the first step in flow is the only valid one
-            if ($loginFlow[0] !== $state) {
+            if ($authorizationFlow[0] !== $state) {
                 throw new InvalidLoginStateException($this->authRequest, $state);
             }
         } else {
             // Find current position in flow
-            $currentIndex = LoginStateEnum::indexOf($this->authRequest->getLoginState(), $loginFlow);
+            $currentIndex = LoginStateEnum::indexOf($this->authRequest->getLoginState(), $authorizationFlow);
             if ($currentIndex === false) {
                 throw new InvalidLoginStateException($this->authRequest, $state);
             }
 
             // The next valid state is the one right after the current index
-            $nextState = $loginFlow[$currentIndex + 1] ?? null;
+            $nextState = $authorizationFlow[$currentIndex + 1] ?? null;
             if ($nextState !== $state) {
                 throw new InvalidLoginStateException($this->authRequest, $state);
             }
@@ -96,18 +96,18 @@ class LoginFlow
         }
     }
 
-    private function buildLoginFlow(): array
+    private function buildAuthorizationFlow(): array
     {
-        $loginFlow = [LoginStateEnum::PASSWORD];
+        $authorizationFlow = [LoginStateEnum::PASSWORD];
 
-        if ($this->loginFlowConfig->twoFactorEnabled && $this->isTwoFaEnabledForUser()) {
-            $loginFlow[] = LoginStateEnum::TWO_FACTOR_INITIATE;
-            $loginFlow[] = LoginStateEnum::TWO_FACTOR_COMPLETE;
+        if ($this->authorizationFlowConfig->twoFactorEnabled && $this->isTwoFaEnabledForUser()) {
+            $authorizationFlow[] = LoginStateEnum::TWO_FACTOR_INITIATE;
+            $authorizationFlow[] = LoginStateEnum::TWO_FACTOR_COMPLETE;
         }
 
-        $loginFlow[] = LoginStateEnum::COMPLETED;
+        $authorizationFlow[] = LoginStateEnum::COMPLETED;
 
-        return $loginFlow;
+        return $authorizationFlow;
     }
 
     private function isTwoFaEnabledForUser(): bool
@@ -124,7 +124,7 @@ class LoginFlow
         $user = $this->userConnector->getUserById($userIdentifier);
         if ($user === null) {
             // The user was resolved earlier in the login flow but no longer exists.
-            // Abort the authentication and let LoginFlowExceptionSubscriber present
+            // Abort the authentication and let AuthorizationFlowExceptionSubscriber present
             // a user-friendly error page.
             throw new UserNotFoundException($this->authRequest, $userIdentifier);
         }
