@@ -8,10 +8,11 @@ use App\Api\Contract\UserConnectorInterface;
 use App\Entity\AuthorizationSession;
 use App\Form\Type\ConsentType;
 use App\LeagueOAuth2\Entity\UserEntity;
-use App\Security\AuthorizationSessionResolver;
-use App\Security\Exception\UserNotFoundException;
+use App\Security\Attribute\MapAuthorizationFlow;
+use App\Security\AuthorizationFlow;
 use App\Security\AuthorizationFlowFactory;
 use App\Security\AuthorizationStateEnum;
+use App\Security\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -25,6 +26,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 
 class OAuth2AuthorizationController extends AbstractController
 {
@@ -37,7 +39,6 @@ class OAuth2AuthorizationController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly FormFactoryInterface $formFactory,
         private readonly ClientConnectorInterface $clientConnector,
-        private readonly AuthorizationSessionResolver $authorizationSessionResolver,
         private readonly LoggerInterface $logger,
         private readonly AuthorizationFlowFactory $authorizationFlowFactory,
     )
@@ -81,12 +82,18 @@ class OAuth2AuthorizationController extends AbstractController
         }
     }
 
-    #[Route('/oauth2/auth/{id}', name: 'oauth2_auth_complete', methods: ['GET', 'POST'])]
-    public function complete(string $id, Request $request): Response
+    #[Route('/oauth2/auth/{id}',
+        name: 'oauth2_auth_complete',
+        requirements: ['id' => Requirement::UUID],
+        methods: ['GET', 'POST'])
+    ]
+    public function complete(
+        #[MapAuthorizationFlow(AuthorizationStateEnum::AUTHORIZATION_CODE)] AuthorizationFlow $authorizationFlow,
+        Request $request,
+    ): Response
     {
         // The user is the one identified by the login flow of this authorization request
-        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
-        $this->authorizationFlowFactory->create($authorizationSession)->assertStateAllowed(AuthorizationStateEnum::AUTHORIZATION_CODE);
+        $authorizationSession = $authorizationFlow->getAuthorizationSession();
 
         $psrRequest =  $this->httpMessageFactory->createRequest(
             $request->duplicate($authorizationSession->getQueryParams(), null, ['_route' => 'oauth2_auth_complete'])
@@ -134,12 +141,17 @@ class OAuth2AuthorizationController extends AbstractController
         }
     }
 
-    #[Route('/oauth2/auth/consent-screen/{id}', name: 'oauth2_auth_consent_screen', methods: ['GET', 'POST'])]
-    public function consentScreen(string $id, Request $request): Response
+    #[Route('/oauth2/auth/consent-screen/{id}',
+        name: 'oauth2_auth_consent_screen',
+        requirements: ['id' => Requirement::UUID],
+        methods: ['GET', 'POST'])
+    ]
+    public function consentScreen(
+        #[MapAuthorizationFlow(AuthorizationStateEnum::CONSENT)] AuthorizationFlow $authorizationFlow,
+        Request $request,
+    ): Response
     {
-        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::CONSENT);
+        $authorizationSession = $authorizationFlow->getAuthorizationSession();
 
         $form = $this->formFactory->create(ConsentType::class);
         $form->handleRequest($request);
@@ -174,7 +186,7 @@ class OAuth2AuthorizationController extends AbstractController
             $this->entityManager->flush();
 
             $nextState = $authorizationFlow->resolveNextState();
-            return $this->redirectToRoute($nextState->value, ['id' => $id]);
+            return $this->redirectToRoute($nextState->value, ['id' => $authorizationSession->getId()]);
         }
 
         return $this->render('authorization/consent_screen.html.twig', [

@@ -23,6 +23,11 @@ class AuthorizationFlow
     {
     }
 
+    public function getAuthorizationSession(): AuthorizationSession
+    {
+        return $this->authorizationSession;
+    }
+
     /**
      * Determines the next step in the authorization flow for the current authorization session.
      *

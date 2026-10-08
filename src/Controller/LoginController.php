@@ -8,10 +8,10 @@ use App\Api\Contract\UserConnectorInterface;
 use App\Form\Type\LoginType;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\LeagueOAuth2\Repository\ClientRepository;
-use App\Security\AuthorizationSessionResolver;
-use App\Security\Exception\RateLimitException;
-use App\Security\AuthorizationFlowFactory;
+use App\Security\Attribute\MapAuthorizationFlow;
+use App\Security\AuthorizationFlow;
 use App\Security\AuthorizationStateEnum;
+use App\Security\Exception\RateLimitException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -37,8 +37,6 @@ class LoginController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly TwoFaConnectorInterface $twoFaConnector,
-        private readonly AuthorizationSessionResolver $authorizationSessionResolver,
-        private readonly AuthorizationFlowFactory $authorizationFlowFactory,
     )
     {
     }
@@ -48,11 +46,12 @@ class LoginController extends AbstractController
         requirements: ['id' => Requirement::UUID],
         methods: ['GET', 'POST'])
     ]
-    public function login(string $id, Request $request): Response
+    public function login(
+        #[MapAuthorizationFlow(AuthorizationStateEnum::PASSWORD)] AuthorizationFlow $authorizationFlow,
+        Request $request,
+    ): Response
     {
-        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::PASSWORD);
+        $authorizationSession = $authorizationFlow->getAuthorizationSession();
 
         $client = $this->clientRepository->getClientEntity($authorizationSession->getClientId());
         $form = $this->formFactory->create(LoginType::class);
@@ -69,7 +68,7 @@ class LoginController extends AbstractController
                     'params' => $exception->getMessageData()
                 ]);
 
-                return $this->redirectToRoute('login_with_password', ['id' => $id]);
+                return $this->redirectToRoute('login_with_password', ['id' => $authorizationSession->getId()]);
             }
 
             $user = $this->userConnector->getUserByUserCredentials(
@@ -85,7 +84,7 @@ class LoginController extends AbstractController
                     'params' => []
                 ]);
 
-                return $this->redirectToRoute('login_with_password', ['id' => $id]);
+                return $this->redirectToRoute('login_with_password', ['id' => $authorizationSession->getId()]);
             }
 
             $authorizationSession->setAuthorizationState(AuthorizationStateEnum::PASSWORD);
@@ -94,14 +93,14 @@ class LoginController extends AbstractController
             $this->entityManager->flush();
 
             $nextState = $authorizationFlow->resolveNextState();
-            return $this->redirectToRoute($nextState->value, ['id' => $id]);
+            return $this->redirectToRoute($nextState->value, ['id' => $authorizationSession->getId()]);
         }
 
         return $this->render('login/login.html.twig', [
             'form' => $this->createForm(LoginType::class),
             'scopes' => $authorizationSession->getScopes(),
             'client_name' => $client->getName(),
-            'resetPasswordUrl' => str_replace('{id}', $id, $this->parameterBag->get('reset_password_url')),
+            'resetPasswordUrl' => str_replace('{id}', $authorizationSession->getId(), $this->parameterBag->get('reset_password_url')),
         ]);
     }
 
@@ -110,11 +109,11 @@ class LoginController extends AbstractController
         requirements: ['id' => Requirement::UUID],
         methods: ['GET'])
     ]
-    public function twoFaInitiate(string $id): RedirectResponse
+    public function twoFaInitiate(
+        #[MapAuthorizationFlow(AuthorizationStateEnum::TWO_FACTOR_INITIATE)] AuthorizationFlow $authorizationFlow,
+    ): RedirectResponse
     {
-        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::TWO_FACTOR_INITIATE);
+        $authorizationSession = $authorizationFlow->getAuthorizationSession();
 
         $redirectUrl = $this->urlGenerator->generate('login_2fa_complete', ['id' => $authorizationSession->getId()],
             UrlGeneratorInterface::ABSOLUTE_URL
@@ -139,11 +138,12 @@ class LoginController extends AbstractController
         requirements: ['id' => Requirement::UUID],
         methods: ['GET'])
     ]
-    public function twoFaComplete(string $id, Request $request): RedirectResponse
+    public function twoFaComplete(
+        #[MapAuthorizationFlow(AuthorizationStateEnum::TWO_FACTOR_COMPLETE)] AuthorizationFlow $authorizationFlow,
+        Request $request,
+    ): RedirectResponse
     {
-        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::TWO_FACTOR_COMPLETE);
+        $authorizationSession = $authorizationFlow->getAuthorizationSession();
 
         $twoFaId = $request->query->get('id');
         if (!is_string($twoFaId) || $twoFaId === '') {
@@ -160,7 +160,7 @@ class LoginController extends AbstractController
         $this->entityManager->flush();
 
         $nextState = $authorizationFlow->resolveNextState();
-        return $this->redirectToRoute($nextState->value, ['id' => $id]);
+        return $this->redirectToRoute($nextState->value, ['id' => $authorizationSession->getId()]);
     }
 
     #[Route('/login/complete/{id}',
@@ -168,18 +168,18 @@ class LoginController extends AbstractController
         requirements: ['id' => Requirement::UUID],
         methods: ['GET'])
     ]
-    public function complete(string $id): RedirectResponse
+    public function complete(
+        #[MapAuthorizationFlow(AuthorizationStateEnum::COMPLETED)] AuthorizationFlow $authorizationFlow,
+    ): RedirectResponse
     {
-        $authorizationSession = $this->authorizationSessionResolver->resolve($id);
-        $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::COMPLETED);
+        $authorizationSession = $authorizationFlow->getAuthorizationSession();
 
         $authorizationSession->setAuthorizationState(AuthorizationStateEnum::COMPLETED);
         $this->entityManager->persist($authorizationSession);
         $this->entityManager->flush();
 
         $nextState = $authorizationFlow->resolveNextState();
-        return $this->redirectToRoute($nextState->value, ['id' => $id]);
+        return $this->redirectToRoute($nextState->value, ['id' => $authorizationSession->getId()]);
     }
 
     private function checkLoginRateLimits(?string $ip, string $username): void
