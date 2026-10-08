@@ -505,16 +505,104 @@ final class TokenControllerTest extends WebTestCase
         $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $accessTokenPayload['client_id']);
     }
 
-    public function testAuthorizationCodeFlowIncludesNonceInIdToken(): void
+    /**
+     * @dataProvider nonceProvider
+     */
+    public function testAuthorizationCodeFlowIncludesNonceInIdToken(string $nonce): void
     {
-        $this->markTestSkipped('TODO: Include nonce in ID token for authorization code flow.');
+        $client = static::createClient();
+        $response = $this->requestTokenThroughAuthorizationFlow($client, ['nonce' => $nonce]);
+
+        $this->assertArrayHasKey('id_token', $response);
+        $payload = $this->decodeJwtPayload($response['id_token']);
+
+        // The nonce must be echoed exactly as sent (OIDC Core 3.1.3.7), without trimming or re-encoding.
+        $this->assertArrayHasKey('nonce', $payload);
+        $this->assertSame($nonce, $payload['nonce']);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function nonceProvider(): array
+    {
+        return [
+            'random' => [bin2hex(random_bytes(16))],
+            'reserved and whitespace characters' => [' a+b/c=d&e?f%20 '],
+            'unicode' => ['nonce-ünïcödé-✓'],
+            'maximum length' => [str_repeat('n', 255)],
+        ];
+    }
+
+    public function testIdTokenOmitsNonceWhenNotRequested(): void
+    {
+        $client = static::createClient();
+        $response = $this->requestTokenThroughAuthorizationFlow($client);
+
+        $this->assertArrayHasKey('id_token', $response);
+        $this->assertArrayNotHasKey('nonce', $this->decodeJwtPayload($response['id_token']));
+    }
+
+    public function testIdTokenOmitsEmptyNonce(): void
+    {
+        $client = static::createClient();
+        $response = $this->requestTokenThroughAuthorizationFlow($client, ['nonce' => '']);
+
+        $this->assertArrayHasKey('id_token', $response);
+        $this->assertArrayNotHasKey('nonce', $this->decodeJwtPayload($response['id_token']));
+    }
+
+    public function testNonceDoesNotCarryOverToNextAuthorization(): void
+    {
+        $client = static::createClient();
+        // Keep one kernel, and so the same service instances, across both flows, as a long-running worker would.
+        $client->disableReboot();
+
+        $first = $this->requestTokenThroughAuthorizationFlow($client, ['nonce' => 'first-nonce']);
+        $second = $this->requestTokenThroughAuthorizationFlow($client);
+
+        $this->assertSame('first-nonce', $this->decodeJwtPayload($first['id_token'])['nonce']);
+        $this->assertArrayNotHasKey('nonce', $this->decodeJwtPayload($second['id_token']));
+    }
+
+    public function testRefreshedIdTokenOmitsNonce(): void
+    {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
+        $response = $this->requestTokenThroughAuthorizationFlow($client, ['nonce' => 'original-nonce']);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::REFRESH_TOKEN,
+            'refresh_token' => $response['refresh_token'],
+        ]);
 
-        $nonce = bin2hex(random_bytes(16));
+        $this->assertSame(200, $client->getResponse()->getStatusCode());
+        $refreshed = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        // A refreshed ID token should not contain a nonce (OIDC Core 12.2).
+        $this->assertArrayHasKey('id_token', $refreshed);
+        $this->assertArrayNotHasKey('nonce', $this->decodeJwtPayload($refreshed['id_token']));
+    }
+
+    public function testNonceIsIgnoredWithoutOpenidScope(): void
+    {
+        $client = static::createClient();
+        $response = $this->requestTokenThroughAuthorizationFlow($client, [
+            'scope' => 'profile',
+            'nonce' => str_repeat('n', 256),
+        ]);
+
+        $this->assertArrayNotHasKey('id_token', $response);
+    }
+
+    /**
+     * @dataProvider invalidNonceProvider
+     */
+    public function testAuthorizationRejectsInvalidNonce(mixed $nonce): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $client->loginUser(new User(AppFixtures::USER_IDENTIFIER), 'secured');
 
         $client->request('GET', $router->generate('oauth2_auth'), [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
@@ -525,42 +613,19 @@ final class TokenControllerTest extends WebTestCase
             'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
         ]);
 
-        $this->assertResponseRedirects();
-        $client->request('GET', $client->getResponse()->headers->get('Location'));
-        $crawler = $client->followRedirect();
+        $this->assertSame(400, $client->getResponse()->getStatusCode());
+        $error = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertSame('invalid_request', $error['error']);
+    }
 
-        $form = $crawler->selectButton('consent[allow]')->form();
-        $client->submit($form);
-
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
-
-        $query = [];
-        parse_str(parse_url($url, \PHP_URL_QUERY), $query);
-        $this->assertArrayHasKey('code', $query);
-
-        $client->request('POST', $router->generate('oauth2_token'), [
-            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
-            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
-            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
-            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
-            'code' => $query['code'],
-        ]);
-
-        $response = $client->getResponse();
-
-        $this->assertSame(200, $response->getStatusCode());
-        $jsonResponse = json_decode($response->getContent(), true);
-
-        $this->assertArrayHasKey('id_token', $jsonResponse);
-        $this->assertNotEmpty($jsonResponse['id_token']);
-
-        [$header, $payload, $signature] = explode('.', $jsonResponse['id_token']);
-        $decodedPayload = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
-
-        $this->assertArrayHasKey('nonce', $decodedPayload);
-        $this->assertSame($nonce, $decodedPayload['nonce']);
+    /** @return array<string, array{mixed}> */
+    public static function invalidNonceProvider(): array
+    {
+        return [
+            'longer than 255 bytes' => [str_repeat('n', 256)],
+            'multibyte longer than 255 bytes' => [str_repeat('✓', 86)],
+            'array' => [['a', 'b']],
+        ];
     }
 
     public function testNoIdTokenWithoutOpenidScope(): void
@@ -726,6 +791,51 @@ final class TokenControllerTest extends WebTestCase
         }
 
         return $jsonResponse;
+    }
+
+    /**
+     * Runs the browser authorization flow (authorize, consent, redirect) and exchanges the code for tokens.
+     *
+     * @param array<string, mixed> $authorizationParams overrides for the authorization request
+     * @return array<string, mixed>
+     */
+    private function requestTokenThroughAuthorizationFlow(KernelBrowser $client, array $authorizationParams = []): array
+    {
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $client->loginUser(new User(AppFixtures::USER_IDENTIFIER), 'secured');
+
+        $client->request('GET', $router->generate('oauth2_auth'), $authorizationParams + [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'scope' => 'openid',
+            'state' => 'foobar',
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+        ]);
+
+        $this->assertResponseRedirects();
+        $client->request('GET', $client->getResponse()->headers->get('Location'));
+        $crawler = $client->followRedirect();
+
+        $client->submit($crawler->selectButton('consent[allow]')->form());
+
+        $this->assertResponseRedirects();
+        $client->followRedirect();
+
+        $query = [];
+        parse_str((string) parse_url($client->getResponse()->headers->get('Location'), \PHP_URL_QUERY), $query);
+        $this->assertArrayHasKey('code', $query);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $query['code'],
+        ]);
+
+        $this->assertSame(200, $client->getResponse()->getStatusCode());
+
+        return json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
     }
 
     /** @return array{string, JwtConfig, string} */

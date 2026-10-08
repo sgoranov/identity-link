@@ -108,12 +108,16 @@ services:
 
     OpenIDConnectServer\ClaimExtractor: ~
 
+    OpenIDConnectServer\StaticIssuerResolver:
+        arguments:
+            - '@=service("App\\Security\\Jwt\\JwtConfig").getIssuer()'
+
     OpenIDConnectServer\IdTokenResponse:
-        class: App\LeagueOAuth2\ResponseType\IdTokenResponse
         arguments:
             - '@App\LeagueOAuth2\Repository\UserRepository'
             - '@OpenIDConnectServer\ClaimExtractor'
-            - '@App\Security\Jwt\JwtConfig'
+            - '@OpenIDConnectServer\StaticIssuerResolver'
+            - '@=service("App\\Security\\Jwt\\JwtConfig").getKid()'
 
     App\LeagueOAuth2\AuthorizationServerFactory:
         calls:
