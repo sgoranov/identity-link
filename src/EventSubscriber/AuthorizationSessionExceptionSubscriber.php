@@ -5,6 +5,7 @@ namespace App\EventSubscriber;
 
 use App\Api\Contract\ClientConnectorInterface;
 use App\Security\Exception\AuthorizationSessionException;
+use App\Security\Exception\BrowserMismatchAuthorizationSessionException;
 use App\Security\Exception\ConsumedAuthorizationSessionException;
 use App\Security\Exception\ExpiredAuthorizationSessionException;
 use App\Security\Exception\InvalidAuthorizationSessionException;
@@ -42,6 +43,7 @@ class AuthorizationSessionExceptionSubscriber implements EventSubscriberInterfac
             $exception instanceof InvalidAuthorizationSessionException => 'authorization_session.invalid',
             $exception instanceof ExpiredAuthorizationSessionException => 'authorization_session.expired',
             $exception instanceof ConsumedAuthorizationSessionException => 'authorization_session.consumed',
+            $exception instanceof BrowserMismatchAuthorizationSessionException => 'authorization_session.browser_mismatch',
         };
 
         $authorizationSession = $exception->authorizationSession;

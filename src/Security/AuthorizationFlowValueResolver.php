@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Security\Attribute\MapAuthorizationFlow;
+use App\Security\Exception\BrowserMismatchAuthorizationSessionException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsTargetedValueResolver;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
@@ -13,6 +15,7 @@ use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
  * Resolves arguments marked with #[MapAuthorizationFlow].
  *
  * The session must exist, not be expired and not be consumed (AuthorizationSessionResolver),
+ * the request must come from the browser that started it (AuthorizationSessionBinding),
  * and the step of the action must be the next step of its flow (AuthorizationFlow::assertStateAllowed()).
  * Failures are thrown as exceptions and handled by the exception subscribers.
  */
@@ -22,6 +25,8 @@ final class AuthorizationFlowValueResolver implements ValueResolverInterface
     public function __construct(
         private readonly AuthorizationSessionResolver $authorizationSessionResolver,
         private readonly AuthorizationFlowFactory $authorizationFlowFactory,
+        private readonly AuthorizationSessionBinding $authorizationSessionBinding,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -46,6 +51,17 @@ final class AuthorizationFlowValueResolver implements ValueResolverInterface
         }
 
         $authorizationSession = $this->authorizationSessionResolver->resolve($id);
+
+        // The session is not consumed here, otherwise anyone with the link could end the flow
+        // of the browser it belongs to
+        if (!$this->authorizationSessionBinding->isBound($authorizationSession, $request)) {
+            $this->logger->warning('Authorization session used from a browser it is not bound to.', [
+                'authorization_session_id' => $authorizationSession->getId(),
+            ]);
+
+            throw new BrowserMismatchAuthorizationSessionException($authorizationSession);
+        }
+
         $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
         $authorizationFlow->assertStateAllowed($attributes[0]->state);
 

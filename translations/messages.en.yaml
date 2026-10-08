@@ -119,6 +119,7 @@ authorization_session:
   invalid: 'The requested login session is invalid or has been cleared.'
   expired: 'Your login session has expired. Please try logging in again.'
   consumed: 'This login session has already been completed. Please start a new login.'
+  browser_mismatch: 'This login session was started in another browser. Please start a new login from the application.'
   return_to_application: 'Return to %application%'
 
 authorization_flow:

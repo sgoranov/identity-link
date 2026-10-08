@@ -37,6 +37,7 @@ use App\Security\AuthorizationStateEnum;
 use App\Tests\Helper\AuthorizationFlowHelper;
 use App\Tests\Helper\Mocks\ClientConnectorMock;
 use App\Tests\Helper\TestHelper;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -269,6 +270,95 @@ class AuthorizationControllerTest extends WebTestCase
         $em = $client->getContainer()->get('doctrine')->getManager();
         $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
         $this->assertTrue($authorizationSession->isConsumed(), 'A denied authorization session must not be usable again.');
+    }
+
+    /** @return array<string, array{string}> */
+    public static function boundStepProvider(): array
+    {
+        return [
+            'password' => ['login_with_password'],
+            'consent' => ['oauth2_auth_consent_screen'],
+            'authorization code' => ['oauth2_auth_complete'],
+        ];
+    }
+
+    /**
+     * @dataProvider boundStepProvider
+     */
+    public function testAuthorizationCannotBeContinuedFromAnotherBrowser(string $route): void
+    {
+        $client = static::createClient();
+        $stepUrl = $this->reachStep($client, $route);
+        $authorizationSessionId = basename((string) parse_url($stepUrl, \PHP_URL_PATH));
+
+        // another browser, i.e. without the cookie set when the authorization request started
+        $cookies = $client->getCookieJar()->all();
+        $client->getCookieJar()->clear();
+        $client->request('GET', $stepUrl);
+
+        $this->assertResponseStatusCodeSame(400);
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertFalse($authorizationSession->isConsumed(), 'Another browser must not be able to end the authorization.');
+
+        // the browser that started the authorization can still continue it
+        foreach ($cookies as $cookie) {
+            $client->getCookieJar()->set($cookie);
+        }
+        $client->request('GET', $stepUrl);
+
+        if ($route === 'oauth2_auth_complete') {
+            $this->assertStringContainsString('code=', (string) $client->getResponse()->headers->get('Location'));
+        } else {
+            $this->assertResponseIsSuccessful();
+        }
+    }
+
+    public function testBindingCookieIsRemovedWhenTheCodeIsIssued(): void
+    {
+        $client = static::createClient();
+        $stepUrl = $this->reachStep($client, 'oauth2_auth_complete');
+        $cookieName = 'authorization_session_' . basename((string) parse_url($stepUrl, \PHP_URL_PATH));
+        $this->assertNotNull($client->getCookieJar()->get($cookieName));
+
+        $client->request('GET', $stepUrl);
+
+        $this->assertStringContainsString('code=', (string) $client->getResponse()->headers->get('Location'));
+        $this->assertNull($client->getCookieJar()->get($cookieName));
+    }
+
+    /**
+     * Goes through the authorization flow up to $route and returns its URL without requesting it.
+     */
+    private function reachStep(KernelBrowser $client, string $route): string
+    {
+        $authorizationParams = [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ];
+
+        if ($route === 'login_with_password') {
+            $client->disableReboot();
+            $client->request('GET', $client->getContainer()->get(RouterInterface::class)->generate('oauth2_auth'), $authorizationParams);
+            $this->assertResponseRedirects();
+
+            return (string) $client->getResponse()->headers->get('Location');
+        }
+
+        $crawler = $this->authorizeWithLogin($client, $authorizationParams);
+        $this->assertSame('oauth2_auth_consent_screen', $client->getRequest()->attributes->get('_route'));
+        if ($route === 'oauth2_auth_consent_screen') {
+            return $client->getRequest()->getUri();
+        }
+
+        // consent -> login_complete -> oauth2_auth_complete
+        $client->submit($crawler->selectButton('consent[allow]')->form());
+        $client->followRedirect();
+        $this->assertSame('login_complete', $client->getRequest()->attributes->get('_route'));
+        $this->assertResponseRedirects();
+
+        return (string) $client->getResponse()->headers->get('Location');
     }
 
     public function testSuccessfulCodeRequestWithAlternateRedirectUri(): void

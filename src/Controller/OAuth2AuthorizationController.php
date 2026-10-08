@@ -11,6 +11,7 @@ use App\LeagueOAuth2\Entity\UserEntity;
 use App\Security\Attribute\MapAuthorizationFlow;
 use App\Security\AuthorizationFlow;
 use App\Security\AuthorizationFlowFactory;
+use App\Security\AuthorizationSessionBinding;
 use App\Security\AuthorizationStateEnum;
 use App\Security\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -41,6 +42,7 @@ class OAuth2AuthorizationController extends AbstractController
         private readonly ClientConnectorInterface $clientConnector,
         private readonly LoggerInterface $logger,
         private readonly AuthorizationFlowFactory $authorizationFlowFactory,
+        private readonly AuthorizationSessionBinding $authorizationSessionBinding,
     )
     {
     }
@@ -67,10 +69,15 @@ class OAuth2AuthorizationController extends AbstractController
             $authorizationSession->setScopes($validated->getScopes());;
 
             $this->entityManager->persist($authorizationSession);
-            $this->entityManager->flush();
 
             $firstState = $this->authorizationFlowFactory->create($authorizationSession)->resolveNextState();
-            return $this->redirectToRoute($firstState->value, ['id' => $authorizationSession->getId()]);
+            $response = $this->redirectToRoute($firstState->value, ['id' => $authorizationSession->getId()]);
+
+            // The binding cookie is named after the id, which is assigned on persist
+            $this->authorizationSessionBinding->bind($authorizationSession, $response);
+            $this->entityManager->flush();
+
+            return $response;
 
         } catch (OAuthServerException $e) {
             $this->logger->warning('OAuth2 authorization request failed.', [
@@ -130,7 +137,10 @@ class OAuth2AuthorizationController extends AbstractController
             $this->entityManager->persist($authorizationSession);
             $this->entityManager->flush();
 
-            return $this->httpFoundationFactory->createResponse($final);
+            $response = $this->httpFoundationFactory->createResponse($final);
+            $this->authorizationSessionBinding->unbind($authorizationSession, $response);
+
+            return $response;
         } catch (OAuthServerException $e) {
             $this->logger->warning('OAuth2 authorization request failed.', [
                 'error_type' => $e->getErrorType(),
@@ -178,7 +188,10 @@ class OAuth2AuthorizationController extends AbstractController
 
                 $redirectUrl = $redirectUri . (str_contains($redirectUri, '?') ? '&' : '?') . $query;
 
-                return new RedirectResponse($redirectUrl);
+                $response = new RedirectResponse($redirectUrl);
+                $this->authorizationSessionBinding->unbind($authorizationSession, $response);
+
+                return $response;
             }
 
             $authorizationSession->setAuthorizationState(AuthorizationStateEnum::CONSENT);

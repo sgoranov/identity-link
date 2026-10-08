@@ -43,6 +43,9 @@ class AuthorizationSession
     #[ORM\Column(type: 'string', length: 100, nullable: true)]
     private ?string $userIdentifier = null;
 
+    #[ORM\Column(type: 'string', length: 64)]
+    private string $browserBindingHash;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -129,5 +132,15 @@ class AuthorizationSession
     public function setUserIdentifier(?string $userIdentifier): void
     {
         $this->userIdentifier = $userIdentifier;
+    }
+
+    public function getBrowserBindingHash(): string
+    {
+        return $this->browserBindingHash;
+    }
+
+    public function setBrowserBindingHash(string $browserBindingHash): void
+    {
+        $this->browserBindingHash = $browserBindingHash;
     }
 }
