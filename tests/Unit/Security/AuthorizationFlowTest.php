@@ -131,51 +131,76 @@ class AuthorizationFlowTest extends TestCase
         $dispatcher->resolveNextState();
     }
 
-    public function testCompletedFlowIsAccepted(): void
+    public function testAuthorizationCodeFollowsCompleted(): void
     {
         $flow = $this->createAuthorizationFlow(
             $this->createAuthorizationSession(AuthorizationStateEnum::COMPLETED, 'user-id'),
-            expectUserLookup: false,
         );
 
-        $flow->assertCompleted();
+        $this->assertSame(AuthorizationStateEnum::AUTHORIZATION_CODE, $flow->resolveNextState());
+        $flow->assertStateAllowed(AuthorizationStateEnum::AUTHORIZATION_CODE);
         $this->addToAssertionCount(1);
     }
 
     /**
-     * @dataProvider uncompletedStateProvider
+     * @dataProvider stateBeforeCompletedProvider
      */
-    public function testUncompletedFlowIsRejected(?AuthorizationStateEnum $authorizationState): void
-    {
+    public function testAuthorizationCodeIsNotAllowedBeforeCompleted(
+        ?AuthorizationStateEnum $authorizationState,
+        bool $consentRequired,
+    ): void {
         $flow = $this->createAuthorizationFlow(
             $this->createAuthorizationSession($authorizationState, $authorizationState === null ? null : 'user-id'),
-            expectUserLookup: false,
+            expectUserLookup: $authorizationState !== null,
+            consentRequired: $consentRequired,
         );
 
         $this->expectException(InvalidAuthorizationStateException::class);
-        $flow->assertCompleted();
+        $flow->assertStateAllowed(AuthorizationStateEnum::AUTHORIZATION_CODE);
     }
 
-    /** @return array<string, array{?AuthorizationStateEnum}> */
-    public static function uncompletedStateProvider(): array
+    /** @return array<string, array{?AuthorizationStateEnum, bool}> */
+    public static function stateBeforeCompletedProvider(): array
     {
         return [
-            'not started' => [null],
-            'password' => [AuthorizationStateEnum::PASSWORD],
-            '2FA initiated' => [AuthorizationStateEnum::TWO_FACTOR_INITIATE],
-            '2FA completed' => [AuthorizationStateEnum::TWO_FACTOR_COMPLETE],
+            'not started' => [null, false],
+            'password' => [AuthorizationStateEnum::PASSWORD, false],
+            '2FA initiated' => [AuthorizationStateEnum::TWO_FACTOR_INITIATE, false],
+            '2FA completed' => [AuthorizationStateEnum::TWO_FACTOR_COMPLETE, false],
+            'consent' => [AuthorizationStateEnum::CONSENT, true],
         ];
     }
 
-    public function testCompletedFlowWithoutUserIsRejected(): void
+    public function testAuthorizationCodeCannotBeRepeated(): void
     {
         $flow = $this->createAuthorizationFlow(
-            $this->createAuthorizationSession(AuthorizationStateEnum::COMPLETED, null),
-            expectUserLookup: false,
+            $this->createAuthorizationSession(AuthorizationStateEnum::AUTHORIZATION_CODE, 'user-id'),
         );
 
         $this->expectException(InvalidAuthorizationStateException::class);
-        $flow->assertCompleted();
+        $flow->assertStateAllowed(AuthorizationStateEnum::AUTHORIZATION_CODE);
+    }
+
+    public function testNoStepFollowsAuthorizationCode(): void
+    {
+        $flow = $this->createAuthorizationFlow(
+            $this->createAuthorizationSession(AuthorizationStateEnum::AUTHORIZATION_CODE, 'user-id'),
+        );
+
+        $this->expectException(\LogicException::class);
+        $flow->resolveNextState();
+    }
+
+    public function testStateOutsideTheFlowHasNoNextStep(): void
+    {
+        // the session is in the 2FA step, but the user no longer has 2FA enabled
+        $flow = $this->createAuthorizationFlow(
+            $this->createAuthorizationSession(AuthorizationStateEnum::TWO_FACTOR_INITIATE, 'user-id'),
+            twoFaEnabled: false,
+        );
+
+        $this->expectException(InvalidAuthorizationStateException::class);
+        $flow->resolveNextState();
     }
 
     public function testConsentFollowsPasswordWhenClientRequiresConsent(): void

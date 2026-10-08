@@ -83,7 +83,7 @@ class AuthorizationControllerTest extends WebTestCase
         $em = $client->getContainer()->get('doctrine')->getManager();
         list($authorizationSession) = $em->getRepository(AuthorizationSession::class)->findAll();
 
-        $this->assertSame(AuthorizationStateEnum::COMPLETED, $authorizationSession->getAuthorizationState(), 'Authorization state should be COMPLETED.');
+        $this->assertSame(AuthorizationStateEnum::AUTHORIZATION_CODE, $authorizationSession->getAuthorizationState(), 'Authorization state should be AUTHORIZATION_CODE.');
         $this->assertTrue($authorizationSession->isConsumed(), 'AuthorizationSession should be marked as consumed.');
     }
 

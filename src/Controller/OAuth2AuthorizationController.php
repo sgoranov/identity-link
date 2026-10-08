@@ -86,8 +86,7 @@ class OAuth2AuthorizationController extends AbstractController
     {
         // The user is the one identified by the login flow of this authorization request
         $authorizationSession = $this->authorizationSessionResolver->resolve($id);
-        // Consent, when the client requires it, is a step of the flow, so it has been given at this point
-        $this->authorizationFlowFactory->create($authorizationSession)->assertCompleted();
+        $this->authorizationFlowFactory->create($authorizationSession)->assertStateAllowed(AuthorizationStateEnum::AUTHORIZATION_CODE);
 
         $psrRequest =  $this->httpMessageFactory->createRequest(
             $request->duplicate($authorizationSession->getQueryParams(), null, ['_route' => 'oauth2_auth_complete'])
@@ -119,6 +118,7 @@ class OAuth2AuthorizationController extends AbstractController
 
             $this->logger->info('OAuth2 authorization code issued.');
 
+            $authorizationSession->setAuthorizationState(AuthorizationStateEnum::AUTHORIZATION_CODE);
             $authorizationSession->consume();
             $this->entityManager->persist($authorizationSession);
             $this->entityManager->flush();
@@ -148,6 +148,8 @@ class OAuth2AuthorizationController extends AbstractController
 
             if ($form->get('deny')->isClicked()) {
 
+                // Denying ends the session without completing the flow: its state stays at the
+                // last step before consent, so consuming it is what prevents any further use
                 $authorizationSession->consume();
                 $this->entityManager->persist($authorizationSession);
                 $this->entityManager->flush();

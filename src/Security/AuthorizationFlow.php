@@ -30,11 +30,12 @@ class AuthorizationFlow
      *
      * If no authorization state is currently stored in the AuthorizationSession, this method will return
      * the first step in the flow.
-     * Otherwise, it will return the next step in sequence, or `COMPLETED` if the flow is finished.
+     * Otherwise, it will return the next step in sequence.
      *
-     * @return AuthorizationStateEnum|null The next authorization state to be executed, or null if the AuthorizationSession is invalid.
+     * @throws InvalidAuthorizationStateException when the stored state is not part of the flow
+     * @throws \LogicException when the flow is already finished (the authorization code has been issued)
      */
-    public function resolveNextState(): ?AuthorizationStateEnum
+    public function resolveNextState(): AuthorizationStateEnum
     {
         $authorizationFlow = $this->getAuthorizationFlow();
         $currentState = $this->authorizationSession->getAuthorizationState();
@@ -45,7 +46,20 @@ class AuthorizationFlow
         }
 
         $currentIndex = AuthorizationStateEnum::indexOf($currentState, $authorizationFlow);
-        return $authorizationFlow[$currentIndex + 1] ?? AuthorizationStateEnum::COMPLETED;
+        if ($currentIndex === false) {
+            // The stored state is not part of the flow, e.g. 2FA or consent was disabled
+            // while the flow was in progress
+            throw new InvalidAuthorizationStateException($this->authorizationSession, $currentState);
+        }
+
+        $nextState = $authorizationFlow[$currentIndex + 1] ?? null;
+        if ($nextState === null) {
+            // Issuing the authorization code is the last step and consumes the session,
+            // so asking for a step after it is a programming error
+            throw new \LogicException(sprintf('The authorization flow has no step after "%s".', $currentState->name));
+        }
+
+        return $nextState;
     }
 
     /**
@@ -85,22 +99,6 @@ class AuthorizationFlow
     }
 
     /**
-     * Ensures that the authorization flow for the current authorization session
-     * has been completed and the user is identified.
-     *
-     * Issuing the authorization code relies on the user stored in the
-     * AuthorizationSession and on the consent given, so it must not be reached
-     * before every step of the flow (including consent, when required) has passed.
-     */
-    public function assertCompleted(): void
-    {
-        if ($this->authorizationSession->getAuthorizationState() !== AuthorizationStateEnum::COMPLETED
-            || !$this->authorizationSession->getUserIdentifier()) {
-            throw new InvalidAuthorizationStateException($this->authorizationSession, AuthorizationStateEnum::COMPLETED);
-        }
-    }
-
-    /**
      * Returns the steps of the authorization flow, building them on first use.
      *
      * @return list<AuthorizationStateEnum>
@@ -131,6 +129,10 @@ class AuthorizationFlow
         }
 
         $authorizationFlow[] = AuthorizationStateEnum::COMPLETED;
+
+        // Issuing the authorization code is the last step, so it is reached only after
+        // every step before it (including 2FA and consent, when required) has passed
+        $authorizationFlow[] = AuthorizationStateEnum::AUTHORIZATION_CODE;
 
         return $authorizationFlow;
     }

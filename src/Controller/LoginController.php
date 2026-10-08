@@ -178,7 +178,8 @@ class LoginController extends AbstractController
         $this->entityManager->persist($authorizationSession);
         $this->entityManager->flush();
 
-        return $this->redirectToRoute('oauth2_auth_complete', ['id' => $id]);
+        $nextState = $authorizationFlow->resolveNextState();
+        return $this->redirectToRoute($nextState->value, ['id' => $id]);
     }
 
     private function checkLoginRateLimits(?string $ip, string $username): void
