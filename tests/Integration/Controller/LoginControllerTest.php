@@ -5,7 +5,7 @@ namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
 use App\Entity\AuthorizationSession;
-use App\Security\LoginStateEnum;
+use App\Security\AuthorizationStateEnum;
 use App\Tests\Helper\SessionHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
@@ -42,7 +42,7 @@ class LoginControllerTest extends WebTestCase
         $em = $client->getContainer()->get('doctrine')->getManager();
         list($authorizationSession) = $em->getRepository(AuthorizationSession::class)->findAll();
 
-        $this->assertEquals(LoginStateEnum::PASSWORD->value, $authorizationSession->getLoginState()->value, 'Login state should be PASSWORD.');
+        $this->assertEquals(AuthorizationStateEnum::PASSWORD->value, $authorizationSession->getAuthorizationState()->value, 'Login state should be PASSWORD.');
         $this->assertNull($authorizationSession->getConsentApproved(), 'Consent was still not approved.');
         $this->assertFalse($authorizationSession->isConsumed(), 'AuthorizationSession should be marked as false.');
     }

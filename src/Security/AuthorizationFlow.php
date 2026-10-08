@@ -5,7 +5,7 @@ namespace App\Security;
 
 use App\Api\Contract\UserConnectorInterface;
 use App\Entity\AuthorizationSession;
-use App\Security\Exception\InvalidLoginStateException;
+use App\Security\Exception\InvalidAuthorizationStateException;
 use App\Security\Exception\UserNotFoundException;
 
 class AuthorizationFlow
@@ -24,58 +24,58 @@ class AuthorizationFlow
      *
      * The authorization flow is defined dynamically (via buildAuthorizationFlow()) depending on system configuration
      *
-     * If no login state is currently stored in the AuthorizationSession, this method will return
+     * If no authorization state is currently stored in the AuthorizationSession, this method will return
      * the first step in the flow.
      * Otherwise, it will return the next step in sequence, or `COMPLETED` if the flow is finished.
      *
-     * @return LoginStateEnum|null The next login state to be executed, or null if the AuthorizationSession is invalid.
+     * @return AuthorizationStateEnum|null The next authorization state to be executed, or null if the AuthorizationSession is invalid.
      */
-    public function resolveNextState(): ?LoginStateEnum
+    public function resolveNextState(): ?AuthorizationStateEnum
     {
         $authorizationFlow = $this->buildAuthorizationFlow();
-        $currentState = $this->authorizationSession->getLoginState();
+        $currentState = $this->authorizationSession->getAuthorizationState();
 
         // If no state yet, the first step in flow is the only valid one
         if (null === $currentState) {
             return $authorizationFlow[0];
         }
 
-        $currentIndex = LoginStateEnum::indexOf($currentState, $authorizationFlow);
-        return $authorizationFlow[$currentIndex + 1] ?? LoginStateEnum::COMPLETED;
+        $currentIndex = AuthorizationStateEnum::indexOf($currentState, $authorizationFlow);
+        return $authorizationFlow[$currentIndex + 1] ?? AuthorizationStateEnum::COMPLETED;
     }
 
     /**
-     * Ensures that the given login state is the next valid step in the current
+     * Ensures that the given authorization state is the next valid step in the current
      * authentication flow.
      *
      * This prevents clients from skipping or repeating authentication steps
      * (for example, attempting to complete two-factor authentication before
      * successfully completing the password step).
      *
-     * If the authorization session has no current login state, only the first
+     * If the authorization session has no current authorization state, only the first
      * state in the configured authorization flow is considered valid. Otherwise, only
      * the immediate next state in the flow is allowed.
      */
-    public function assertStateAllowed(LoginStateEnum $state): void
+    public function assertStateAllowed(AuthorizationStateEnum $state): void
     {
         $authorizationFlow = $this->buildAuthorizationFlow();
 
-        if ($this->authorizationSession->getLoginState() === null) {
+        if ($this->authorizationSession->getAuthorizationState() === null) {
             // If no state yet, the first step in flow is the only valid one
             if ($authorizationFlow[0] !== $state) {
-                throw new InvalidLoginStateException($this->authorizationSession, $state);
+                throw new InvalidAuthorizationStateException($this->authorizationSession, $state);
             }
         } else {
             // Find current position in flow
-            $currentIndex = LoginStateEnum::indexOf($this->authorizationSession->getLoginState(), $authorizationFlow);
+            $currentIndex = AuthorizationStateEnum::indexOf($this->authorizationSession->getAuthorizationState(), $authorizationFlow);
             if ($currentIndex === false) {
-                throw new InvalidLoginStateException($this->authorizationSession, $state);
+                throw new InvalidAuthorizationStateException($this->authorizationSession, $state);
             }
 
             // The next valid state is the one right after the current index
             $nextState = $authorizationFlow[$currentIndex + 1] ?? null;
             if ($nextState !== $state) {
-                throw new InvalidLoginStateException($this->authorizationSession, $state);
+                throw new InvalidAuthorizationStateException($this->authorizationSession, $state);
             }
         }
     }
@@ -90,22 +90,22 @@ class AuthorizationFlow
      */
     public function assertCompleted(): void
     {
-        if ($this->authorizationSession->getLoginState() !== LoginStateEnum::COMPLETED
+        if ($this->authorizationSession->getAuthorizationState() !== AuthorizationStateEnum::COMPLETED
             || !$this->authorizationSession->getUserIdentifier()) {
-            throw new InvalidLoginStateException($this->authorizationSession, LoginStateEnum::COMPLETED);
+            throw new InvalidAuthorizationStateException($this->authorizationSession, AuthorizationStateEnum::COMPLETED);
         }
     }
 
     private function buildAuthorizationFlow(): array
     {
-        $authorizationFlow = [LoginStateEnum::PASSWORD];
+        $authorizationFlow = [AuthorizationStateEnum::PASSWORD];
 
         if ($this->authorizationFlowConfig->twoFactorEnabled && $this->isTwoFaEnabledForUser()) {
-            $authorizationFlow[] = LoginStateEnum::TWO_FACTOR_INITIATE;
-            $authorizationFlow[] = LoginStateEnum::TWO_FACTOR_COMPLETE;
+            $authorizationFlow[] = AuthorizationStateEnum::TWO_FACTOR_INITIATE;
+            $authorizationFlow[] = AuthorizationStateEnum::TWO_FACTOR_COMPLETE;
         }
 
-        $authorizationFlow[] = LoginStateEnum::COMPLETED;
+        $authorizationFlow[] = AuthorizationStateEnum::COMPLETED;
 
         return $authorizationFlow;
     }

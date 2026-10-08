@@ -32,7 +32,7 @@ use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
 use App\Entity\AuthorizationSession;
 use App\Repository\AuthCodeRepository;
-use App\Security\LoginStateEnum;
+use App\Security\AuthorizationStateEnum;
 use App\Tests\Helper\AuthorizationFlowHelper;
 use App\Tests\Helper\TestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -83,7 +83,7 @@ class AuthorizationControllerTest extends WebTestCase
         $em = $client->getContainer()->get('doctrine')->getManager();
         list($authorizationSession) = $em->getRepository(AuthorizationSession::class)->findAll();
 
-        $this->assertSame(LoginStateEnum::COMPLETED, $authorizationSession->getLoginState(), 'Login state should be COMPLETED.');
+        $this->assertSame(AuthorizationStateEnum::COMPLETED, $authorizationSession->getAuthorizationState(), 'Login state should be COMPLETED.');
         $this->assertTrue($authorizationSession->getConsentApproved(), 'Consent should be approved.');
         $this->assertTrue($authorizationSession->isConsumed(), 'AuthorizationSession should be marked as consumed.');
     }

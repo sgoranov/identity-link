@@ -8,7 +8,7 @@ use App\Security\Exception\AuthorizationSessionException;
 use App\Security\Exception\ConsumedAuthorizationSessionException;
 use App\Security\Exception\ExpiredAuthorizationSessionException;
 use App\Security\Exception\InvalidAuthorizationSessionException;
-use App\Security\Exception\InvalidLoginStateException;
+use App\Security\Exception\InvalidAuthorizationStateException;
 use App\Security\Exception\AuthorizationFlowException;
 use App\Security\Exception\UserNotFoundException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -43,7 +43,7 @@ class AuthorizationFlowExceptionSubscriber implements EventSubscriberInterface
 
         $messageKey = match (true) {
             $exception instanceof UserNotFoundException => 'authorization_flow.user_not_found',
-            $exception instanceof InvalidLoginStateException => 'authorization_flow.invalid_state',
+            $exception instanceof InvalidAuthorizationStateException => 'authorization_flow.invalid_state',
         };
 
         $authorizationSession = $exception->authorizationSession;

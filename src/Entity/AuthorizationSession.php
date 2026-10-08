@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\AuthorizationSessionRepository;
-use App\Security\LoginStateEnum;
+use App\Security\AuthorizationStateEnum;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AuthorizationSessionRepository::class)]
@@ -37,8 +37,8 @@ class AuthorizationSession
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $consumed = false;
 
-    #[ORM\Column(type: 'string', length: 50, nullable: true, enumType: LoginStateEnum::class)]
-    private ?LoginStateEnum $loginState = null;
+    #[ORM\Column(type: 'string', length: 50, nullable: true, enumType: AuthorizationStateEnum::class)]
+    private ?AuthorizationStateEnum $authorizationState = null;
 
     #[ORM\Column(type: 'string', length: 100, nullable: true)]
     private ?string $userIdentifier = null;
@@ -114,14 +114,14 @@ class AuthorizationSession
         $this->consumed = true;
     }
 
-    public function getLoginState(): ?LoginStateEnum
+    public function getAuthorizationState(): ?AuthorizationStateEnum
     {
-        return $this->loginState;
+        return $this->authorizationState;
     }
 
-    public function setLoginState(?LoginStateEnum $loginState): void
+    public function setAuthorizationState(?AuthorizationStateEnum $authorizationState): void
     {
-        $this->loginState = $loginState;
+        $this->authorizationState = $authorizationState;
     }
 
     public function getUserIdentifier(): ?string

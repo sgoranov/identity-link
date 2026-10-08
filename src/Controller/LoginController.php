@@ -11,7 +11,7 @@ use App\LeagueOAuth2\Repository\ClientRepository;
 use App\Security\AuthorizationSessionResolver;
 use App\Security\Exception\RateLimitException;
 use App\Security\AuthorizationFlowFactory;
-use App\Security\LoginStateEnum;
+use App\Security\AuthorizationStateEnum;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -52,7 +52,7 @@ class LoginController extends AbstractController
     {
         $authorizationSession = $this->authorizationSessionResolver->resolve($id);
         $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(LoginStateEnum::PASSWORD);
+        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::PASSWORD);
 
         $client = $this->clientRepository->getClientEntity($authorizationSession->getClientId());
         $form = $this->formFactory->create(LoginType::class);
@@ -88,7 +88,7 @@ class LoginController extends AbstractController
                 return $this->redirectToRoute('login_with_password', ['id' => $id]);
             }
 
-            $authorizationSession->setLoginState(LoginStateEnum::PASSWORD);
+            $authorizationSession->setAuthorizationState(AuthorizationStateEnum::PASSWORD);
             $authorizationSession->setUserIdentifier($user->getId());
             $this->entityManager->persist($authorizationSession);;
             $this->entityManager->flush();
@@ -114,7 +114,7 @@ class LoginController extends AbstractController
     {
         $authorizationSession = $this->authorizationSessionResolver->resolve($id);
         $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_INITIATE);
+        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::TWO_FACTOR_INITIATE);
 
         $redirectUrl = $this->urlGenerator->generate('login_2fa_complete', ['id' => $authorizationSession->getId()],
             UrlGeneratorInterface::ABSOLUTE_URL
@@ -125,7 +125,7 @@ class LoginController extends AbstractController
             throw new \RuntimeException('Unable to initiate two-factor authentication.');
         }
 
-        $authorizationSession->setLoginState(LoginStateEnum::TWO_FACTOR_INITIATE);
+        $authorizationSession->setAuthorizationState(AuthorizationStateEnum::TWO_FACTOR_INITIATE);
         $this->entityManager->persist($authorizationSession);;
         $this->entityManager->flush();
 
@@ -143,7 +143,7 @@ class LoginController extends AbstractController
     {
         $authorizationSession = $this->authorizationSessionResolver->resolve($id);
         $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(LoginStateEnum::TWO_FACTOR_COMPLETE);
+        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::TWO_FACTOR_COMPLETE);
 
         $twoFaId = $request->query->get('id');
         if (!is_string($twoFaId) || $twoFaId === '') {
@@ -155,7 +155,7 @@ class LoginController extends AbstractController
             throw new \RuntimeException('Invalid two-factor authentication response.');
         }
 
-        $authorizationSession->setLoginState(LoginStateEnum::TWO_FACTOR_COMPLETE);
+        $authorizationSession->setAuthorizationState(AuthorizationStateEnum::TWO_FACTOR_COMPLETE);
         $this->entityManager->persist($authorizationSession);;
         $this->entityManager->flush();
 
@@ -172,9 +172,9 @@ class LoginController extends AbstractController
     {
         $authorizationSession = $this->authorizationSessionResolver->resolve($id);
         $authorizationFlow = $this->authorizationFlowFactory->create($authorizationSession);
-        $authorizationFlow->assertStateAllowed(LoginStateEnum::COMPLETED);
+        $authorizationFlow->assertStateAllowed(AuthorizationStateEnum::COMPLETED);
 
-        $authorizationSession->setLoginState(LoginStateEnum::COMPLETED);
+        $authorizationSession->setAuthorizationState(AuthorizationStateEnum::COMPLETED);
         $this->entityManager->persist($authorizationSession);
         $this->entityManager->flush();
 
