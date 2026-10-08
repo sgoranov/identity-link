@@ -9,6 +9,8 @@ use App\Entity\AuthRequest;
 use App\Form\Type\ConsentType;
 use App\LeagueOAuth2\Entity\UserEntity;
 use App\Security\AuthRequestResolver;
+use App\Security\Exception\UserNotFoundException;
+use App\Security\LoginFlowFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -36,6 +38,7 @@ class OAuth2AuthorizationController extends AbstractController
         private readonly ClientConnectorInterface $clientConnector,
         private readonly AuthRequestResolver $authRequestResolver,
         private readonly LoggerInterface $logger,
+        private readonly LoginFlowFactory $loginFlowFactory,
     )
     {
     }
@@ -54,7 +57,8 @@ class OAuth2AuthorizationController extends AbstractController
                 throw OAuthServerException::invalidRequest('code_challenge_method', 'Plain code challenge method is not allowed for this client');
             }
 
-            // Not logged in: persist a short-lived snapshot and redirect to login with request_id
+            // Every authorization request starts a new login: persist a short-lived snapshot
+            // and redirect to the first step of the login flow
             $authRequest = new AuthRequest();
             $authRequest->setQueryParams($request->query->all());
             $authRequest->setClientId($validated->getClient()->getIdentifier());
@@ -63,7 +67,8 @@ class OAuth2AuthorizationController extends AbstractController
             $this->entityManager->persist($authRequest);
             $this->entityManager->flush();
 
-            return new RedirectResponse($this->generateUrl('oauth2_auth_complete', ['id' => $authRequest->getId()]));
+            $firstState = $this->loginFlowFactory->create($authRequest)->resolveNextState();
+            return $this->redirectToRoute($firstState->value, ['id' => $authRequest->getId()]);
 
         } catch (OAuthServerException $e) {
             $this->logger->warning('OAuth2 authorization request failed.', [
@@ -78,12 +83,10 @@ class OAuth2AuthorizationController extends AbstractController
     #[Route('/oauth2/auth/{id}', name: 'oauth2_auth_complete', methods: ['GET', 'POST'])]
     public function complete(string $id, Request $request): Response
     {
-        // Ensure the user is authenticated. This route should be protected by the firewall.
-        if (!$this->getUser()) {
-            throw $this->createAccessDeniedException('User is not authenticated');
-        }
-
+        // The user is the one identified by the login flow of this authorization request
         $authRequest = $this->authRequestResolver->resolve($id);
+        $this->loginFlowFactory->create($authRequest)->assertCompleted();
+
         $client = $this->clientConnector->getClientById($authRequest->getClientId());
 
         // Redirect the user to the consent screen before completing the OAuth2 authorization request.
@@ -106,7 +109,11 @@ class OAuth2AuthorizationController extends AbstractController
 
             // Verify the user again just before completing the authorization.
             // This ensures the user still exists and is valid (e.g., the account may have been deleted or disabled)
-            $currentUser = $this->userConnector->getUserById($this->getUser()->getUserIdentifier());
+            $currentUser = $this->userConnector->getUserById($authRequest->getUserIdentifier());
+            if ($currentUser === null) {
+                throw new UserNotFoundException($authRequest, $authRequest->getUserIdentifier());
+            }
+
             $userEntity = new UserEntity();
             $userEntity->setIdentifier($currentUser->getId());
 
@@ -136,6 +143,7 @@ class OAuth2AuthorizationController extends AbstractController
     public function consentScreen(string $id, Request $request): Response
     {
         $authRequest = $this->authRequestResolver->resolve($id);
+        $this->loginFlowFactory->create($authRequest)->assertCompleted();
 
         $form = $this->formFactory->create(ConsentType::class);
         $form->handleRequest($request);

@@ -129,6 +129,53 @@ class LoginFlowTest extends TestCase
         $dispatcher->resolveNextState();
     }
 
+    public function testCompletedFlowIsAccepted(): void
+    {
+        $flow = $this->createLoginFlow(
+            $this->createAuthRequest(LoginStateEnum::COMPLETED, 'user-id'),
+            expectUserLookup: false,
+        );
+
+        $flow->assertCompleted();
+        $this->addToAssertionCount(1);
+    }
+
+    /**
+     * @dataProvider uncompletedStateProvider
+     */
+    public function testUncompletedFlowIsRejected(?LoginStateEnum $loginState): void
+    {
+        $flow = $this->createLoginFlow(
+            $this->createAuthRequest($loginState, $loginState === null ? null : 'user-id'),
+            expectUserLookup: false,
+        );
+
+        $this->expectException(InvalidLoginStateException::class);
+        $flow->assertCompleted();
+    }
+
+    /** @return array<string, array{?LoginStateEnum}> */
+    public static function uncompletedStateProvider(): array
+    {
+        return [
+            'not started' => [null],
+            'password' => [LoginStateEnum::PASSWORD],
+            '2FA initiated' => [LoginStateEnum::TWO_FACTOR_INITIATE],
+            '2FA completed' => [LoginStateEnum::TWO_FACTOR_COMPLETE],
+        ];
+    }
+
+    public function testCompletedFlowWithoutUserIsRejected(): void
+    {
+        $flow = $this->createLoginFlow(
+            $this->createAuthRequest(LoginStateEnum::COMPLETED, null),
+            expectUserLookup: false,
+        );
+
+        $this->expectException(InvalidLoginStateException::class);
+        $flow->assertCompleted();
+    }
+
     private function createLoginFlow(
         ?AuthRequest $authRequest,
         bool $globalTwoFaEnabled = true,

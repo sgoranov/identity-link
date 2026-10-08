@@ -32,35 +32,37 @@ use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
 use App\Entity\AuthRequest;
 use App\Repository\AuthCodeRepository;
-use App\Security\User;
+use App\Security\LoginStateEnum;
+use App\Tests\Helper\AuthorizationFlowHelper;
 use App\Tests\Helper\TestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
 
 class AuthorizationControllerTest extends WebTestCase
 {
-    public function testSuccessfulCodeRequest(): void
+    use AuthorizationFlowHelper;
+
+    /** @return array<string, array{bool}> */
+    public static function loginFlowProvider(): array
+    {
+        return [
+            'password' => [false],
+            'password and 2FA' => [true],
+        ];
+    }
+
+    /**
+     * @dataProvider loginFlowProvider
+     */
+    public function testSuccessfulCodeRequest(bool $twoFaEnabled): void
     {
         $client = static::createClient();
-        $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
-        // hit the initial authorization endpoint
-        $client->request('GET', $router->generate('oauth2_auth'), [
+        $crawler = $this->authorizeWithLogin($client, [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
             'response_type' => 'code',
             'state' => 'foobar',
-        ]);
-
-        // expect redirect to /oauth2/auth/{id}
-        $this->assertResponseRedirects();
-        $client->request(
-            'GET',
-            $client->getResponse()->headers->get('Location')
-        );
-        $crawler = $client->followRedirect();
+        ], $twoFaEnabled);
 
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
@@ -81,9 +83,95 @@ class AuthorizationControllerTest extends WebTestCase
         $em = $client->getContainer()->get('doctrine')->getManager();
         list($authRequest) = $em->getRepository(AuthRequest::class)->findAll();
 
-        $this->assertNull($authRequest->getLoginState(), 'Login state should be null for already logged-in user.');
+        $this->assertSame(LoginStateEnum::COMPLETED, $authRequest->getLoginState(), 'Login state should be COMPLETED.');
         $this->assertTrue($authRequest->getConsentApproved(), 'Consent should be approved.');
         $this->assertTrue($authRequest->isConsumed(), 'AuthRequest should be marked as consumed.');
+    }
+
+    /**
+     * @dataProvider loginFlowProvider
+     */
+    public function testNewAuthorizationRequestRequiresLoginAgain(bool $twoFaEnabled): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $authorizationParams = [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ];
+
+        // complete a full login in the browser and obtain an authorization code
+        $crawler = $this->authorizeWithLogin($client, $authorizationParams, $twoFaEnabled);
+        $form = $crawler->selectButton('consent[allow]')->form();
+        $client->submit($form);
+        $client->followRedirect();
+        $url = $client->getResponse()->headers->get('Location');
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
+        $this->assertStringContainsString('code=', $url);
+
+        // start a new authorization request in the same browser:
+        // the previous login must not be reused, so the login flow starts again from the password step
+        $client->request('GET', $router->generate('oauth2_auth'), $authorizationParams);
+        while ($client->getResponse()->isRedirect()) {
+            $location = $client->getResponse()->headers->get('Location');
+            $this->assertStringNotContainsString('code=', $location, 'Authorization code issued without a new login.');
+            $crawler = $client->followRedirect();
+        }
+
+        $this->assertSame('login_with_password', $client->getRequest()->attributes->get('_route'));
+        $this->assertCount(1, $crawler->selectButton('login[submit]'));
+    }
+
+    /** @return array<string, array{string, bool}> */
+    public static function uncompletedLoginProvider(): array
+    {
+        return [
+            'complete before login' => ['oauth2_auth_complete', false],
+            'consent before login' => ['oauth2_auth_consent_screen', false],
+            'complete before 2FA' => ['oauth2_auth_complete', true],
+            'consent before 2FA' => ['oauth2_auth_consent_screen', true],
+        ];
+    }
+
+    /**
+     * @dataProvider uncompletedLoginProvider
+     */
+    public function testAuthorizationStepsRequireCompletedLogin(string $route, bool $passwordSubmitted): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $client->request('GET', $router->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+        $crawler = $client->followRedirect();
+        $this->assertSame('login_with_password', $client->getRequest()->attributes->get('_route'));
+        $authRequestId = $client->getRequest()->attributes->get('id');
+
+        if ($passwordSubmitted) {
+            // the user mock has 2FA enabled by default, so the login stops before the 2FA step
+            $form = $crawler->selectButton('login[submit]')->form([
+                'login[user_id]' => AppFixtures::USER_IDENTIFIER,
+                'login[password]' => AppFixtures::USER_PASSWORD,
+            ]);
+            $client->submit($form);
+            $this->assertResponseRedirects($router->generate('login_2fa_initiate', ['id' => $authRequestId]));
+        }
+
+        $client->request('GET', $router->generate($route, ['id' => $authRequestId]));
+
+        $this->assertResponseStatusCodeSame(400);
+        $location = (string) $client->getResponse()->headers->get('Location');
+        $this->assertStringNotContainsString('code=', $location);
+
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authRequest = $em->getRepository(AuthRequest::class)->find($authRequestId);
+        $this->assertFalse($authRequest->isConsumed(), 'AuthRequest must not be consumed before the login is completed.');
     }
 
     public function testSuccessfulCodeRequestWithAlternateRedirectUri(): void
@@ -92,22 +180,12 @@ class AuthorizationControllerTest extends WebTestCase
         $router = $client->getContainer()->get(RouterInterface::class);
         $redirectUri = AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS[1];
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
-        $client->request('GET', $router->generate('oauth2_auth'), [
+        $crawler = $this->authorizeWithLogin($client, [
             'client_id' => AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER,
             'response_type' => 'code',
             'redirect_uri' => $redirectUri,
             'state' => 'foobar',
         ]);
-
-        $this->assertResponseRedirects();
-        $client->request(
-            'GET',
-            $client->getResponse()->headers->get('Location')
-        );
-        $crawler = $client->followRedirect();
 
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
@@ -125,9 +203,6 @@ class AuthorizationControllerTest extends WebTestCase
         $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
         $testHelper = $client->getContainer()->get(TestHelper::class);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
         $state = bin2hex(random_bytes(20));
         $codeVerifier = bin2hex(random_bytes(64));
         $codeChallengeMethod = 'S256';
@@ -138,26 +213,14 @@ class AuthorizationControllerTest extends WebTestCase
             '-_'
         );
 
-        $client->request(
-            'GET',
-            $router->generate('oauth2_auth'),
-            [
-                'client_id' => AppFixtures::PUBLIC_CLIENT_IDENTIFIER,
-                'response_type' => 'code',
-                'scope' => '',
-                'state' => $state,
-                'code_challenge' => $codeChallenge,
-                'code_challenge_method' => $codeChallengeMethod,
-            ]
-        );
-
-        // expect redirect to /oauth2/auth/{id}
-        $this->assertResponseRedirects();
-        $client->request(
-            'GET',
-            $client->getResponse()->headers->get('Location')
-        );
-        $crawler = $client->followRedirect();
+        $crawler = $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PUBLIC_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'scope' => '',
+            'state' => $state,
+            'code_challenge' => $codeChallenge,
+            'code_challenge_method' => $codeChallengeMethod,
+        ]);
 
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
@@ -193,9 +256,6 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
         $client->request(
             'GET',
             $router->generate('oauth2_auth'),
@@ -224,9 +284,6 @@ class AuthorizationControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
 
         $state = bin2hex(random_bytes(20));
         $codeVerifier = bin2hex(random_bytes(32));
@@ -295,9 +352,6 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
         $client->request(
             'GET',
             $router->generate('oauth2_auth'),
@@ -324,9 +378,6 @@ class AuthorizationControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',
@@ -355,9 +406,6 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-        
         $client->request(
             'GET',
             $router->generate('oauth2_auth'),
@@ -379,9 +427,6 @@ class AuthorizationControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',

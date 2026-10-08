@@ -35,23 +35,6 @@ class AuthRequestRepository extends ServiceEntityRepository
     }
 
     /**
-     * Returns an active (not expired, not consumed) request or null.
-     */
-    public function findActive(string $id): ?AuthRequest
-    {
-        $now = new DateTimeImmutable();
-
-        return $this->createQueryBuilder('r')
-            ->andWhere('r.id = :id')
-            ->andWhere('r.expiresAt > :now')
-            ->andWhere('r.consumed = false')
-            ->setParameter('id', $id)
-            ->setParameter('now', $now)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
-    /**
      * Optional housekeeping: remove already expired rows.
      */
     public function purgeExpired(): int

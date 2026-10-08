@@ -34,7 +34,7 @@ use App\LeagueOAuth2\Entity\GrantTypeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
 use App\Security\Jwt\JwtConfig;
-use App\Security\User;
+use App\Tests\Helper\AuthorizationFlowHelper;
 use App\Tests\Helper\TestHelper;
 use App\Tests\Helper\Mocks\ClientConnectorMock;
 use App\Tests\Helper\Mocks\UserConnectorMock;
@@ -52,6 +52,8 @@ use Symfony\Component\Routing\RouterInterface;
 
 final class TokenControllerTest extends WebTestCase
 {
+    use AuthorizationFlowHelper;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -602,7 +604,6 @@ final class TokenControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-        $client->loginUser(new User(AppFixtures::USER_IDENTIFIER), 'secured');
 
         $client->request('GET', $router->generate('oauth2_auth'), [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
@@ -808,19 +809,14 @@ final class TokenControllerTest extends WebTestCase
     private function requestTokenThroughAuthorizationFlow(KernelBrowser $client, array $authorizationParams = []): array
     {
         $router = $client->getContainer()->get(RouterInterface::class);
-        $client->loginUser(new User(AppFixtures::USER_IDENTIFIER), 'secured');
 
-        $client->request('GET', $router->generate('oauth2_auth'), $authorizationParams + [
+        $crawler = $this->authorizeWithLogin($client, $authorizationParams + [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
             'response_type' => 'code',
             'scope' => 'openid',
             'state' => 'foobar',
             'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
         ]);
-
-        $this->assertResponseRedirects();
-        $client->request('GET', $client->getResponse()->headers->get('Location'));
-        $crawler = $client->followRedirect();
 
         $client->submit($crawler->selectButton('consent[allow]')->form());
 

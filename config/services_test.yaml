@@ -33,3 +33,6 @@ services:
 
     App\Api\Contract\ClientConnectorInterface:
         class: App\Tests\Helper\Mocks\ClientConnectorMock
+
+    App\Api\Contract\TwoFaConnectorInterface:
+        class: App\Tests\Helper\Mocks\TwoFaConnectorMock

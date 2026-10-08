@@ -80,6 +80,22 @@ class LoginFlow
         }
     }
 
+    /**
+     * Ensures that the login flow for the current authentication request has
+     * been completed and the user is identified.
+     *
+     * The steps after the login (consent and issuing the authorization code)
+     * rely on the user stored in the AuthRequest, so they must not be reached
+     * before every login step has passed.
+     */
+    public function assertCompleted(): void
+    {
+        if ($this->authRequest->getLoginState() !== LoginStateEnum::COMPLETED
+            || !$this->authRequest->getUserIdentifier()) {
+            throw new InvalidLoginStateException($this->authRequest, LoginStateEnum::COMPLETED);
+        }
+    }
+
     private function buildLoginFlow(): array
     {
         $loginFlow = [LoginStateEnum::PASSWORD];
