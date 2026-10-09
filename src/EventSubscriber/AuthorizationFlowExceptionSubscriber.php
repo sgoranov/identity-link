@@ -7,6 +7,7 @@ use App\Api\Contract\ClientConnectorInterface;
 use App\Security\Exception\InvalidAuthorizationStateException;
 use App\Security\Exception\AuthorizationFlowException;
 use App\Security\Exception\ClientNotFoundException;
+use App\Security\Exception\TwoFactorAuthenticationFailedException;
 use App\Security\Exception\UserNotFoundException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -42,6 +43,7 @@ class AuthorizationFlowExceptionSubscriber implements EventSubscriberInterface
             $exception instanceof UserNotFoundException => 'authorization_flow.user_not_found',
             $exception instanceof ClientNotFoundException => 'authorization_flow.client_not_found',
             $exception instanceof InvalidAuthorizationStateException => 'authorization_flow.invalid_state',
+            $exception instanceof TwoFactorAuthenticationFailedException => 'authorization_flow.two_factor_failed',
         };
 
         $authorizationSession = $exception->authorizationSession;

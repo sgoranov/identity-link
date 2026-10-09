@@ -12,6 +12,7 @@ use App\Security\Attribute\MapAuthorizationFlow;
 use App\Security\AuthorizationFlow;
 use App\Security\AuthorizationStateEnum;
 use App\Security\Exception\RateLimitException;
+use App\Security\Exception\TwoFactorAuthenticationFailedException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -125,6 +126,7 @@ class LoginController extends AbstractController
         }
 
         $authorizationSession->setAuthorizationState(AuthorizationStateEnum::TWO_FACTOR_INITIATE);
+        $authorizationSession->setTwoFaRequestId($twoFaId);
         $this->entityManager->persist($authorizationSession);;
         $this->entityManager->flush();
 
@@ -140,19 +142,16 @@ class LoginController extends AbstractController
     ]
     public function twoFaComplete(
         #[MapAuthorizationFlow(AuthorizationStateEnum::TWO_FACTOR_COMPLETE)] AuthorizationFlow $authorizationFlow,
-        Request $request,
     ): RedirectResponse
     {
         $authorizationSession = $authorizationFlow->getAuthorizationSession();
 
-        $twoFaId = $request->query->get('id');
-        if (!is_string($twoFaId) || $twoFaId === '') {
-            throw new \RuntimeException('Unable to get two-factor authentication id.');
-        }
-
-        $twoFaResponse = $this->twoFaConnector->validateAuthenticationRequest($twoFaId);
+        // Only the 2FA request initiated for this session counts, so its id is taken from the session
+        // and not from the redirect back from the 2FA service, which could carry the id of another request
+        $twoFaId = $authorizationSession->getTwoFaRequestId();
+        $twoFaResponse = $twoFaId === null ? null : $this->twoFaConnector->validateAuthenticationRequest($twoFaId);
         if (null === $twoFaResponse || $twoFaResponse->getUserId() !== $authorizationSession->getUserIdentifier()) {
-            throw new \RuntimeException('Invalid two-factor authentication response.');
+            throw new TwoFactorAuthenticationFailedException($authorizationSession);
         }
 
         $authorizationSession->setAuthorizationState(AuthorizationStateEnum::TWO_FACTOR_COMPLETE);

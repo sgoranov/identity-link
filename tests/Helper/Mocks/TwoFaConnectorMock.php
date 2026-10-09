@@ -12,6 +12,17 @@ class TwoFaConnectorMock implements TwoFaConnectorInterface
     /** @var array<string, string> 2FA request id => user identifier */
     private array $requests = [];
 
+    /** @var array<string, true> ids of the requests the user has passed */
+    private array $approved = [];
+
+    /**
+     * Simulates the user passing the second factor on the 2FA service.
+     */
+    public function approve(string $id): void
+    {
+        $this->approved[$id] = true;
+    }
+
     public function initiateAuthenticationRequest(string $userIdentifier, string $redirectUri): ?string
     {
         $id = bin2hex(random_bytes(16));
@@ -22,7 +33,8 @@ class TwoFaConnectorMock implements TwoFaConnectorInterface
 
     public function validateAuthenticationRequest(string $id): ?TwoFaConnectorResponseInterface
     {
-        if (!isset($this->requests[$id])) {
+        // like the 2FA service, a request is only valid once the user has passed it
+        if (!isset($this->requests[$id], $this->approved[$id])) {
             return null;
         }
 

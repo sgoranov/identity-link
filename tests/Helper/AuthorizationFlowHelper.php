@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Helper;
 
+use App\Api\Contract\TwoFaConnectorInterface;
 use App\Api\Contract\UserConnectorInterface;
 use App\DataFixtures\AppFixtures;
+use App\Tests\Helper\Mocks\TwoFaConnectorMock;
 use App\Tests\Helper\Mocks\UserConnectorMock;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
@@ -61,6 +63,10 @@ trait AuthorizationFlowHelper
         self::assertTrue($client->getResponse()->isRedirect());
         $twoFaUrl = $client->getResponse()->headers->get('Location');
         $twoFaId = basename((string) parse_url($twoFaUrl, \PHP_URL_PATH));
+
+        $twoFaConnector = $client->getContainer()->get(TwoFaConnectorInterface::class);
+        self::assertInstanceOf(TwoFaConnectorMock::class, $twoFaConnector);
+        $twoFaConnector->approve($twoFaId);
 
         $authorizationSessionId = $client->getRequest()->attributes->get('id');
         $client->request('GET', $router->generate('login_2fa_complete', ['id' => $authorizationSessionId]), ['id' => $twoFaId]);

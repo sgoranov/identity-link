@@ -29,6 +29,8 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Controller;
 
 use App\Api\Contract\ClientConnectorInterface;
+use App\Api\Contract\TwoFaConnectorInterface;
+use App\Api\Contract\UserConnectorInterface;
 use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
 use App\Entity\AuthorizationSession;
@@ -36,6 +38,8 @@ use App\Repository\AuthCodeRepository;
 use App\Security\AuthorizationStateEnum;
 use App\Tests\Helper\AuthorizationFlowHelper;
 use App\Tests\Helper\Mocks\ClientConnectorMock;
+use App\Tests\Helper\Mocks\TwoFaConnectorMock;
+use App\Tests\Helper\Mocks\UserConnectorMock;
 use App\Tests\Helper\TestHelper;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -325,6 +329,74 @@ class AuthorizationControllerTest extends WebTestCase
 
         $this->assertStringContainsString('code=', (string) $client->getResponse()->headers->get('Location'));
         $this->assertNull($client->getCookieJar()->get($cookieName));
+    }
+
+    public function testTwoFactorRequestOfAnotherSessionIsRejected(): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        // the user passed the 2FA request of another login, e.g. an earlier one
+        [, $otherTwoFaId] = $this->startTwoFactorStep($client);
+        $twoFaConnector = $client->getContainer()->get(TwoFaConnectorInterface::class);
+        self::assertInstanceOf(TwoFaConnectorMock::class, $twoFaConnector);
+        $twoFaConnector->approve($otherTwoFaId);
+
+        [$authorizationSessionId] = $this->startTwoFactorStep($client);
+        $client->request('GET', $router->generate('login_2fa_complete', ['id' => $authorizationSessionId]), ['id' => $otherTwoFaId]);
+
+        $this->assertResponseStatusCodeSame(400);
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertSame(AuthorizationStateEnum::TWO_FACTOR_INITIATE, $authorizationSession->getAuthorizationState());
+    }
+
+    public function testTwoFactorRequestThatWasNotPassedIsRejected(): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        [$authorizationSessionId, $twoFaId] = $this->startTwoFactorStep($client);
+        $client->request('GET', $router->generate('login_2fa_complete', ['id' => $authorizationSessionId]), ['id' => $twoFaId]);
+
+        $this->assertResponseStatusCodeSame(400);
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertSame(AuthorizationStateEnum::TWO_FACTOR_INITIATE, $authorizationSession->getAuthorizationState());
+    }
+
+    /**
+     * Starts an authorization, logs in with the password and stops at the 2FA service,
+     * returning the authorization session id and the id of its 2FA request.
+     *
+     * @return array{string, string}
+     */
+    private function startTwoFactorStep(KernelBrowser $client): array
+    {
+        $client->disableReboot();
+        $userConnector = $client->getContainer()->get(UserConnectorInterface::class);
+        self::assertInstanceOf(UserConnectorMock::class, $userConnector);
+        $userConnector->setTwoFaEnabled(true);
+
+        $client->request('GET', $client->getContainer()->get(RouterInterface::class)->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+        $crawler = $client->followRedirect();
+        $authorizationSessionId = (string) $client->getRequest()->attributes->get('id');
+
+        $client->submit($crawler->selectButton('login[submit]')->form([
+            'login[user_id]' => AppFixtures::USER_IDENTIFIER,
+            'login[password]' => AppFixtures::USER_PASSWORD,
+        ]));
+        $client->followRedirect();
+        $this->assertSame('login_2fa_initiate', $client->getRequest()->attributes->get('_route'));
+
+        // the redirect to the 2FA service carries the id of the 2FA request
+        $twoFaUrl = (string) $client->getResponse()->headers->get('Location');
+
+        return [$authorizationSessionId, basename((string) parse_url($twoFaUrl, \PHP_URL_PATH))];
     }
 
     /**

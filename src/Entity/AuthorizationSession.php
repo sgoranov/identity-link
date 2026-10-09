@@ -46,6 +46,9 @@ class AuthorizationSession
     #[ORM\Column(type: 'string', length: 64)]
     private string $browserBindingHash;
 
+    #[ORM\Column(type: 'string', length: 100, nullable: true)]
+    private ?string $twoFaRequestId = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -142,5 +145,15 @@ class AuthorizationSession
     public function setBrowserBindingHash(string $browserBindingHash): void
     {
         $this->browserBindingHash = $browserBindingHash;
+    }
+
+    public function getTwoFaRequestId(): ?string
+    {
+        return $this->twoFaRequestId;
+    }
+
+    public function setTwoFaRequestId(?string $twoFaRequestId): void
+    {
+        $this->twoFaRequestId = $twoFaRequestId;
     }
 }
