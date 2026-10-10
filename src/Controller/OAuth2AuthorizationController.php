@@ -17,6 +17,7 @@ use App\Security\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Exception\OAuthServerException;
+use League\OAuth2\Server\RequestTypes\AuthorizationRequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface;
@@ -101,19 +102,10 @@ class OAuth2AuthorizationController extends AbstractController
     {
         // The user is the one identified by the login flow of this authorization request
         $authorizationSession = $authorizationFlow->getAuthorizationSession();
-
-        $psrRequest =  $this->httpMessageFactory->createRequest(
-            $request->duplicate($authorizationSession->getQueryParams(), null, ['_route' => 'oauth2_auth_complete'])
-        );
         $psrResponse = $this->responseFactory->createResponse();
 
         try {
-            $validated = $this->server->validateAuthorizationRequest($psrRequest);
-
-            // enforce PKCE policy
-            if ($validated->getCodeChallengeMethod() === 'plain') {
-                throw OAuthServerException::invalidRequest('code_challenge_method', 'Plain code challenge method is not allowed for this client');
-            }
+            $validated = $this->validateStoredAuthorizationRequest($authorizationSession, $request);
 
             // Verify the user again just before completing the authorization.
             // This ensures the user still exists and is valid (e.g., the account may have been deleted or disabled)
@@ -176,19 +168,7 @@ class OAuth2AuthorizationController extends AbstractController
                 $this->entityManager->persist($authorizationSession);
                 $this->entityManager->flush();
 
-                $params = $authorizationSession->getQueryParams();
-                $redirectUri = $params['redirect_uri'] ?? null;
-                $state = $params['state'] ?? null;
-
-                $query = http_build_query([
-                    'error' => 'access_denied',
-                    'error_description' => 'User denied consent',
-                    'state' => $state,
-                ]);
-
-                $redirectUrl = $redirectUri . (str_contains($redirectUri, '?') ? '&' : '?') . $query;
-
-                $response = new RedirectResponse($redirectUrl);
+                $response = $this->denyAuthorizationRequest($authorizationSession, $request);
                 $this->authorizationSessionBinding->unbind($authorizationSession, $response);
 
                 return $response;
@@ -207,5 +187,61 @@ class OAuth2AuthorizationController extends AbstractController
             'client' => $this->clientConnector->getClientById($authorizationSession->getClientId()),
             'scopes' => $authorizationSession->getScopes(),
         ]);
+    }
+
+    /**
+     * Returns the "access_denied" error to the client. League resolves the redirect URI (the one
+     * of the request, or the one registered for the client when the request has none) and the state.
+     */
+    private function denyAuthorizationRequest(AuthorizationSession $authorizationSession, Request $request): Response
+    {
+        $psrResponse = $this->responseFactory->createResponse();
+
+        try {
+            $validated = $this->validateStoredAuthorizationRequest($authorizationSession, $request);
+
+            // League requires a user, also for a denied request
+            $userEntity = new UserEntity();
+            $userEntity->setIdentifier($authorizationSession->getUserIdentifier());
+
+            $validated->setUser($userEntity);
+            $validated->setAuthorizationApproved(false);
+
+            // League doesn't return for a denied request: it throws "access_denied" with the redirect
+            // URI and state, and the exception builds the redirect to the client
+            $this->server->completeAuthorizationRequest($validated, $psrResponse);
+        } catch (OAuthServerException $e) {
+            $this->logger->info('OAuth2 authorization request denied.', [
+                'error_type' => $e->getErrorType(),
+                'http_status' => $e->getHttpStatusCode(),
+            ]);
+
+            return $this->httpFoundationFactory->createResponse($e->generateHttpResponse($psrResponse));
+        }
+
+        throw new \LogicException('League completed an authorization request that was not approved.');
+    }
+
+    /**
+     * Rebuilds the authorization request from the query params stored in the session, as league
+     * needs it to complete the request. Validating it again also rejects a client that changed
+     * since the request started, e.g. one that was removed.
+     *
+     * @throws OAuthServerException
+     */
+    private function validateStoredAuthorizationRequest(AuthorizationSession $authorizationSession, Request $request): AuthorizationRequestInterface
+    {
+        $psrRequest = $this->httpMessageFactory->createRequest(
+            $request->duplicate($authorizationSession->getQueryParams())
+        );
+
+        $validated = $this->server->validateAuthorizationRequest($psrRequest);
+
+        // enforce PKCE policy
+        if ($validated->getCodeChallengeMethod() === 'plain') {
+            throw OAuthServerException::invalidRequest('code_challenge_method', 'Plain code challenge method is not allowed for this client');
+        }
+
+        return $validated;
     }
 }

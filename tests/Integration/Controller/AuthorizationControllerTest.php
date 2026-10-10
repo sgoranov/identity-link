@@ -248,7 +248,21 @@ class AuthorizationControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(400);
     }
 
-    public function testDeniedConsentReturnsErrorToClient(): void
+    /** @return array<string, array{array<string, string>}> */
+    public static function deniedConsentProvider(): array
+    {
+        return [
+            'with redirect URI' => [['redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI]],
+            // the error goes to the redirect URI registered for the client
+            'without redirect URI' => [[]],
+        ];
+    }
+
+    /**
+     * @dataProvider deniedConsentProvider
+     * @param array<string, string> $redirectParams
+     */
+    public function testDeniedConsentReturnsErrorToClient(array $redirectParams): void
     {
         $client = static::createClient();
 
@@ -256,8 +270,7 @@ class AuthorizationControllerTest extends WebTestCase
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
             'response_type' => 'code',
             'state' => 'foobar',
-            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
-        ]);
+        ] + $redirectParams);
         $authorizationSessionId = $client->getRequest()->attributes->get('id');
 
         $client->submit($crawler->selectButton('consent[deny]')->form());
