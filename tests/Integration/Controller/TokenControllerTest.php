@@ -613,9 +613,15 @@ final class TokenControllerTest extends WebTestCase
             'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
         ]);
 
-        $this->assertSame(400, $client->getResponse()->getStatusCode());
-        $error = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        $this->assertSame('invalid_request', $error['error']);
+        // The client and redirect URI are valid, so the error goes back to the client (RFC 6749 4.1.2.1).
+        $this->assertSame(302, $client->getResponse()->getStatusCode());
+        $location = (string) $client->getResponse()->headers->get('Location');
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $location);
+
+        parse_str((string) parse_url($location, \PHP_URL_QUERY), $query);
+        $this->assertSame('invalid_request', $query['error']);
+        $this->assertSame('foobar', $query['state']);
+        $this->assertArrayNotHasKey('code', $query);
     }
 
     /** @return array<string, array{mixed}> */
