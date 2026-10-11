@@ -77,6 +77,24 @@ services:
       calls:
         - setEncryptionKeyPath: [ '%encryption_key%' ]
 
+    # Throttles failed logins with the limiter behind Symfony's login_throttling, wired by hand because
+    # LoginController checks the password itself instead of a Symfony authenticator, so login_throttling
+    # never runs. It combines two limiters from rate_limiter.yaml (limiter.<name> services):
+    #  - $globalFactory: per client IP, across all usernames
+    #  - $localFactory: per username and client IP; reset() after a successful login clears only this one
+    # The username is read from the SecurityRequestAttributes::LAST_USERNAME request attribute, which
+    # LoginController sets before using the limiter; without it this limit is per IP only.
+    # The IPs and usernames are stored as HMACs keyed with $secret, not in plain text.
+    app.login_rate_limiter:
+        class: Symfony\Component\Security\Http\RateLimiter\DefaultLoginRateLimiter
+        arguments:
+            $globalFactory: '@limiter.login_ip'
+            $localFactory: '@limiter.login_username'
+            $secret: '%kernel.secret%'
+
+    # Autowires app.login_rate_limiter into the constructor arguments with this type and name
+    Symfony\Component\HttpFoundation\RateLimiter\PeekableRequestRateLimiterInterface $loginRateLimiter: '@app.login_rate_limiter'
+
     App\Security\AuthorizationFlowConfig:
         arguments:
             $twoFactorEnabled: '%login_two_fa_enabled%'

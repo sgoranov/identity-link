@@ -17,14 +17,15 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\HttpFoundation\RateLimiter\PeekableRequestRateLimiterInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 class LoginController extends AbstractController
 {
@@ -32,8 +33,7 @@ class LoginController extends AbstractController
         private readonly ParameterBagInterface $parameterBag,
         private readonly ClientRepository $clientRepository,
         private readonly FormFactoryInterface $formFactory,
-        private readonly RateLimiterFactory $loginIpLimiter,
-        private readonly RateLimiterFactory $loginUsernameLimiter,
+        private readonly PeekableRequestRateLimiterInterface $loginRateLimiter,
         private readonly UserConnectorInterface $userConnector,
         private readonly EntityManagerInterface $entityManager,
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -61,8 +61,12 @@ class LoginController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
 
+            // Only failed logins are throttled, like Symfony's login throttling: the limit is checked
+            // without consuming, a failed login consumes and a successful one resets the username limit
+            $request->attributes->set(SecurityRequestAttributes::LAST_USERNAME, (string) $data['user_id']);
+
             try {
-                $this->checkLoginRateLimits($request->getClientIp(), $data['user_id']);
+                $this->assertLoginAllowed($request);
             } catch (AuthenticationException $exception) {
                 $this->addFlash('error', [
                     'key' => $exception->getMessageKey(),
@@ -80,6 +84,8 @@ class LoginController extends AbstractController
             );
 
             if ($user === null) {
+                $this->loginRateLimiter->consume($request);
+
                 $this->addFlash('error', [
                     'key' => 'login.invalid_credentials',
                     'params' => []
@@ -87,6 +93,10 @@ class LoginController extends AbstractController
 
                 return $this->redirectToRoute('login_with_password', ['id' => $authorizationSession->getId()]);
             }
+
+            // Resets the limit of the username only, not of the IP, so logging in to one account
+            // can't be used to keep guessing the passwords of others
+            $this->loginRateLimiter->reset($request);
 
             $authorizationSession->setAuthorizationState(AuthorizationStateEnum::PASSWORD);
             $authorizationSession->setUserIdentifier($user->getId());
@@ -181,19 +191,16 @@ class LoginController extends AbstractController
         return $this->redirectToRoute($nextState->value, ['id' => $authorizationSession->getId()]);
     }
 
-    private function checkLoginRateLimits(?string $ip, string $username): void
+    /**
+     * @throws RateLimitException when the client IP or the username has too many failed logins
+     */
+    private function assertLoginAllowed(Request $request): void
     {
-        $ipLimiter = $this->loginIpLimiter->create($ip ?? 'unknown');
-        $usernameLimiter = $this->loginUsernameLimiter->create($username);
+        $limit = $this->loginRateLimiter->peek($request);
 
-        $ipLimit = $ipLimiter->consume();
-        $usernameLimit = $usernameLimiter->consume();
-
-        if (!$ipLimit->isAccepted() || !$usernameLimit->isAccepted()) {
-            $retryAfter = max(
-                    $ipLimit->getRetryAfter()->getTimestamp(),
-                    $usernameLimit->getRetryAfter()->getTimestamp()
-                ) - time();
+        // peek() consumes no tokens, so it is accepted even when no tokens are left
+        if (!$limit->isAccepted() || $limit->getRemainingTokens() === 0) {
+            $retryAfter = max(0, $limit->getRetryAfter()->getTimestamp() - time());
 
             $minutes = (int) floor($retryAfter / 60);
             $seconds = $retryAfter % 60;
