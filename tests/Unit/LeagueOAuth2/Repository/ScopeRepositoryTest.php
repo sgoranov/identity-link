@@ -83,6 +83,44 @@ final class ScopeRepositoryTest extends TestCase
         );
     }
 
+    public function testOpenIdConnectResourcesScopesAreLimitedByClientButNotByUser(): void
+    {
+        $repository = $this->createRepository(
+            clientScopes: ['openid', 'scope.d'],
+            userScopes: [],
+        );
+
+        self::assertSame(
+            ['openid'],
+            $this->finalize(
+                $repository,
+                ['openid', 'email', 'scope.d'],
+                'password',
+                userIdentifier: self::USER_ID,
+            ),
+        );
+    }
+
+    public function testOpenIdConnectResourcesScopesAreLimitedByAuthorizationCode(): void
+    {
+        $repository = $this->createRepository(
+            clientScopes: ['oidc.default'],
+            userScopes: [],
+            authCodeScopes: ['email'],
+        );
+
+        self::assertSame(
+            ['email'],
+            $this->finalize(
+                $repository,
+                ['oidc.default'],
+                'authorization_code',
+                self::USER_ID,
+                self::AUTH_CODE_ID,
+            ),
+        );
+    }
+
     public function testAuthorizationCodeFlowReturnsInvalidTargetForUnknownAudience(): void
     {
         $this->assertUnknownAudienceReturnsInvalidTarget('authorization_code');
@@ -267,6 +305,17 @@ final class ScopeRepositoryTest extends TestCase
                         'description' => 'Scopes assigned to the user',
                         'scopes' => ['scope.d', 'scope.e'],
                     ],
+                ],
+            ],
+        ], [
+            'scopes' => [
+                'openid' => ['description' => 'Sign in'],
+                'email' => ['description' => 'Read the email address'],
+            ],
+            'aliases' => [
+                'oidc.default' => [
+                    'description' => 'Standard identity scopes',
+                    'scopes' => ['openid', 'email'],
                 ],
             ],
         ]);

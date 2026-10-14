@@ -41,7 +41,10 @@ final class AuthorizationMetadataController extends AbstractController
         }
 
         try {
-            return new JsonResponse($this->authorizationRegistry->getScopesAndAliases($audience));
+            return new JsonResponse([
+                ...$this->authorizationRegistry->getScopesAndAliases($audience),
+                'openid_connect_resources' => $this->authorizationRegistry->getOpenIdConnectResources(),
+            ]);
         } catch (UnknownAudienceException) {
             return new JsonResponse(
                 ['error' => sprintf('Unknown audience "%s".', $audience)],

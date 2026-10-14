@@ -79,14 +79,24 @@ class ScopeRepository implements ScopeRepositoryInterface
         );
 
         if ($userIdentifier !== null) {
-            // For non-client-credentials flows, restrict the remaining scopes to those assigned to the user.
-            $availableScopes = $this->filterScopes(
+            // For non-client-credentials flows, keep the remaining scopes that are assigned to the user.
+            $userScopes = $this->filterScopes(
                 $availableScopes,
                 $this->expandScopes(
                     $audience,
                     $this->userConnector->getScopes($userIdentifier, $audience),
                 ),
             );
+
+            // Also keep the remaining OpenID Connect scopes from openid_connect_resources. Every user holds them:
+            // they only describe the user to the client, so the client's assignment and the user's consent decide them.
+            $openIdConnectScopes = $this->filterScopes(
+                $availableScopes,
+                $this->authorizationRegistry->getOpenIdConnectResourcesScopes(),
+            );
+
+            // Combine both, listing a scope kept by both filters once.
+            $availableScopes = array_values(array_unique([...$userScopes, ...$openIdConnectScopes]));
         }
 
         return array_map(

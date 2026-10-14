@@ -54,8 +54,12 @@ The main concepts are:
 - **Scope** describes an operation or level of access for that audience.
 - **Alias** is a convenient request name that expands to multiple concrete scopes. Aliases are never emitted in the
   final token.
+- **OpenID Connect default scope** is an OpenID Connect scope such as `openid` or `email`. OpenID Connect default
+  scopes are declared once, are available to every audience, and are held by every user without a user group
+  assigning them.
 - **Client scope assignment** limits which scopes a client may receive for an audience.
-- **User scope assignment** further limits user-based grants to scopes assigned to that user for the audience.
+- **User scope assignment** further limits user-based grants to resource scopes assigned to that user for the
+  audience.
 
 ### How granted scopes are calculated
 
@@ -63,8 +67,13 @@ Identity Link begins with the scopes requested by the client, expands aliases, a
 the client's audience. It then applies these restrictions:
 
 1. scopes assigned to the client;
-2. scopes assigned to the user for grants involving a user;
+2. scopes assigned to the user for grants involving a user, except OpenID Connect default scopes;
 3. scopes granted by the authorization code when exchanging a code.
+
+OpenID Connect default scopes are not assigned to users. They describe the user to the client rather than grant
+access to a resource, so the client's scope assignment and the user's consent decide them. Signing a user in to an
+application therefore only requires assigning `openid`, and any other OpenID Connect default scopes it needs, to the
+client.
 
 The token receives only the scopes that remain after every applicable restriction. Requesting no scopes grants no
 scopes; Identity Link does not apply an implicit default scope set.
@@ -97,8 +106,37 @@ resources:
           - orders.write
 ```
 
-An alias may reference only concrete scopes defined for the same audience. Scope and alias metadata can be discovered
-through the authenticated authorization metadata endpoints:
+The OpenID Connect default scopes are declared once in the top-level `openid_connect_resources` section of
+`config/authorization.yaml`:
+
+```yaml
+openid_connect_resources:
+  scopes:
+    openid:
+      description: Authenticate using OpenID Connect
+    email:
+      description: Access the user's email address and verification status
+
+  aliases:
+    oidc.default:
+      description: Request the standard OpenID Connect identity scopes
+      scopes:
+        - openid
+        - email
+```
+
+Files in `config/authorization` must not contain an `openid_connect_resources` section, so they can neither add nor
+redefine an OpenID Connect default scope, and an audience must not redeclare an OpenID Connect default scope or alias.
+An audience that only signs users in needs no scopes of its own:
+
+```yaml
+resources:
+  'https://app.example.com': {}
+```
+
+An alias may reference only concrete scopes defined for the same audience and OpenID Connect default scopes. Scope
+and alias metadata, including the OpenID Connect default scopes, can be discovered through the authenticated
+authorization metadata endpoints:
 
 - `GET /api/v1/authorization/audiences`
 - `GET /api/v1/authorization/scopes?audience=https://orders.example.com`

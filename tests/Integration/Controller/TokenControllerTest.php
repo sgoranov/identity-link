@@ -700,17 +700,6 @@ final class TokenControllerTest extends WebTestCase
         ], true);
     }
 
-    public function testIdTokenClaimsRequireClientUserAndRequestedScopes(): void
-    {
-        $client = static::createClient();
-        $scopes = ['openid', 'profile', 'email', 'offline_access'];
-        $response = $this->requestAuthorizationCodeTokenWithScopes($client, $scopes, true, $scopes, $scopes, $scopes);
-        $payload = $this->decodeJwtPayload($response['id_token']);
-
-        self::assertSame('User Name', $payload['name']);
-        self::assertSame('username@email.com', $payload['email']);
-    }
-
     /**
      * @dataProvider missingClaimScopeProvider
      * @param list<string> $clientScopes
@@ -745,9 +734,30 @@ final class TokenControllerTest extends WebTestCase
 
         return [
             'client' => [$withoutProfileAndEmail, $all, $all],
-            'user' => [$all, $withoutProfileAndEmail, $all],
             'requested' => [$all, $all, $withoutProfileAndEmail],
         ];
+    }
+
+    public function testIdTokenClaimsRequireClientAndRequestedScopesButNotUserScopes(): void
+    {
+        $client = static::createClient();
+        $scopes = ['openid', 'profile', 'email', 'offline_access'];
+        // The user has no scopes assigned: OpenID Connect default scopes are governed by the client assignment and consent.
+        $response = $this->requestAuthorizationCodeTokenWithScopes($client, $scopes, true, $scopes, [], $scopes);
+        $payload = $this->decodeJwtPayload($response['id_token']);
+
+        self::assertSame('openid profile email offline_access', $response['scope']);
+        self::assertSame('User Name', $payload['name']);
+        self::assertSame('username@email.com', $payload['email']);
+    }
+
+    public function testResourceScopesStillRequireUserScopeAssignment(): void
+    {
+        $client = static::createClient();
+        $scopes = ['openid', 'users.read'];
+        $response = $this->requestAuthorizationCodeTokenWithScopes($client, $scopes, true, $scopes, [], $scopes);
+
+        self::assertSame('openid', $response['scope']);
     }
 
     /** @return array<string, mixed> */
@@ -765,7 +775,7 @@ final class TokenControllerTest extends WebTestCase
         $clientConnector->setScopes($clientScopes ?? ['openid', 'profile', 'email', 'offline_access']);
         $userConnector = $container->get(UserConnectorInterface::class);
         self::assertInstanceOf(UserConnectorMock::class, $userConnector);
-        $userConnector->setScopes($userScopes ?? ['openid']);
+        $userConnector->setScopes($userScopes ?? []);
         $testHelper = $container->get(TestHelper::class);
         $router = $container->get(RouterInterface::class);
         $authCodeRepository = $container->get(AuthCodeRepository::class);
