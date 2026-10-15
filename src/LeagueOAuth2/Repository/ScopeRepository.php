@@ -9,7 +9,6 @@ use App\LeagueOAuth2\Entity\ClientEntityInterface as IdentityLinkClientEntityInt
 use App\LeagueOAuth2\Entity\ScopeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use App\Security\Authorization\UnknownAudienceException;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
@@ -18,15 +17,12 @@ use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
 
 class ScopeRepository implements ScopeRepositoryInterface
 {
-    private readonly AuthorizationRegistry $authorizationRegistry;
-
     public function __construct(
         private readonly ClientConnectorInterface $clientConnector,
         private readonly UserConnectorInterface $userConnector,
         private readonly AuthCodeRepository $authCodeRepository,
-        AuthorizationLoaderInterface $authorizationLoader
+        private readonly AuthorizationRegistry $authorizationRegistry,
     ) {
-        $this->authorizationRegistry = $authorizationLoader->load();
     }
 
     public function getScopeEntityByIdentifier(string $identifier): ?ScopeEntityInterface

@@ -11,7 +11,6 @@ use App\LeagueOAuth2\Entity\ScopeEntity;
 use App\LeagueOAuth2\Repository\ScopeRepository;
 use App\Repository\AuthCodeRepository;
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use PHPUnit\Framework\TestCase;
@@ -188,9 +187,6 @@ final class ScopeRepositoryTest extends TestCase
         array $userScopes = [],
         ?array $authCodeScopes = null,
     ): ScopeRepository {
-        $loader = $this->createStub(AuthorizationLoaderInterface::class);
-        $loader->method('load')->willReturn($this->createRegistry());
-
         $clientConnector = $this->createStub(ClientConnectorInterface::class);
         $clientConnector
             ->method('getScopes')
@@ -228,7 +224,7 @@ final class ScopeRepositoryTest extends TestCase
             $clientConnector,
             $userConnector,
             $authCodeRepository,
-            $loader,
+            $this->createRegistry(),
         );
     }
 
