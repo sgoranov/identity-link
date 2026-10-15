@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace App\Security\Exception;
 
-use App\Entity\AuthRequest;
+use App\Entity\AuthorizationSession;
 
-final class UserNotFoundException extends LoginFlowException
+final class UserNotFoundException extends AuthorizationFlowException
 {
-    public function __construct(AuthRequest $authRequest, public readonly string $userIdentifier)
+    public function __construct(AuthorizationSession $authorizationSession, public readonly string $userIdentifier)
     {
-        parent::__construct($authRequest);
+        parent::__construct($authorizationSession);
     }
 }

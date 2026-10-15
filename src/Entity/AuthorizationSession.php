@@ -3,15 +3,15 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Repository\AuthRequestRepository;
-use App\Security\LoginStateEnum;
+use App\Repository\AuthorizationSessionRepository;
+use App\Security\AuthorizationStateEnum;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: AuthRequestRepository::class)]
-#[ORM\Table(name: 'auth_request')]
-#[ORM\Index(columns: ['expires_at'], name: 'idx_auth_request_expires_at')]
-#[ORM\Index(columns: ['consumed'], name: 'idx_auth_request_consumed')]
-class AuthRequest
+#[ORM\Entity(repositoryClass: AuthorizationSessionRepository::class)]
+#[ORM\Table(name: 'authorization_session')]
+#[ORM\Index(columns: ['expires_at'], name: 'idx_authorization_session_expires_at')]
+#[ORM\Index(columns: ['consumed'], name: 'idx_authorization_session_consumed')]
+class AuthorizationSession
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -37,14 +37,17 @@ class AuthRequest
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $consumed = false;
 
-    #[ORM\Column(type: 'string', length: 50, nullable: true, enumType: LoginStateEnum::class)]
-    private ?LoginStateEnum $loginState = null;
+    #[ORM\Column(type: 'string', length: 50, nullable: true, enumType: AuthorizationStateEnum::class)]
+    private ?AuthorizationStateEnum $authorizationState = null;
 
     #[ORM\Column(type: 'string', length: 100, nullable: true)]
     private ?string $userIdentifier = null;
 
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    private ?bool $consentApproved = null;
+    #[ORM\Column(type: 'string', length: 64)]
+    private string $browserBindingHash;
+
+    #[ORM\Column(type: 'string', length: 100, nullable: true)]
+    private ?string $twoFaRequestId = null;
 
     public function __construct()
     {
@@ -114,14 +117,14 @@ class AuthRequest
         $this->consumed = true;
     }
 
-    public function getLoginState(): ?LoginStateEnum
+    public function getAuthorizationState(): ?AuthorizationStateEnum
     {
-        return $this->loginState;
+        return $this->authorizationState;
     }
 
-    public function setLoginState(?LoginStateEnum $loginState): void
+    public function setAuthorizationState(?AuthorizationStateEnum $authorizationState): void
     {
-        $this->loginState = $loginState;
+        $this->authorizationState = $authorizationState;
     }
 
     public function getUserIdentifier(): ?string
@@ -134,13 +137,23 @@ class AuthRequest
         $this->userIdentifier = $userIdentifier;
     }
 
-    public function getConsentApproved(): ?bool
+    public function getBrowserBindingHash(): string
     {
-        return $this->consentApproved;
+        return $this->browserBindingHash;
     }
 
-    public function setConsentApproved(?bool $consentApproved): void
+    public function setBrowserBindingHash(string $browserBindingHash): void
     {
-        $this->consentApproved = $consentApproved;
+        $this->browserBindingHash = $browserBindingHash;
+    }
+
+    public function getTwoFaRequestId(): ?string
+    {
+        return $this->twoFaRequestId;
+    }
+
+    public function setTwoFaRequestId(?string $twoFaRequestId): void
+    {
+        $this->twoFaRequestId = $twoFaRequestId;
     }
 }

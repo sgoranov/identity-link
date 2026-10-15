@@ -4,12 +4,10 @@ declare(strict_types=1);
 namespace App\EventSubscriber;
 
 use App\Api\Contract\ClientConnectorInterface;
-use App\Security\Exception\AuthRequestException;
-use App\Security\Exception\ConsumedAuthRequestException;
-use App\Security\Exception\ExpiredAuthRequestException;
-use App\Security\Exception\InvalidAuthRequestException;
-use App\Security\Exception\InvalidLoginStateException;
-use App\Security\Exception\LoginFlowException;
+use App\Security\Exception\InvalidAuthorizationStateException;
+use App\Security\Exception\AuthorizationFlowException;
+use App\Security\Exception\ClientNotFoundException;
+use App\Security\Exception\TwoFactorAuthenticationFailedException;
 use App\Security\Exception\UserNotFoundException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,7 +16,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Environment;
 
-class LoginFlowExceptionSubscriber implements EventSubscriberInterface
+class AuthorizationFlowExceptionSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private readonly TranslatorInterface $translator,
@@ -37,17 +35,19 @@ class LoginFlowExceptionSubscriber implements EventSubscriberInterface
     public function onException(ExceptionEvent $event): void
     {
         $exception = $event->getThrowable();
-        if (!$exception instanceof LoginFlowException) {
+        if (!$exception instanceof AuthorizationFlowException) {
             return;
         }
 
         $messageKey = match (true) {
-            $exception instanceof UserNotFoundException => 'login_flow.user_not_found',
-            $exception instanceof InvalidLoginStateException => 'login_flow.invalid_state',
+            $exception instanceof UserNotFoundException => 'authorization_flow.user_not_found',
+            $exception instanceof ClientNotFoundException => 'authorization_flow.client_not_found',
+            $exception instanceof InvalidAuthorizationStateException => 'authorization_flow.invalid_state',
+            $exception instanceof TwoFactorAuthenticationFailedException => 'authorization_flow.two_factor_failed',
         };
 
-        $authRequest = $exception->authRequest;
-        $client = $this->clientConnector->getClientById($authRequest->getClientId());
+        $authorizationSession = $exception->authorizationSession;
+        $client = $this->clientConnector->getClientById($authorizationSession->getClientId());
 
         $response = new Response(
             $this->twig->render('invalid_session.html.twig', [

@@ -4,18 +4,20 @@ declare(strict_types=1);
 namespace App\Security;
 
 /**
- * Enum representing the steps in the login flow.
+ * Enum representing the steps in the authorization flow.
  *
  * The string value of each case corresponds to a Symfony route name.
  * These routes are used to redirect the user to the correct action
- * for handling that step of the authentication process.
+ * for handling that step of the authorization flow.
  */
-enum LoginStateEnum: string
+enum AuthorizationStateEnum: string
 {
     case PASSWORD = 'login_with_password';
     case TWO_FACTOR_INITIATE = 'login_2fa_initiate';
     case TWO_FACTOR_COMPLETE = 'login_2fa_complete';
+    case CONSENT = 'oauth2_auth_consent_screen';
     case COMPLETED = 'login_complete';
+    case AUTHORIZATION_CODE = 'oauth2_auth_complete';
 
     public static function indexOf(self $state, array $flow): int|false
     {

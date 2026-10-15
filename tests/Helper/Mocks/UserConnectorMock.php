@@ -13,11 +13,17 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 class UserConnectorMock implements UserConnectorInterface
 {
     private array $scopes = ['openid'];
+    private bool $twoFaEnabled = true;
 
     /** @param list<string> $scopes */
     public function setScopes(array $scopes): void
     {
         $this->scopes = $scopes;
+    }
+
+    public function setTwoFaEnabled(bool $twoFaEnabled): void
+    {
+        $this->twoFaEnabled = $twoFaEnabled;
     }
 
     public function getUserByUserCredentials(
@@ -26,6 +32,7 @@ class UserConnectorMock implements UserConnectorInterface
         if ($username === AppFixtures::USER_IDENTIFIER && $password === AppFixtures::USER_PASSWORD) {
             $user = new DbUserResponse();
             $user->setId(AppFixtures::USER_IDENTIFIER);
+            $user->setTwoFaEnabled($this->twoFaEnabled);
             $user->setClaims([
                 'name' => 'User Name',
                 'preferred_username' => 'username',
@@ -45,6 +52,7 @@ class UserConnectorMock implements UserConnectorInterface
         if ($id === AppFixtures::USER_IDENTIFIER) {
             $user = new DbUserResponse();
             $user->setId(AppFixtures::USER_IDENTIFIER);
+            $user->setTwoFaEnabled($this->twoFaEnabled);
             $user->setClaims([
                 'name' => 'User Name',
                 'preferred_username' => 'username',

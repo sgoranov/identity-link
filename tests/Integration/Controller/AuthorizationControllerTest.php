@@ -28,47 +28,54 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Controller;
 
+use App\Api\Contract\ClientConnectorInterface;
+use App\Api\Contract\TwoFaConnectorInterface;
+use App\Api\Contract\UserConnectorInterface;
 use App\DataFixtures\AppFixtures;
 use App\Entity\AuthCode;
-use App\Entity\AuthRequest;
+use App\Entity\AuthorizationSession;
 use App\Repository\AuthCodeRepository;
-use App\Security\User;
+use App\Security\AuthorizationStateEnum;
+use App\Tests\Helper\AuthorizationFlowHelper;
+use App\Tests\Helper\Mocks\ClientConnectorMock;
+use App\Tests\Helper\Mocks\TwoFaConnectorMock;
+use App\Tests\Helper\Mocks\UserConnectorMock;
 use App\Tests\Helper\TestHelper;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
 
 class AuthorizationControllerTest extends WebTestCase
 {
-    public function testSuccessfulCodeRequest(): void
+    use AuthorizationFlowHelper;
+
+    /** @return array<string, array{bool}> */
+    public static function loginFlowProvider(): array
+    {
+        return [
+            'password' => [false],
+            'password and 2FA' => [true],
+        ];
+    }
+
+    /**
+     * @dataProvider loginFlowProvider
+     */
+    public function testSuccessfulCodeRequest(bool $twoFaEnabled): void
     {
         $client = static::createClient();
-        $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
-        // hit the initial authorization endpoint
-        $client->request('GET', $router->generate('oauth2_auth'), [
+        $crawler = $this->authorizeWithLogin($client, [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
             'response_type' => 'code',
             'state' => 'foobar',
-        ]);
-
-        // expect redirect to /oauth2/auth/{id}
-        $this->assertResponseRedirects();
-        $client->request(
-            'GET',
-            $client->getResponse()->headers->get('Location')
-        );
-        $crawler = $client->followRedirect();
+        ], $twoFaEnabled);
 
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
 
-        // after the consent approval, the client is redirected to the authorization endpoint
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
+        // after the consent approval, the flow completes and the user is redirected back to the client
+        $url = $this->followRedirectsToClient($client);
         $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
 
         $query = [];
@@ -77,13 +84,366 @@ class AuthorizationControllerTest extends WebTestCase
         $this->assertArrayHasKey('state', $query);
         $this->assertEquals('foobar', $query['state']);
 
-        // at this point the auth request must be consumed
+        // at this point the authorization session must be consumed
         $em = $client->getContainer()->get('doctrine')->getManager();
-        list($authRequest) = $em->getRepository(AuthRequest::class)->findAll();
+        list($authorizationSession) = $em->getRepository(AuthorizationSession::class)->findAll();
 
-        $this->assertNull($authRequest->getLoginState(), 'Login state should be null for already logged-in user.');
-        $this->assertTrue($authRequest->getConsentApproved(), 'Consent should be approved.');
-        $this->assertTrue($authRequest->isConsumed(), 'AuthRequest should be marked as consumed.');
+        $this->assertSame(AuthorizationStateEnum::AUTHORIZATION_CODE, $authorizationSession->getAuthorizationState(), 'Authorization state should be AUTHORIZATION_CODE.');
+        $this->assertTrue($authorizationSession->isConsumed(), 'AuthorizationSession should be marked as consumed.');
+    }
+
+    /**
+     * @dataProvider loginFlowProvider
+     */
+    public function testNewAuthorizationRequestRequiresLoginAgain(bool $twoFaEnabled): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $authorizationParams = [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ];
+
+        // complete a full login in the browser and obtain an authorization code
+        $crawler = $this->authorizeWithLogin($client, $authorizationParams, $twoFaEnabled);
+        $form = $crawler->selectButton('consent[allow]')->form();
+        $client->submit($form);
+        $url = $this->followRedirectsToClient($client);
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
+        $this->assertStringContainsString('code=', $url);
+
+        // start a new authorization request in the same browser:
+        // the previous login must not be reused, so the login flow starts again from the password step
+        $client->request('GET', $router->generate('oauth2_auth'), $authorizationParams);
+        while ($client->getResponse()->isRedirect()) {
+            $location = $client->getResponse()->headers->get('Location');
+            $this->assertStringNotContainsString('code=', $location, 'Authorization code issued without a new login.');
+            $crawler = $client->followRedirect();
+        }
+
+        $this->assertSame('login_with_password', $client->getRequest()->attributes->get('_route'));
+        $this->assertCount(1, $crawler->selectButton('login[submit]'));
+    }
+
+    /** @return array<string, array{string, bool}> */
+    public static function uncompletedLoginProvider(): array
+    {
+        return [
+            'complete before login' => ['oauth2_auth_complete', false],
+            'consent before login' => ['oauth2_auth_consent_screen', false],
+            'complete before 2FA' => ['oauth2_auth_complete', true],
+            'consent before 2FA' => ['oauth2_auth_consent_screen', true],
+        ];
+    }
+
+    /**
+     * @dataProvider uncompletedLoginProvider
+     */
+    public function testAuthorizationStepsRequireCompletedLogin(string $route, bool $passwordSubmitted): void
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $client->request('GET', $router->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+        $crawler = $client->followRedirect();
+        $this->assertSame('login_with_password', $client->getRequest()->attributes->get('_route'));
+        $authorizationSessionId = $client->getRequest()->attributes->get('id');
+
+        if ($passwordSubmitted) {
+            // the user mock has 2FA enabled by default, so the login stops before the 2FA step
+            $form = $crawler->selectButton('login[submit]')->form([
+                'login[user_id]' => AppFixtures::USER_IDENTIFIER,
+                'login[password]' => AppFixtures::USER_PASSWORD,
+            ]);
+            $client->submit($form);
+            $this->assertResponseRedirects($router->generate('login_2fa_initiate', ['id' => $authorizationSessionId]));
+        }
+
+        $client->request('GET', $router->generate($route, ['id' => $authorizationSessionId]));
+
+        $this->assertResponseStatusCodeSame(400);
+        $location = (string) $client->getResponse()->headers->get('Location');
+        $this->assertStringNotContainsString('code=', $location);
+
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertFalse($authorizationSession->isConsumed(), 'AuthorizationSession must not be consumed before the login is completed.');
+    }
+
+    public function testClientWithoutConsentReceivesCodeWithoutConsentScreen(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setConsentRequired(false);
+
+        $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+
+        $url = $this->followRedirectsToClient($client);
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
+        $this->assertStringContainsString('code=', $url);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function stepsAfterConsentProvider(): array
+    {
+        return [
+            'complete the flow' => ['login_complete'],
+            'issue the code' => ['oauth2_auth_complete'],
+        ];
+    }
+
+    /**
+     * @dataProvider stepsAfterConsentProvider
+     */
+    public function testStepsAfterConsentRequireConsent(string $route): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        // the login is done and the consent screen is shown, but consent is not given yet
+        $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+        $this->assertSame('oauth2_auth_consent_screen', $client->getRequest()->attributes->get('_route'));
+        $authorizationSessionId = $client->getRequest()->attributes->get('id');
+
+        $client->request('GET', $router->generate($route, ['id' => $authorizationSessionId]));
+
+        $this->assertResponseStatusCodeSame(400);
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertFalse($authorizationSession->isConsumed(), 'No code must be issued before consent.');
+    }
+
+    public function testConsentCannotBeGivenTwice(): void
+    {
+        $client = static::createClient();
+
+        $crawler = $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+        $consentUrl = $client->getRequest()->getUri();
+
+        // give consent, but stop before the flow completes
+        $client->submit($crawler->selectButton('consent[allow]')->form());
+        $this->assertResponseRedirects();
+
+        $client->request('GET', $consentUrl);
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    /** @return array<string, array{array<string, string>}> */
+    public static function deniedConsentProvider(): array
+    {
+        return [
+            'with redirect URI' => [['redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI]],
+            // the error goes to the redirect URI registered for the client
+            'without redirect URI' => [[]],
+        ];
+    }
+
+    /**
+     * @dataProvider deniedConsentProvider
+     * @param array<string, string> $redirectParams
+     */
+    public function testDeniedConsentReturnsErrorToClient(array $redirectParams): void
+    {
+        $client = static::createClient();
+
+        $crawler = $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ] + $redirectParams);
+        $authorizationSessionId = $client->getRequest()->attributes->get('id');
+
+        $client->submit($crawler->selectButton('consent[deny]')->form());
+
+        $url = $this->followRedirectsToClient($client);
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $url);
+
+        $query = [];
+        parse_str((string) parse_url($url, \PHP_URL_QUERY), $query);
+        $this->assertSame('access_denied', $query['error'] ?? null);
+        $this->assertSame('foobar', $query['state'] ?? null);
+        $this->assertArrayNotHasKey('code', $query);
+
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertTrue($authorizationSession->isConsumed(), 'A denied authorization session must not be usable again.');
+    }
+
+    /** @return array<string, array{string}> */
+    public static function boundStepProvider(): array
+    {
+        return [
+            'password' => ['login_with_password'],
+            'consent' => ['oauth2_auth_consent_screen'],
+            'authorization code' => ['oauth2_auth_complete'],
+        ];
+    }
+
+    /**
+     * @dataProvider boundStepProvider
+     */
+    public function testAuthorizationCannotBeContinuedFromAnotherBrowser(string $route): void
+    {
+        $client = static::createClient();
+        $stepUrl = $this->reachStep($client, $route);
+        $authorizationSessionId = basename((string) parse_url($stepUrl, \PHP_URL_PATH));
+
+        // another browser, i.e. without the cookie set when the authorization request started
+        $cookies = $client->getCookieJar()->all();
+        $client->getCookieJar()->clear();
+        $client->request('GET', $stepUrl);
+
+        $this->assertResponseStatusCodeSame(400);
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertFalse($authorizationSession->isConsumed(), 'Another browser must not be able to end the authorization.');
+
+        // the browser that started the authorization can still continue it
+        foreach ($cookies as $cookie) {
+            $client->getCookieJar()->set($cookie);
+        }
+        $client->request('GET', $stepUrl);
+
+        if ($route === 'oauth2_auth_complete') {
+            $this->assertStringContainsString('code=', (string) $client->getResponse()->headers->get('Location'));
+        } else {
+            $this->assertResponseIsSuccessful();
+        }
+    }
+
+    public function testBindingCookieIsRemovedWhenTheCodeIsIssued(): void
+    {
+        $client = static::createClient();
+        $stepUrl = $this->reachStep($client, 'oauth2_auth_complete');
+        $cookieName = 'authorization_session_' . basename((string) parse_url($stepUrl, \PHP_URL_PATH));
+        $this->assertNotNull($client->getCookieJar()->get($cookieName));
+
+        $client->request('GET', $stepUrl);
+
+        $this->assertStringContainsString('code=', (string) $client->getResponse()->headers->get('Location'));
+        $this->assertNull($client->getCookieJar()->get($cookieName));
+    }
+
+    public function testTwoFactorRequestOfAnotherSessionIsRejected(): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        // the user passed the 2FA request of another login, e.g. an earlier one
+        [, $otherTwoFaId] = $this->startTwoFactorStep($client);
+        $twoFaConnector = $client->getContainer()->get(TwoFaConnectorInterface::class);
+        self::assertInstanceOf(TwoFaConnectorMock::class, $twoFaConnector);
+        $twoFaConnector->approve($otherTwoFaId);
+
+        [$authorizationSessionId] = $this->startTwoFactorStep($client);
+        $client->request('GET', $router->generate('login_2fa_complete', ['id' => $authorizationSessionId]), ['id' => $otherTwoFaId]);
+
+        $this->assertResponseStatusCodeSame(400);
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertSame(AuthorizationStateEnum::TWO_FACTOR_INITIATE, $authorizationSession->getAuthorizationState());
+    }
+
+    public function testTwoFactorRequestThatWasNotPassedIsRejected(): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        [$authorizationSessionId, $twoFaId] = $this->startTwoFactorStep($client);
+        $client->request('GET', $router->generate('login_2fa_complete', ['id' => $authorizationSessionId]), ['id' => $twoFaId]);
+
+        $this->assertResponseStatusCodeSame(400);
+        $em = $client->getContainer()->get('doctrine')->getManager();
+        $authorizationSession = $em->getRepository(AuthorizationSession::class)->find($authorizationSessionId);
+        $this->assertSame(AuthorizationStateEnum::TWO_FACTOR_INITIATE, $authorizationSession->getAuthorizationState());
+    }
+
+    /**
+     * Starts an authorization, logs in with the password and stops at the 2FA service,
+     * returning the authorization session id and the id of its 2FA request.
+     *
+     * @return array{string, string}
+     */
+    private function startTwoFactorStep(KernelBrowser $client): array
+    {
+        $client->disableReboot();
+        $userConnector = $client->getContainer()->get(UserConnectorInterface::class);
+        self::assertInstanceOf(UserConnectorMock::class, $userConnector);
+        $userConnector->setTwoFaEnabled(true);
+
+        $client->request('GET', $client->getContainer()->get(RouterInterface::class)->generate('oauth2_auth'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ]);
+        $crawler = $client->followRedirect();
+        $authorizationSessionId = (string) $client->getRequest()->attributes->get('id');
+
+        $client->submit($crawler->selectButton('login[submit]')->form([
+            'login[user_id]' => AppFixtures::USER_IDENTIFIER,
+            'login[password]' => AppFixtures::USER_PASSWORD,
+        ]));
+        $client->followRedirect();
+        $this->assertSame('login_2fa_initiate', $client->getRequest()->attributes->get('_route'));
+
+        // the redirect to the 2FA service carries the id of the 2FA request
+        $twoFaUrl = (string) $client->getResponse()->headers->get('Location');
+
+        return [$authorizationSessionId, basename((string) parse_url($twoFaUrl, \PHP_URL_PATH))];
+    }
+
+    /**
+     * Goes through the authorization flow up to $route and returns its URL without requesting it.
+     */
+    private function reachStep(KernelBrowser $client, string $route): string
+    {
+        $authorizationParams = [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'state' => 'foobar',
+        ];
+
+        if ($route === 'login_with_password') {
+            $client->disableReboot();
+            $client->request('GET', $client->getContainer()->get(RouterInterface::class)->generate('oauth2_auth'), $authorizationParams);
+            $this->assertResponseRedirects();
+
+            return (string) $client->getResponse()->headers->get('Location');
+        }
+
+        $crawler = $this->authorizeWithLogin($client, $authorizationParams);
+        $this->assertSame('oauth2_auth_consent_screen', $client->getRequest()->attributes->get('_route'));
+        if ($route === 'oauth2_auth_consent_screen') {
+            return $client->getRequest()->getUri();
+        }
+
+        // consent -> login_complete -> oauth2_auth_complete
+        $client->submit($crawler->selectButton('consent[allow]')->form());
+        $client->followRedirect();
+        $this->assertSame('login_complete', $client->getRequest()->attributes->get('_route'));
+        $this->assertResponseRedirects();
+
+        return (string) $client->getResponse()->headers->get('Location');
     }
 
     public function testSuccessfulCodeRequestWithAlternateRedirectUri(): void
@@ -92,29 +452,17 @@ class AuthorizationControllerTest extends WebTestCase
         $router = $client->getContainer()->get(RouterInterface::class);
         $redirectUri = AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS[1];
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
-        $client->request('GET', $router->generate('oauth2_auth'), [
+        $crawler = $this->authorizeWithLogin($client, [
             'client_id' => AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER,
             'response_type' => 'code',
             'redirect_uri' => $redirectUri,
             'state' => 'foobar',
         ]);
 
-        $this->assertResponseRedirects();
-        $client->request(
-            'GET',
-            $client->getResponse()->headers->get('Location')
-        );
-        $crawler = $client->followRedirect();
-
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
 
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
+        $url = $this->followRedirectsToClient($client);
         $this->assertStringStartsWith($redirectUri, $url);
     }
 
@@ -124,9 +472,6 @@ class AuthorizationControllerTest extends WebTestCase
         $router = $client->getContainer()->get(RouterInterface::class);
         $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
         $testHelper = $client->getContainer()->get(TestHelper::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
 
         $state = bin2hex(random_bytes(20));
         $codeVerifier = bin2hex(random_bytes(64));
@@ -138,34 +483,20 @@ class AuthorizationControllerTest extends WebTestCase
             '-_'
         );
 
-        $client->request(
-            'GET',
-            $router->generate('oauth2_auth'),
-            [
-                'client_id' => AppFixtures::PUBLIC_CLIENT_IDENTIFIER,
-                'response_type' => 'code',
-                'scope' => '',
-                'state' => $state,
-                'code_challenge' => $codeChallenge,
-                'code_challenge_method' => $codeChallengeMethod,
-            ]
-        );
-
-        // expect redirect to /oauth2/auth/{id}
-        $this->assertResponseRedirects();
-        $client->request(
-            'GET',
-            $client->getResponse()->headers->get('Location')
-        );
-        $crawler = $client->followRedirect();
+        $crawler = $this->authorizeWithLogin($client, [
+            'client_id' => AppFixtures::PUBLIC_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'scope' => '',
+            'state' => $state,
+            'code_challenge' => $codeChallenge,
+            'code_challenge_method' => $codeChallengeMethod,
+        ]);
 
         $form = $crawler->selectButton('consent[allow]')->form();
         $client->submit($form);
 
-        // after the consent approval, the client is redirected to the authorization endpoint
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
+        // after the consent approval, the flow completes and the user is redirected back to the client
+        $url = $this->followRedirectsToClient($client);
 
         $this->assertStringStartsWith(AppFixtures::PUBLIC_CLIENT_REDIRECT_URI, $url);
 
@@ -192,9 +523,6 @@ class AuthorizationControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',
@@ -224,9 +552,6 @@ class AuthorizationControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
 
         $state = bin2hex(random_bytes(20));
         $codeVerifier = bin2hex(random_bytes(32));
@@ -295,9 +620,6 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-
         $client->request(
             'GET',
             $router->generate('oauth2_auth'),
@@ -324,9 +646,6 @@ class AuthorizationControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',
@@ -355,9 +674,6 @@ class AuthorizationControllerTest extends WebTestCase
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
-        
         $client->request(
             'GET',
             $router->generate('oauth2_auth'),
@@ -379,9 +695,6 @@ class AuthorizationControllerTest extends WebTestCase
     {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
-
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
 
         $client->request(
             'GET',

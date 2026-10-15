@@ -115,12 +115,15 @@ scopes:
       label: "Reset two-factor authentication"
       description: "Reset users' two-factor authentication configuration."
 
-auth_request:
+authorization_session:
   invalid: 'The requested login session is invalid or has been cleared.'
   expired: 'Your login session has expired. Please try logging in again.'
   consumed: 'This login session has already been completed. Please start a new login.'
+  browser_mismatch: 'This login session was started in another browser. Please start a new login from the application.'
   return_to_application: 'Return to %application%'
 
-login_flow:
+authorization_flow:
   user_not_found: 'Your account could not be found. Please contact your administrator if you believe this is an error.'
+  client_not_found: 'The application you are signing in to could not be found. Please contact your administrator.'
   invalid_state: 'Your login session is no longer valid. Please start the sign-in process again.'
+  two_factor_failed: 'Two-factor authentication could not be verified. Please start the sign-in process again.'

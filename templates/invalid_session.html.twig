@@ -10,7 +10,7 @@
 
             {% if client and client.applicationUrl %}
                 <a href="{{ client.applicationUrl }}" class="btn btn-primary">
-                    {{ 'auth_request.return_to_application'|trans({
+                    {{ 'authorization_session.return_to_application'|trans({
                         '%application%': client.name
                     }) }}
                 </a>
