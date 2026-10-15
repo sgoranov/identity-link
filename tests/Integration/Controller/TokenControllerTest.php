@@ -785,6 +785,18 @@ final class TokenControllerTest extends WebTestCase
         self::assertSame('User Name', $idTokenPayload['name']);
         self::assertSame('username@email.com', $idTokenPayload['email']);
         self::assertSame('https://login-only.example', $accessTokenPayload['aud']);
+
+        // The login-only access token reads the user's claims from the userinfo endpoint.
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $client->request('GET', $router->generate('oidc_user_info'), [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $response['access_token'],
+        ]);
+
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+        $userInfo = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame(AppFixtures::USER_IDENTIFIER, $userInfo['sub']);
+        self::assertSame('User Name', $userInfo['name']);
+        self::assertSame('username@email.com', $userInfo['email']);
     }
 
     /** @return array<string, mixed> */
