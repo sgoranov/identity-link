@@ -3,5 +3,7 @@ framework:
         app: cache.adapter.array
         system: cache.adapter.array
         pools:
+            # not cache.adapter.array, which is reset between the requests of a test,
+            # see LoginControllerTest for clearing it between tests
             rate_limiter_redis:
-                adapter: cache.adapter.array
+                adapter: cache.adapter.filesystem
