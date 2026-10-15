@@ -95,6 +95,24 @@ YAML);
         );
     }
 
+    public function testLoadsAdditionalFilesFromTheConfiguredDirectoryInsteadOfConfigAuthorization(): void
+    {
+        $this->writeConfiguration('ignored.yaml', "resources:\n  'https://ignored.example': {}\n");
+        $directory = $this->projectDir . '/fixtures';
+        mkdir($directory);
+        file_put_contents($directory . '/app.yaml', "resources:\n  'https://app.example': {}\n");
+
+        try {
+            $this->assertEquals(
+                new AuthorizationRegistry(['https://app.example' => []]),
+                (new FileAuthorizationLoader($this->projectDir, configurationDirectory: $directory))->load(),
+            );
+        } finally {
+            unlink($directory . '/app.yaml');
+            rmdir($directory);
+        }
+    }
+
     public function testLoadsOpenIdConnectResourcesScopesFromTheBuiltInConfiguration(): void
     {
         $this->writeDefaultConfiguration(<<<'YAML'

@@ -760,6 +760,33 @@ final class TokenControllerTest extends WebTestCase
         self::assertSame('openid', $response['scope']);
     }
 
+    public function testLoginOnlyAudienceSignsUserIn(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        // Declared in tests/resources/authorization without scopes of its own.
+        $clientConnector->setAudienceOverride('https://login-only.example');
+
+        // users.read is assigned to the client and the user, but belongs to another audience.
+        $scopes = ['openid', 'profile', 'email', 'users.read'];
+        $response = $this->requestAuthorizationCodeTokenWithScopes(
+            $client,
+            $scopes,
+            true,
+            $scopes,
+            ['users.read'],
+            $scopes,
+        );
+        $idTokenPayload = $this->decodeJwtPayload($response['id_token']);
+        $accessTokenPayload = $this->decodeJwtPayload($response['access_token']);
+
+        self::assertSame('openid profile email', $response['scope']);
+        self::assertSame('User Name', $idTokenPayload['name']);
+        self::assertSame('username@email.com', $idTokenPayload['email']);
+        self::assertSame('https://login-only.example', $accessTokenPayload['aud']);
+    }
+
     /** @return array<string, mixed> */
     private function requestAuthorizationCodeTokenWithScopes(
         KernelBrowser $client,

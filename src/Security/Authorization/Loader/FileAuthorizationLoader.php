@@ -12,9 +12,14 @@ final class FileAuthorizationLoader implements AuthorizationLoaderInterface
     private const CONFIG_DIRECTORY = 'config/authorization';
     private const CONFIG_FILE = 'config/authorization.yaml';
 
+    /**
+     * @param string|null $configurationDirectory Directory of the additional configuration files; defaults to
+     *        config/authorization in the project directory.
+     */
     public function __construct(
         private readonly string $projectDir,
         private readonly ?ParameterBagInterface $parameterBag = null,
+        private readonly ?string $configurationDirectory = null,
     ) {
     }
 
@@ -163,9 +168,11 @@ final class FileAuthorizationLoader implements AuthorizationLoaderInterface
     {
         $defaultConfig = $this->defaultConfigurationFile();
 
-        $directory = rtrim($this->projectDir, DIRECTORY_SEPARATOR)
-            . DIRECTORY_SEPARATOR
-            . self::CONFIG_DIRECTORY;
+        $directory = rtrim(
+            $this->configurationDirectory
+                ?? rtrim($this->projectDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::CONFIG_DIRECTORY,
+            DIRECTORY_SEPARATOR,
+        );
 
         $files = array_merge(
             glob($directory . DIRECTORY_SEPARATOR . '*.yaml') ?: [],
