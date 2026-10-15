@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\LeagueOAuth2\Repository;
 
+use App\Api\Contract\UserConnectorInterface;
 use App\Entity\RefreshToken;
 use App\LeagueOAuth2\Entity\Mapper\RefreshTokenMapper;
 use App\LeagueOAuth2\Entity\RefreshTokenEntity;
@@ -16,6 +17,7 @@ class RefreshTokenRepository implements RefreshTokenRepositoryInterface
     public function __construct(
         readonly EntityManagerInterface $entityManager,
         readonly RefreshTokenMapper $refreshTokenMapper,
+        private readonly UserConnectorInterface $userConnector,
     )
     {
     }
@@ -58,7 +60,12 @@ class RefreshTokenRepository implements RefreshTokenRepositoryInterface
         /** @var Repository $repository */
         $repository = $this->entityManager->getRepository(RefreshToken::class);
         $entity = $repository->getByIdentifier($tokenId);
+        if ($entity->isRevoked()) {
+            return true;
+        }
 
-        return $entity->isRevoked();
+        // Every user may sign in, so deleting the user is how their access is removed. League calls this only from
+        // the refresh token grant, before it issues anything, so a deleted user's refresh token counts as revoked.
+        return $this->userConnector->getUserById($entity->getUserIdentifier()) === null;
     }
 }

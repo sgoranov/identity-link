@@ -270,6 +270,36 @@ final class TokenControllerTest extends WebTestCase
         $this->assertSame($accessToken->getIdentifier(), $refreshTokenEntity->getAccessToken()->getIdentifier());
     }
 
+    public function testRefreshTokenRequestRejectsDeletedUser(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $container = $client->getContainer();
+        /** @var TestHelper $testHelper */
+        $testHelper = $container->get(TestHelper::class);
+        $userConnector = $container->get(UserConnectorInterface::class);
+        self::assertInstanceOf(UserConnectorMock::class, $userConnector);
+        $userConnector->setUserDeleted(true);
+
+        list($refreshToken) = $container->get(RefreshTokenRepository::class)
+            ->findBy(['identifier' => AppFixtures::REFRESH_TOKEN_IDENTIFIER]);
+        // Without openid no ID token is issued, so nothing else on the refresh looks the user up.
+        $refreshToken->getAccessToken()->setScopes(json_encode(['offline_access']));
+
+        $client->request('POST', $container->get(RouterInterface::class)->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::REFRESH_TOKEN,
+            'refresh_token' => $testHelper->generateEncryptedRefreshTokenPayload($refreshToken),
+        ]);
+
+        $response = $client->getResponse();
+        self::assertSame(400, $response->getStatusCode());
+        $jsonResponse = json_decode($response->getContent(), true);
+        self::assertSame('invalid_grant', $jsonResponse['error']);
+        self::assertSame('Token has been revoked', $jsonResponse['hint']);
+        self::assertFalse($refreshToken->isRevoked());
+    }
+
     public function testSuccessfulAuthorizationCodeRequest(): void
     {
         $client = TokenControllerTest::createClient();
