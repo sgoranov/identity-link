@@ -27,7 +27,7 @@
         "league/oauth2-server": "^9",
         "nyholm/psr7": "^1.8",
         "sgoranov/identity-link-shared": "dev-develop",
-        "steverhoades/oauth2-openid-connect-server": "^3.0",
+        "sgoranov/oauth2-openid-connect-server": "dev-develop",
         "strobotti/php-jwk": "^1.4",
         "symfony/asset": "6.4.*",
         "symfony/asset-mapper": "6.4.*",
@@ -127,6 +127,10 @@
         {
             "type": "vcs",
             "url": "https://github.com/sgoranov/identity-link-shared"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/sgoranov/oauth2-openid-connect-server"
         }
     ]
 }

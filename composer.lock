@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fc975561b8f2a1dde296f1731019e6f0",
+    "content-hash": "8f104777726ad4e6b4286c5f267df12e",
     "packages": [
         {
             "name": "bjeavons/zxcvbn-php",
@@ -2830,27 +2830,30 @@
             "time": "2026-09-30T10:49:59+00:00"
         },
         {
-            "name": "steverhoades/oauth2-openid-connect-server",
-            "version": "v3.0.1",
+            "name": "sgoranov/oauth2-openid-connect-server",
+            "version": "dev-develop",
             "source": {
                 "type": "git",
-                "url": "https://github.com/steverhoades/oauth2-openid-connect-server.git",
-                "reference": "f20665aeeeec78fb336c1bc89e8152b4b2380221"
+                "url": "https://github.com/sgoranov/oauth2-openid-connect-server.git",
+                "reference": "b33d30c680be20696bd5eb8339f86b2a3d90d550"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/steverhoades/oauth2-openid-connect-server/zipball/f20665aeeeec78fb336c1bc89e8152b4b2380221",
-                "reference": "f20665aeeeec78fb336c1bc89e8152b4b2380221",
+                "url": "https://api.github.com/repos/sgoranov/oauth2-openid-connect-server/zipball/b33d30c680be20696bd5eb8339f86b2a3d90d550",
+                "reference": "b33d30c680be20696bd5eb8339f86b2a3d90d550",
                 "shasum": ""
             },
             "require": {
-                "lcobucci/jwt": "4.1.5|^4.2|^4.3|^5.0",
-                "league/oauth2-server": "^8.4.2|^9.0",
-                "php": ">=7.4"
+                "lcobucci/jwt": "^5.6",
+                "league/oauth2-server": "^9.0.1",
+                "php": "^8.2"
+            },
+            "conflict": {
+                "steverhoades/oauth2-openid-connect-server": "*"
             },
             "require-dev": {
                 "laminas/laminas-diactoros": "^1.3.2 || ^3.3",
-                "phpunit/phpunit": "^5.0|^9.5"
+                "phpunit/phpunit": "^10.5"
             },
             "type": "library",
             "autoload": {
@@ -2858,22 +2861,36 @@
                     "OpenIDConnectServer\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "OpenIDConnectServer\\Test\\": "tests/"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "phpunit"
+                ]
+            },
             "license": [
                 "MIT"
             ],
             "authors": [
                 {
+                    "name": "Goranov",
+                    "email": "sgoranov@users.noreply.github.com",
+                    "role": "Maintainer"
+                },
+                {
                     "name": "Steve Rhoades",
-                    "email": "sedonami@gmail.com"
+                    "email": "sedonami@gmail.com",
+                    "role": "Original author"
                 }
             ],
-            "description": "An OpenID Connect Server that sites on The PHP League's OAuth2 Server",
+            "description": "An OpenID Connect Server built on The PHP League's OAuth2 Server",
             "support": {
-                "issues": "https://github.com/steverhoades/oauth2-openid-connect-server/issues",
-                "source": "https://github.com/steverhoades/oauth2-openid-connect-server/tree/v3.0.1"
+                "source": "https://github.com/sgoranov/oauth2-openid-connect-server/tree/develop"
             },
-            "time": "2024-09-26T16:19:13+00:00"
+            "time": "2026-10-11T17:56:29+00:00"
         },
         {
             "name": "strobotti/php-jwk",
@@ -10710,7 +10727,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "sgoranov/identity-link-shared": 20
+        "sgoranov/identity-link-shared": 20,
+        "sgoranov/oauth2-openid-connect-server": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
