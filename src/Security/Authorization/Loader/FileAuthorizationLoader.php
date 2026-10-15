@@ -46,6 +46,18 @@ final class FileAuthorizationLoader implements AuthorizationLoaderInterface
                 ));
             }
 
+            foreach ($fileResources as $audience => $resource) {
+                // An audience without a value would be listed as an audience but unknown when issuing tokens, and
+                // would replace an audience declared by an earlier file when merged.
+                if (!$this->isMapping($resource)) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'Audience "%s" in "%s" must be a mapping; write {} for an audience that declares no scopes or aliases.',
+                        $audience,
+                        $file,
+                    ));
+                }
+            }
+
             // Files are loaded in lexical order; a later file may deliberately
             // refine a resource declared by an earlier one.
             $resources = array_replace_recursive($resources, $fileResources);
@@ -68,6 +80,20 @@ final class FileAuthorizationLoader implements AuthorizationLoaderInterface
                         'The "openid_connect_resources" entry in "%s" must be a mapping.',
                         $file,
                     ));
+                }
+
+                foreach (['scopes', 'aliases'] as $section) {
+                    // A list would key the scopes by position, leaving every OpenID Connect scope unknown.
+                    if (
+                        array_key_exists($section, $openIdConnectResources)
+                        && !$this->isMapping($openIdConnectResources[$section])
+                    ) {
+                        throw new \InvalidArgumentException(sprintf(
+                            'The "openid_connect_resources.%s" entry in "%s" must be a mapping.',
+                            $section,
+                            $file,
+                        ));
+                    }
                 }
             }
 

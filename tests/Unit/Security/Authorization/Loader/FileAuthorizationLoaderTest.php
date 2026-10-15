@@ -325,6 +325,113 @@ YAML);
         (new FileAuthorizationLoader($this->projectDir))->load();
     }
 
+    /**
+     * @dataProvider emptyJwtUrlProvider
+     */
+    public function testRejectsAudienceParameterResolvingToAnEmptyValue(string $jwtUrl): void
+    {
+        $this->writeConfiguration('app.yaml', "resources:\n  '%jwt_url%': {}\n");
+
+        $loader = new FileAuthorizationLoader($this->projectDir, new ParameterBag(['jwt_url' => $jwtUrl]));
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('Audience "%s" must not be empty.', $jwtUrl));
+
+        $loader->load();
+    }
+
+    /** @return array<string, array{string}> */
+    public static function emptyJwtUrlProvider(): array
+    {
+        return [
+            'empty' => [''],
+            'whitespace' => ['   '],
+        ];
+    }
+
+    /**
+     * @dataProvider audienceThatIsNotAMappingProvider
+     */
+    public function testRejectsAudienceThatIsNotAMapping(string $resources): void
+    {
+        $this->writeConfiguration('app.yaml', $resources);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Audience "https://app.example" in "%s" must be a mapping; write {} for an audience that declares no scopes or aliases.',
+            $this->configurationDir . '/app.yaml',
+        ));
+
+        (new FileAuthorizationLoader($this->projectDir))->load();
+    }
+
+    /** @return array<string, array{string}> */
+    public static function audienceThatIsNotAMappingProvider(): array
+    {
+        return [
+            'no value' => ["resources:\n  'https://app.example':\n"],
+            'null' => ["resources:\n  'https://app.example': ~\n"],
+            'string' => ["resources:\n  'https://app.example': invalid\n"],
+            'list' => ["resources:\n  'https://app.example': [users.read]\n"],
+        ];
+    }
+
+    public function testRejectsAudienceWithoutValueThatWouldReplaceAnEarlierDeclaration(): void
+    {
+        $this->writeConfiguration('10-base.yaml', <<<'YAML'
+resources:
+  'https://app.example':
+    scopes:
+      users.read:
+        description: View users
+YAML);
+        $this->writeConfiguration('20-app.yaml', "resources:\n  'https://app.example':\n");
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Audience "https://app.example" in "%s" must be a mapping',
+            $this->configurationDir . '/20-app.yaml',
+        ));
+
+        (new FileAuthorizationLoader($this->projectDir))->load();
+    }
+
+    /**
+     * @dataProvider openIdConnectResourcesSectionThatIsNotAMappingProvider
+     */
+    public function testRejectsOpenIdConnectResourcesSectionThatIsNotAMapping(
+        string $openIdConnectResources,
+        string $section,
+    ): void {
+        $this->writeDefaultConfiguration($openIdConnectResources);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'The "openid_connect_resources.%s" entry in "%s" must be a mapping.',
+            $section,
+            $this->projectDir . '/config/authorization.yaml',
+        ));
+
+        (new FileAuthorizationLoader($this->projectDir))->load();
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function openIdConnectResourcesSectionThatIsNotAMappingProvider(): array
+    {
+        return [
+            'scopes as a list' => ["openid_connect_resources:\n  scopes: [openid, email]\n", 'scopes'],
+            'scopes as a string' => ["openid_connect_resources:\n  scopes: openid\n", 'scopes'],
+            'scopes without value' => ["openid_connect_resources:\n  scopes:\n", 'scopes'],
+            'aliases as a list' => [<<<'YAML'
+openid_connect_resources:
+  scopes:
+    openid:
+      description: Sign in
+  aliases: [oidc.default]
+YAML, 'aliases'],
+        ];
+    }
+
     private function writeDefaultConfiguration(string $contents): void
     {
         file_put_contents($this->projectDir . '/config/authorization.yaml', $contents);

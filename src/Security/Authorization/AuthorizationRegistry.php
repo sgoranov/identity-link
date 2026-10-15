@@ -15,6 +15,7 @@ class AuthorizationRegistry
         private readonly array $resources = [],
         private readonly array $openIdConnectResources = [],
     ) {
+        $this->validateAudiences();
         $this->validateAliases();
     }
 
@@ -118,6 +119,19 @@ class AuthorizationRegistry
         }
 
         return array_values($expanded);
+    }
+
+    /**
+     * The audiences are already resolved here, so an audience parameter such as %jwt_url% that resolves to an empty
+     * value is rejected too.
+     */
+    private function validateAudiences(): void
+    {
+        foreach (array_keys($this->resources) as $audience) {
+            if ('' === trim((string) $audience)) {
+                throw new \InvalidArgumentException(sprintf('Audience "%s" must not be empty.', $audience));
+            }
+        }
     }
 
     private function validateAliases(): void

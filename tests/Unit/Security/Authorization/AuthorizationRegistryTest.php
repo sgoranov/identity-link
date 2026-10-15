@@ -47,6 +47,29 @@ final class AuthorizationRegistryTest extends TestCase
         (new AuthorizationRegistry())->getScopesAndAliases('unknown');
     }
 
+    /**
+     * @dataProvider emptyAudienceProvider
+     */
+    public function testRejectsEmptyAudience(string $audience): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('Audience "%s" must not be empty.', $audience));
+
+        new AuthorizationRegistry([
+            'https://api.example' => [],
+            $audience => [],
+        ]);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function emptyAudienceProvider(): array
+    {
+        return [
+            'empty' => [''],
+            'whitespace' => ['   '],
+        ];
+    }
+
     public function testExpandsAliasToUniqueConcreteScopes(): void
     {
         $registry = new AuthorizationRegistry([

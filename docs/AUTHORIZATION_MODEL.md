@@ -134,6 +134,8 @@ resources:
   'https://app.example.com': {}
 ```
 
+The `{}` is required: an audience without a value is rejected.
+
 An alias may reference only concrete scopes defined for the same audience and OpenID Connect default scopes. Scope
 and alias metadata, including the OpenID Connect default scopes, can be discovered through the authenticated
 authorization metadata endpoints:
