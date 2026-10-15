@@ -9,7 +9,6 @@ use App\LeagueOAuth2\Entity\ClientEntityInterface as IdentityLinkClientEntityInt
 use App\LeagueOAuth2\Entity\ScopeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use App\Security\Authorization\UnknownAudienceException;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
@@ -18,15 +17,12 @@ use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
 
 class ScopeRepository implements ScopeRepositoryInterface
 {
-    private readonly AuthorizationRegistry $authorizationRegistry;
-
     public function __construct(
         private readonly ClientConnectorInterface $clientConnector,
         private readonly UserConnectorInterface $userConnector,
         private readonly AuthCodeRepository $authCodeRepository,
-        AuthorizationLoaderInterface $authorizationLoader
+        private readonly AuthorizationRegistry $authorizationRegistry,
     ) {
-        $this->authorizationRegistry = $authorizationLoader->load();
     }
 
     public function getScopeEntityByIdentifier(string $identifier): ?ScopeEntityInterface
@@ -79,14 +75,24 @@ class ScopeRepository implements ScopeRepositoryInterface
         );
 
         if ($userIdentifier !== null) {
-            // For non-client-credentials flows, restrict the remaining scopes to those assigned to the user.
-            $availableScopes = $this->filterScopes(
+            // For non-client-credentials flows, keep the remaining scopes that are assigned to the user.
+            $userScopes = $this->filterScopes(
                 $availableScopes,
                 $this->expandScopes(
                     $audience,
                     $this->userConnector->getScopes($userIdentifier, $audience),
                 ),
             );
+
+            // Also keep the remaining OpenID Connect scopes from openid_connect_resources. Every user holds them:
+            // they only describe the user to the client, so the client's assignment and the user's consent decide them.
+            $openIdConnectScopes = $this->filterScopes(
+                $availableScopes,
+                $this->authorizationRegistry->getOpenIdConnectResourcesScopes(),
+            );
+
+            // Combine both, listing a scope kept by both filters once.
+            $availableScopes = array_values(array_unique([...$userScopes, ...$openIdConnectScopes]));
         }
 
         return array_map(

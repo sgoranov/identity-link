@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use App\Security\Jwt\JwtConfig;
 use Firebase\JWT\JWT;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -15,15 +14,13 @@ class JwtTokenGenerator
     private string $subject; // Identifies the subject of the JWT, typically the user or entity it represents.
     private int $expTime = 3600;
     private array $scopes = ['identity-link.core'];
-    private readonly AuthorizationRegistry $authorizationRegistry;
 
     public function __construct(
         private readonly JwtConfig $jwtConfig,
         private readonly CacheInterface $cache,
-        AuthorizationLoaderInterface $authorizationLoader,
+        private readonly AuthorizationRegistry $authorizationRegistry,
     )
     {
-        $this->authorizationRegistry = $authorizationLoader->load();
     }
 
     public static function isJWT(string $token): bool

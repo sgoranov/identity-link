@@ -11,7 +11,6 @@ use App\LeagueOAuth2\Entity\ScopeEntity;
 use App\LeagueOAuth2\Repository\ScopeRepository;
 use App\Repository\AuthCodeRepository;
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use PHPUnit\Framework\TestCase;
@@ -76,6 +75,44 @@ final class ScopeRepositoryTest extends TestCase
             $this->finalize(
                 $repository,
                 ['requested.all'],
+                'authorization_code',
+                self::USER_ID,
+                self::AUTH_CODE_ID,
+            ),
+        );
+    }
+
+    public function testOpenIdConnectResourcesScopesAreLimitedByClientButNotByUser(): void
+    {
+        $repository = $this->createRepository(
+            clientScopes: ['openid', 'scope.d'],
+            userScopes: [],
+        );
+
+        self::assertSame(
+            ['openid'],
+            $this->finalize(
+                $repository,
+                ['openid', 'email', 'scope.d'],
+                'password',
+                userIdentifier: self::USER_ID,
+            ),
+        );
+    }
+
+    public function testOpenIdConnectResourcesScopesAreLimitedByAuthorizationCode(): void
+    {
+        $repository = $this->createRepository(
+            clientScopes: ['oidc.default'],
+            userScopes: [],
+            authCodeScopes: ['email'],
+        );
+
+        self::assertSame(
+            ['email'],
+            $this->finalize(
+                $repository,
+                ['oidc.default'],
                 'authorization_code',
                 self::USER_ID,
                 self::AUTH_CODE_ID,
@@ -150,9 +187,6 @@ final class ScopeRepositoryTest extends TestCase
         array $userScopes = [],
         ?array $authCodeScopes = null,
     ): ScopeRepository {
-        $loader = $this->createStub(AuthorizationLoaderInterface::class);
-        $loader->method('load')->willReturn($this->createRegistry());
-
         $clientConnector = $this->createStub(ClientConnectorInterface::class);
         $clientConnector
             ->method('getScopes')
@@ -190,7 +224,7 @@ final class ScopeRepositoryTest extends TestCase
             $clientConnector,
             $userConnector,
             $authCodeRepository,
-            $loader,
+            $this->createRegistry(),
         );
     }
 
@@ -267,6 +301,17 @@ final class ScopeRepositoryTest extends TestCase
                         'description' => 'Scopes assigned to the user',
                         'scopes' => ['scope.d', 'scope.e'],
                     ],
+                ],
+            ],
+        ], [
+            'scopes' => [
+                'openid' => ['description' => 'Sign in'],
+                'email' => ['description' => 'Read the email address'],
+            ],
+            'aliases' => [
+                'oidc.default' => [
+                    'description' => 'Standard identity scopes',
+                    'scopes' => ['openid', 'email'],
                 ],
             ],
         ]);

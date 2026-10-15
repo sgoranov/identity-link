@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Service;
 
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use App\Security\Jwt\JwtConfig;
 use App\Service\JwtTokenGenerator;
 use Firebase\JWT\JWT;
@@ -23,8 +22,7 @@ final class JwtTokenGeneratorTest extends TestCase
                 'private' => 'file://' . dirname(__DIR__, 2) . '/resources/private.key',
             ],
         ]);
-        $authorizationLoader = $this->createStub(AuthorizationLoaderInterface::class);
-        $authorizationLoader->method('load')->willReturn(new AuthorizationRegistry([
+        $authorizationRegistry = new AuthorizationRegistry([
             'https://example.com/identity-link' => [
                 'scopes' => [
                     'users.read' => ['description' => 'View users'],
@@ -39,8 +37,8 @@ final class JwtTokenGeneratorTest extends TestCase
                     ],
                 ],
             ],
-        ]));
-        $generator = new JwtTokenGenerator($jwtConfig, new ArrayAdapter(), $authorizationLoader);
+        ]);
+        $generator = new JwtTokenGenerator($jwtConfig, new ArrayAdapter(), $authorizationRegistry);
 
         $token = $generator
             ->setSubject('internal')
@@ -62,8 +60,7 @@ final class JwtTokenGeneratorTest extends TestCase
         $jwtConfig = $this->createStub(JwtConfig::class);
         $jwtConfig->method('getAudience')->willReturn('https://example.com/identity-link');
 
-        $authorizationLoader = $this->createStub(AuthorizationLoaderInterface::class);
-        $authorizationLoader->method('load')->willReturn(new AuthorizationRegistry([
+        $authorizationRegistry = new AuthorizationRegistry([
             'https://example.com/identity-link' => [
                 'scopes' => [
                     'users.read' => ['description' => 'View users'],
@@ -76,9 +73,9 @@ final class JwtTokenGeneratorTest extends TestCase
                     ],
                 ],
             ],
-        ]));
+        ]);
 
-        $generator = new JwtTokenGenerator($jwtConfig, new ArrayAdapter(), $authorizationLoader);
+        $generator = new JwtTokenGenerator($jwtConfig, new ArrayAdapter(), $authorizationRegistry);
         $generator->setScopes(['identity-link.core', 'users.read', 'unknown', 'identity-link.core']);
 
         self::assertSame(['users.read', 'users.query'], $generator->getScopes());

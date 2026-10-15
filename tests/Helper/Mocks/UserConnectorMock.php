@@ -14,6 +14,7 @@ class UserConnectorMock implements UserConnectorInterface
 {
     private array $scopes = ['openid'];
     private bool $twoFaEnabled = true;
+    private bool $userDeleted = false;
 
     /** @param list<string> $scopes */
     public function setScopes(array $scopes): void
@@ -24,6 +25,11 @@ class UserConnectorMock implements UserConnectorInterface
     public function setTwoFaEnabled(bool $twoFaEnabled): void
     {
         $this->twoFaEnabled = $twoFaEnabled;
+    }
+
+    public function setUserDeleted(bool $userDeleted): void
+    {
+        $this->userDeleted = $userDeleted;
     }
 
     public function getUserByUserCredentials(
@@ -49,7 +55,7 @@ class UserConnectorMock implements UserConnectorInterface
 
     public function getUserById(string $id): ?UserResponseInterface
     {
-        if ($id === AppFixtures::USER_IDENTIFIER) {
+        if ($id === AppFixtures::USER_IDENTIFIER && !$this->userDeleted) {
             $user = new DbUserResponse();
             $user->setId(AppFixtures::USER_IDENTIFIER);
             $user->setTwoFaEnabled($this->twoFaEnabled);

@@ -55,6 +55,15 @@ final class AuthorizationMetadataControllerTest extends WebTestCase
             $metadata['aliases']['identity-link.all']['description'],
         );
         self::assertContains('users.read', $metadata['aliases']['identity-link.all']['scopes']);
+
+        self::assertSame(
+            ['description' => 'Authenticate using OpenID Connect'],
+            $metadata['openid_connect_resources']['scopes']['openid'],
+        );
+        self::assertSame(
+            ['openid', 'profile', 'email', 'offline_access'],
+            $metadata['openid_connect_resources']['aliases']['oidc.default']['scopes'],
+        );
     }
 
     public function testRequiresAudience(): void

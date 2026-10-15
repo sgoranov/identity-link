@@ -1,0 +1,4 @@
+resources:
+  # An audience that only signs users in: it declares no scopes of its own and relies on the OpenID Connect default
+  # scopes from config/authorization.yaml.
+  'https://login-only.example': {}

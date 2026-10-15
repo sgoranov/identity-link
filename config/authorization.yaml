@@ -1,16 +1,29 @@
+# OpenID Connect default scopes, shared by every audience. Only this file may declare them. Users hold them without a
+# user group assigning them; a client still needs them assigned, and the user's consent governs them.
+openid_connect_resources:
+  scopes:
+    openid:
+      description: Authenticate using OpenID Connect
+    profile:
+      description: Access the user's basic profile claims
+    email:
+      description: Access the user's email address and verification status
+    offline_access:
+      description: Request a refresh token for offline access
+
+  aliases:
+    oidc.default:
+      description: Request the standard OpenID Connect identity scopes
+      scopes:
+        - openid
+        - profile
+        - email
+        - offline_access
+
 resources:
   # jwt_url resolves JWT_URL and identifies the resource whose scopes are declared below.
   '%jwt_url%':
     scopes:
-      openid:
-        description: Authenticate using OpenID Connect
-      profile:
-        description: Access the user's basic profile claims
-      email:
-        description: Access the user's email address and verification status
-      offline_access:
-        description: Request a refresh token for offline access
-
       users.read:
         description: View users and their account details
       users.write:
@@ -61,14 +74,6 @@ resources:
         description: Reset users' two-factor authentication configuration
 
     aliases:
-      oidc.default:
-        description: Request the standard OpenID Connect identity scopes
-        scopes:
-          - openid
-          - profile
-          - email
-          - offline_access
-
       identity-link.core:
         description: Grant the internal permissions required by Identity Link Core to communicate with the user, client, and two-factor authentication services
         scopes:
