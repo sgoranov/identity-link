@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
+use App\Repository\AccessTokenRepository;
 use App\Tests\Helper\BearerAuthorizationTrait;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -108,6 +110,27 @@ final class AuthorizationMetadataControllerTest extends WebTestCase
         $router = $client->getContainer()->get(RouterInterface::class);
 
         $client->request('GET', $router->generate('authorization_audiences'));
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testRejectsRevokedClientCredentialsAccessToken(): void
+    {
+        $client = self::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+
+        $accessToken = $client->getContainer()->get(AccessTokenRepository::class)->findOneBy([
+            'identifier' => AppFixtures::CLIENT_CREDENTIALS_ACCESS_TOKEN_IDENTIFIER,
+        ]);
+        $accessToken->setIsRevoked(true);
+        $entityManager->flush();
+
+        $client->request(
+            'GET',
+            $router->generate('authorization_audiences'),
+            server: $this->authorizationHeader($client, AppFixtures::CLIENT_CREDENTIALS_ACCESS_TOKEN_IDENTIFIER),
+        );
 
         self::assertResponseStatusCodeSame(401);
     }

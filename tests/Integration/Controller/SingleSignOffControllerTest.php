@@ -50,6 +50,19 @@ class SingleSignOffControllerTest extends WebTestCase
         $this->assertTrue($refreshToken->isRevoked());
     }
 
+    public function testAccessTokenIsRejectedAfterSignOff(): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $authorization = $this->authorizationHeader($client, AppFixtures::ACCESS_TOKEN_IDENTIFIER);
+
+        $client->request('POST', $router->generate('single_sign_off'), [], [], $authorization);
+        $this->assertSame(200, $client->getResponse()->getStatusCode());
+
+        $client->request('GET', $router->generate('oidc_user_info'), [], [], $authorization);
+        $this->assertSame(401, $client->getResponse()->getStatusCode());
+    }
+
     public function testWithoutToken(): void
     {
         $client = static::createClient();
