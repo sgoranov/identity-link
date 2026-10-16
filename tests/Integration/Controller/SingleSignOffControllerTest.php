@@ -72,6 +72,7 @@ class SingleSignOffControllerTest extends WebTestCase
 
         $response = $client->getResponse();
         $this->assertSame(401, $response->getStatusCode());
+        $this->assertSame('Bearer', $response->headers->get('WWW-Authenticate'));
     }
 
     public function testClientCredentialsTokenRevoke(): void

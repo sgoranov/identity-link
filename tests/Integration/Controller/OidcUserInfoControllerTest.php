@@ -33,6 +33,18 @@ final class OidcUserInfoControllerTest extends WebTestCase
         );
     }
 
+    public function testRequiresAccessToken(): void
+    {
+        $client = self::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $client->request('GET', $router->generate('oidc_user_info'));
+
+        // RFC 6750 §3.1: a request without a token gets the Bearer challenge without an error code.
+        self::assertResponseStatusCodeSame(401);
+        self::assertResponseHeaderSame('WWW-Authenticate', 'Bearer');
+    }
+
     public function testRejectsAccessTokenWithoutTheOpenIdScope(): void
     {
         $client = self::createClient();

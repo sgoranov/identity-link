@@ -112,6 +112,7 @@ final class AuthorizationMetadataControllerTest extends WebTestCase
         $client->request('GET', $router->generate('authorization_audiences'));
 
         self::assertResponseStatusCodeSame(401);
+        self::assertResponseHeaderSame('WWW-Authenticate', 'Bearer');
     }
 
     public function testRejectsRevokedClientCredentialsAccessToken(): void
