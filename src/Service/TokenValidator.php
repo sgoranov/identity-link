@@ -42,7 +42,14 @@ class TokenValidator
             return null;
         }
 
-        $entity = $this->accessTokenRepository->getByIdentifier($decoded['jti']);
+        // A JWT signed with our key but without a string jti, such as the internal tokens of JwtTokenGenerator, was not
+        // issued by the authorization server.
+        $jti = $decoded['jti'] ?? null;
+        if (!is_string($jti)) {
+            return null;
+        }
+
+        $entity = $this->accessTokenRepository->getByIdentifier($jti);
         if ($entity === null) {
             return null;
         }

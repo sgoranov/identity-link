@@ -6,6 +6,7 @@ namespace App\Tests\Integration\Controller;
 use App\DataFixtures\AppFixtures;
 use App\Repository\AccessTokenRepository;
 use App\Repository\RefreshTokenRepository;
+use App\Service\JwtTokenGenerator;
 use App\Tests\Helper\TestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
@@ -77,6 +78,28 @@ class RevocationControllerTest extends WebTestCase
         $response = $client->getResponse();
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('', $response->getContent()); // RFC says empty body
+    }
+
+    public function testJwtWithoutJtiReturns200Ok(): void
+    {
+        $client = self::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $jwtTokenGenerator = $client->getContainer()->get(JwtTokenGenerator::class);
+
+        // Signed with our key but not issued by the authorization server, like JwtTokenGenerator's internal tokens.
+        $token = $jwtTokenGenerator->createTokenByPayload([
+            'sub' => AppFixtures::USER_IDENTIFIER,
+            'exp' => time() + 3600,
+        ]);
+
+        $auth = 'Basic ' . base64_encode(AppFixtures::PRIVATE_CLIENT_IDENTIFIER . ':' . AppFixtures::PRIVATE_CLIENT_SECRET);
+        $client->request('POST', $router->generate('oauth2_token_revoke'), [
+            'token' => $token,
+        ], [], ['HTTP_Authorization' => $auth]);
+
+        $response = $client->getResponse();
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('', $response->getContent());
     }
 
     public function testRevokingExpiredAccessToken(): void
