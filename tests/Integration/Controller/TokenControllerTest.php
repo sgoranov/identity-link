@@ -351,6 +351,52 @@ final class TokenControllerTest extends WebTestCase
         $this->assertTokensRevoked($client, $tokens);
     }
 
+    public function testAuthorizationCodeExchangedConcurrentlyRevokesTokensOfBothExchanges(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $container = $client->getContainer();
+        $entityManager = $container->get(EntityManagerInterface::class);
+        $accessTokenRepository = $container->get(AccessTokenRepository::class);
+        [$authCode] = $container->get(AuthCodeRepository::class)->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        $code = $container->get(TestHelper::class)->generateEncryptedAuthCodePayload($authCode);
+
+        // The concurrent exchange has issued its token...
+        $accessTokenRepository->getByIdentifier(AppFixtures::ACCESS_TOKEN_IDENTIFIER)
+            ->setAuthCodeIdentifier(AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER);
+        $entityManager->flush();
+
+        // ...and revokes the code while this exchange issues its own tokens, after both passed the check.
+        $connection = $entityManager->getConnection();
+        $container->get(EventDispatcherInterface::class)->addListener(
+            RequestAccessTokenEvent::class,
+            static fn () => $connection->executeStatement(
+                'UPDATE auth_code SET is_revoked = true WHERE identifier = :identifier',
+                ['identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER],
+            ),
+        );
+
+        $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(400, $client->getResponse()->getStatusCode());
+        self::assertSame('invalid_grant', $this->decodeResponse($client)['error']);
+
+        $client->getContainer()->get(EntityManagerInterface::class)->clear();
+        $accessTokens = $client->getContainer()->get(AccessTokenRepository::class)->findBy([
+            'authCodeIdentifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        self::assertCount(2, $accessTokens, 'Both exchanges should have a token linked to the code.');
+
+        $refreshTokenRepository = $client->getContainer()->get(RefreshTokenRepository::class);
+        foreach ($accessTokens as $accessToken) {
+            self::assertTrue($accessToken->isRevoked(), 'The access token should be revoked.');
+            self::assertTrue(
+                $refreshTokenRepository->findOneBy(['accessToken' => $accessToken])->isRevoked(),
+                'The refresh token should be revoked.',
+            );
+        }
+    }
+
     public function testReusedAuthorizationCodeRevokesTokensObtainedByRefreshing(): void
     {
         $client = TokenControllerTest::createClient();
