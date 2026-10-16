@@ -31,6 +31,7 @@ namespace App\Tests\Integration\Controller;
 use App\Api\Contract\ClientConnectorInterface;
 use App\DataFixtures\AppFixtures;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
+use App\Repository\AccessTokenRepository;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
 use App\Security\Jwt\JwtConfig;
@@ -329,6 +330,52 @@ final class TokenControllerTest extends WebTestCase
         $this->assertLessThanOrEqual(3600, $jsonResponse['expires_in']);
         $this->assertGreaterThan(0, $jsonResponse['expires_in']);
         $this->assertNotEmpty($jsonResponse['access_token']);
+    }
+
+    public function testReusedAuthorizationCodeRevokesTokensIssuedForIt(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        [$authCode] = $client->getContainer()->get(AuthCodeRepository::class)->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        $code = $testHelper->generateEncryptedAuthCodePayload($authCode);
+
+        $tokens = $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+
+        $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(400, $client->getResponse()->getStatusCode());
+        self::assertSame('invalid_grant', $this->decodeResponse($client)['error']);
+
+        $this->assertTokensRevoked($client, $tokens);
+    }
+
+    public function testReusedAuthorizationCodeRevokesTokensObtainedByRefreshing(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        [$authCode] = $client->getContainer()->get(AuthCodeRepository::class)->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        $code = $testHelper->generateEncryptedAuthCodePayload($authCode);
+
+        $tokens = $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+
+        $client->request('POST', $client->getContainer()->get(RouterInterface::class)->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::REFRESH_TOKEN,
+            'refresh_token' => $tokens['refresh_token'],
+        ]);
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+        $refreshedTokens = $this->decodeResponse($client);
+
+        $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(400, $client->getResponse()->getStatusCode());
+
+        $this->assertTokensRevoked($client, $refreshedTokens);
     }
 
     public function testAuthorizationCodeTokenRequestRejectsUnknownAudience(): void
@@ -949,6 +996,46 @@ final class TokenControllerTest extends WebTestCase
             $container->get(JwtConfig::class),
             $jsonResponse['access_token'],
         ];
+    }
+
+    /** @return array<string, mixed> the decoded response */
+    private function exchangeAuthorizationCode(KernelBrowser $client, string $code): array
+    {
+        $client->request('POST', $client->getContainer()->get(RouterInterface::class)->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $code,
+        ]);
+
+        return $this->decodeResponse($client);
+    }
+
+    /** @return array<string, mixed> */
+    private function decodeResponse(KernelBrowser $client): array
+    {
+        return json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+    }
+
+    /** @param array{access_token: string, refresh_token: string} $tokens a token response */
+    private function assertTokensRevoked(KernelBrowser $client, array $tokens): void
+    {
+        $container = $client->getContainer();
+        $container->get(EntityManagerInterface::class)->clear();
+
+        $accessToken = $container->get(AccessTokenRepository::class)
+            ->getByIdentifier($this->decodeJwtPayload($tokens['access_token'])['jti']);
+        self::assertTrue($accessToken->isRevoked(), 'The access token should be revoked.');
+
+        $refreshTokenPayload = json_decode(
+            $container->get(TestHelper::class)->decryptPayload($tokens['refresh_token']),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $refreshToken = $container->get(RefreshTokenRepository::class)
+            ->getByIdentifier($refreshTokenPayload['refresh_token_id']);
+        self::assertTrue($refreshToken->isRevoked(), 'The refresh token should be revoked.');
     }
 
     private function decodeJwtPayload(string $jwt): array

@@ -24,6 +24,12 @@ class TokenRevoker
         $this->entityManager->flush();
     }
 
+    public function revokeTokensIssuedForAuthCode(string $authCodeIdentifier): void
+    {
+        $this->refreshTokenRepository->revokeByAuthCodeIdentifier($authCodeIdentifier);
+        $this->accessTokenRepository->revokeByAuthCodeIdentifier($authCodeIdentifier);
+    }
+
     public function revokeToken(string $token, ?string $clientId = null): void
     {
         $result = $this->tokenValidator->validateToken($token, $clientId);

@@ -12,6 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: AccessTokenRepository::class)]
 #[ORM\Index(columns: ['identifier'], name: 'idx_access_token_identifier')]
 #[ORM\Index(columns: ['user_identifier'], name: 'idx_access_token_user_identifier')]
+#[ORM\Index(columns: ['auth_code_identifier'], name: 'idx_access_token_auth_code_identifier')]
 class AccessToken
 {
     use ScopeTrait, RevocationTrait;
@@ -33,6 +34,10 @@ class AccessToken
 
     #[ORM\Column]
     private DateTimeImmutable $expiryDateTime;
+
+    /** The authorization code this token descends from, directly or by refreshing; see AuthCodeLinkSubscriber. */
+    #[ORM\Column(type: "text", nullable: true)]
+    private ?string $authCodeIdentifier = null;
 
     public function getId(): ?string
     {
@@ -78,5 +83,15 @@ class AccessToken
     public function setClientIdentifier(string $clientIdentifier): void
     {
         $this->clientIdentifier = $clientIdentifier;
+    }
+
+    public function getAuthCodeIdentifier(): ?string
+    {
+        return $this->authCodeIdentifier;
+    }
+
+    public function setAuthCodeIdentifier(?string $authCodeIdentifier): void
+    {
+        $this->authCodeIdentifier = $authCodeIdentifier;
     }
 }

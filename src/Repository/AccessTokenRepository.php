@@ -41,4 +41,17 @@ class AccessTokenRepository extends ServiceEntityRepository
             ->getQuery()
             ->execute();
     }
+
+    public function revokeByAuthCodeIdentifier(string $authCodeIdentifier): void
+    {
+        $qb = $this->createQueryBuilder('a');
+        $qb->update()
+            ->set('a.isRevoked', ':revoked')
+            ->where('a.authCodeIdentifier = :authCodeIdentifier')
+            ->andWhere('a.isRevoked = false')
+            ->setParameter('revoked', true)
+            ->setParameter('authCodeIdentifier', $authCodeIdentifier)
+            ->getQuery()
+            ->execute();
+    }
 }
