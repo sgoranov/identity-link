@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8f104777726ad4e6b4286c5f267df12e",
+    "content-hash": "9b407ec025d0574c6ff5401b053757b1",
     "packages": [
         {
             "name": "bjeavons/zxcvbn-php",
@@ -2746,16 +2746,16 @@
         },
         {
             "name": "sgoranov/identity-link-shared",
-            "version": "dev-develop",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sgoranov/identity-link-shared.git",
-                "reference": "5dbfc1fcf05ce636d154394c370102b4da2fe46d"
+                "reference": "d925a9ded2cb71320f58f7b7f32738bc9e19ba24"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sgoranov/identity-link-shared/zipball/5dbfc1fcf05ce636d154394c370102b4da2fe46d",
-                "reference": "5dbfc1fcf05ce636d154394c370102b4da2fe46d",
+                "url": "https://api.github.com/repos/sgoranov/identity-link-shared/zipball/d925a9ded2cb71320f58f7b7f32738bc9e19ba24",
+                "reference": "d925a9ded2cb71320f58f7b7f32738bc9e19ba24",
                 "shasum": ""
             },
             "require": {
@@ -2801,8 +2801,8 @@
             "type": "symfony-bundle",
             "extra": {
                 "symfony": {
-                    "allow-contrib": false,
-                    "require": "6.4.*"
+                    "require": "6.4.*",
+                    "allow-contrib": false
                 }
             },
             "autoload": {
@@ -2810,37 +2810,28 @@
                     "sgoranov\\IdentityLinkShared\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "sgoranov\\IdentityLinkShared\\Tests\\": "tests/"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "phpunit"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "support": {
-                "source": "https://github.com/sgoranov/identity-link-shared/tree/develop",
-                "issues": "https://github.com/sgoranov/identity-link-shared/issues"
+                "issues": "https://github.com/sgoranov/identity-link-shared/issues",
+                "source": "https://github.com/sgoranov/identity-link-shared/tree/1.1.0"
             },
-            "time": "2026-09-30T10:49:59+00:00"
+            "time": "2026-10-19T12:35:09+00:00"
         },
         {
             "name": "sgoranov/oauth2-openid-connect-server",
-            "version": "dev-develop",
+            "version": "1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sgoranov/oauth2-openid-connect-server.git",
-                "reference": "b33d30c680be20696bd5eb8339f86b2a3d90d550"
+                "reference": "68bedaf7f463e46b0409076bd348a9482ccfa1f1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sgoranov/oauth2-openid-connect-server/zipball/b33d30c680be20696bd5eb8339f86b2a3d90d550",
-                "reference": "b33d30c680be20696bd5eb8339f86b2a3d90d550",
+                "url": "https://api.github.com/repos/sgoranov/oauth2-openid-connect-server/zipball/68bedaf7f463e46b0409076bd348a9482ccfa1f1",
+                "reference": "68bedaf7f463e46b0409076bd348a9482ccfa1f1",
                 "shasum": ""
             },
             "require": {
@@ -2861,16 +2852,7 @@
                     "OpenIDConnectServer\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "OpenIDConnectServer\\Test\\": "tests/"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "phpunit"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -2888,9 +2870,9 @@
             ],
             "description": "An OpenID Connect Server built on The PHP League's OAuth2 Server",
             "support": {
-                "source": "https://github.com/sgoranov/oauth2-openid-connect-server/tree/develop"
+                "source": "https://github.com/sgoranov/oauth2-openid-connect-server/tree/1.0.2"
             },
-            "time": "2026-10-11T17:56:29+00:00"
+            "time": "2026-10-19T07:32:06+00:00"
         },
         {
             "name": "strobotti/php-jwk",
@@ -10726,10 +10708,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "sgoranov/identity-link-shared": 20,
-        "sgoranov/oauth2-openid-connect-server": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
