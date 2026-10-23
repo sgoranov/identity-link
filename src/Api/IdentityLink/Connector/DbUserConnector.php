@@ -11,8 +11,10 @@ use App\Api\Shared\AbstractConnector;
 use App\Service\JwtTokenGenerator;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class DbUserConnector extends AbstractConnector implements UserConnectorInterface
 {
@@ -24,9 +26,11 @@ class DbUserConnector extends AbstractConnector implements UserConnectorInterfac
         private readonly JwtTokenGenerator $jwtTokenGenerator,
         private readonly LoggerInterface $logger,
         private readonly SerializerInterface $serializer,
+        private readonly HttpClientInterface $httpClient,
+        private readonly RequestStack $requestStack,
     )
     {
-        parent::__construct($this->jwtTokenGenerator, $this->logger);
+        parent::__construct($this->jwtTokenGenerator, $this->logger, $this->httpClient, $this->requestStack);
     }
 
     public function getUserById(string $id): ?DbUserResponse
