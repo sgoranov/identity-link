@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Api\Contract\UserConnectorInterface;
-use League\OAuth2\Server\Entities\UserEntityInterface;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -30,7 +29,7 @@ class UserProvider implements UserProviderInterface
      * If your firewall is "stateless: true" (for a pure API), this
      * method is not called.
      */
-    public function refreshUser(UserInterface $user): UserInterface|UserEntityInterface
+    public function refreshUser(UserInterface $user): UserInterface
     {
         if (!$user instanceof User) {
             throw new UnsupportedUserException(sprintf('Invalid user class "%s".', get_class($user)));

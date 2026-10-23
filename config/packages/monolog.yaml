@@ -1,6 +1,5 @@
 monolog:
-    channels:
-        - rest
+    channels: # To see all channels, run bin/console debug:autowiring logger
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
 
 when@dev:
@@ -10,24 +9,11 @@ when@dev:
                 type: stream
                 path: php://stderr
                 level: debug
-                channels: ["!event", "!rest"]
-            # uncomment to get logging in your browser
-            # you may have to allow bigger header sizes in your Web server configuration
-            #firephp:
-            #    type: firephp
-            #    level: info
-            #chromephp:
-            #    type: chromephp
-            #    level: info
+                channels: ["!event"]
             console:
                 type: console
                 process_psr_3_messages: false
                 channels: ["!event", "!doctrine", "!console"]
-            rest_log:
-                type: stream
-                path: php://stderr
-                level: debug
-                channels: [ "rest" ]
 when@test:
     monolog:
         handlers:
@@ -36,16 +22,11 @@ when@test:
                 action_level: error
                 handler: main_output
                 excluded_http_codes: [404, 405]
-                channels: ["!event", "!rest"]
+                channels: ["!event"]
             main_output:
                 type: stream
                 path: php://stderr
                 level: debug
-            rest_log:
-                type: stream
-                path: php://stderr
-                level: debug
-                channels: [ "rest" ]
 
 when@prod:
     monolog:
@@ -56,19 +37,12 @@ when@prod:
                 handler: main_output
                 excluded_http_codes: [404, 405]
                 buffer_size: 50
-                channels: ["!event", "!rest", "!deprecation"]
+                channels: ["!event", "!deprecation"]
 
             main_output:
                 type: stream
                 path: php://stderr
                 level: debug
-                formatter: monolog.formatter.json
-
-            rest:
-                type: stream
-                path: php://stderr
-                level: debug
-                channels: ["rest"]
                 formatter: monolog.formatter.json
 
             deprecation:
@@ -81,4 +55,4 @@ when@prod:
             console:
                 type: console
                 process_psr_3_messages: false
-                channels: ["!event", "!doctrine", "!rest", "!deprecation"]
+                channels: ["!event", "!doctrine", "!deprecation"]

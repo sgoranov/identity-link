@@ -8,7 +8,8 @@ security:
             id: App\Security\UserProvider
     firewalls:
         dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            # Ensure dev tools and static assets are always allowed
+            pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
 
         access_token:
@@ -20,8 +21,7 @@ security:
           access_token:
             token_handler: App\Security\AccessTokenHandler
 
-    # Easy way to control access for large sections of your site
-    # Note: Only the *first* access control that matches will be used
+    # Note: Only the *first* matching rule is applied
     access_control:
          - { path: ^/.well-known/openid-configuration, roles: PUBLIC_ACCESS }
          # The authorization and login routes are guarded by the state of their AuthorizationSession (see AuthorizationFlow)
