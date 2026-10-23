@@ -11,8 +11,10 @@ use App\Api\IdentityLink\Response\GroupsResponse;
 use App\Api\Shared\AbstractConnector;
 use App\Service\JwtTokenGenerator;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class DbClientConnector extends AbstractConnector implements ClientConnectorInterface
 {
@@ -23,9 +25,11 @@ class DbClientConnector extends AbstractConnector implements ClientConnectorInte
         private readonly JwtTokenGenerator $jwtTokenGenerator,
         private readonly LoggerInterface $logger,
         private readonly SerializerInterface $serializer,
+        private readonly HttpClientInterface $httpClient,
+        private readonly RequestStack $requestStack,
     )
     {
-        parent::__construct($this->jwtTokenGenerator, $this->logger);
+        parent::__construct($this->jwtTokenGenerator, $this->logger, $this->httpClient, $this->requestStack);
     }
 
     public function getClientByClientCredentials($clientIdentifier, $clientSecret, $grantType): ?ClientResponseInterface

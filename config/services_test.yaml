@@ -25,9 +25,6 @@ services:
             - '@App\Api\Contract\UserConnectorInterface'
             - '@App\Service\JwtTokenGenerator'
 
-    App\Repository\ScopeRepository:
-        public: true
-
     App\Api\Contract\UserConnectorInterface:
         class: App\Tests\Helper\Mocks\UserConnectorMock
 
