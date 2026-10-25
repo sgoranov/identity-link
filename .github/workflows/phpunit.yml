@@ -2,9 +2,9 @@ name: PHPUnit Tests
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ main, develop ]
 
 permissions:
   contents: read
