@@ -18,14 +18,14 @@ class TwoFaConnector extends AbstractConnector implements TwoFaConnectorInterfac
 {
     public function __construct(
         private readonly string $authEndpoint,
-        private readonly JwtTokenGenerator $jwtTokenGenerator,
-        private readonly LoggerInterface $logger,
         private readonly SerializerInterface $serializer,
-        private readonly HttpClientInterface $httpClient,
-        private readonly RequestStack $requestStack,
+        JwtTokenGenerator $jwtTokenGenerator,
+        LoggerInterface $logger,
+        HttpClientInterface $httpClient,
+        RequestStack $requestStack,
     )
     {
-        parent::__construct($this->jwtTokenGenerator, $this->logger, $this->httpClient, $this->requestStack);
+        parent::__construct($jwtTokenGenerator, $logger, $httpClient, $requestStack);
     }
 
     public function initiateAuthenticationRequest(string $userIdentifier, string $redirectUri): ?string

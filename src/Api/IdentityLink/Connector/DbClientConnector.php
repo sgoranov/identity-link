@@ -22,14 +22,14 @@ class DbClientConnector extends AbstractConnector implements ClientConnectorInte
         private readonly string $clientAuthEndpoint,
         private readonly string $queryEndpoint,
         private readonly string $scopeEndpoint,
-        private readonly JwtTokenGenerator $jwtTokenGenerator,
-        private readonly LoggerInterface $logger,
         private readonly SerializerInterface $serializer,
-        private readonly HttpClientInterface $httpClient,
-        private readonly RequestStack $requestStack,
+        JwtTokenGenerator $jwtTokenGenerator,
+        LoggerInterface $logger,
+        HttpClientInterface $httpClient,
+        RequestStack $requestStack,
     )
     {
-        parent::__construct($this->jwtTokenGenerator, $this->logger, $this->httpClient, $this->requestStack);
+        parent::__construct($jwtTokenGenerator, $logger, $httpClient, $requestStack);
     }
 
     public function getClientByClientCredentials($clientIdentifier, $clientSecret, $grantType): ?ClientResponseInterface
