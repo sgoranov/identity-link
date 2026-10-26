@@ -12,6 +12,25 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 
 class UserConnectorMock implements UserConnectorInterface
 {
+    private array $scopes = ['openid'];
+    private bool $twoFaEnabled = true;
+    private bool $userDeleted = false;
+
+    /** @param list<string> $scopes */
+    public function setScopes(array $scopes): void
+    {
+        $this->scopes = $scopes;
+    }
+
+    public function setTwoFaEnabled(bool $twoFaEnabled): void
+    {
+        $this->twoFaEnabled = $twoFaEnabled;
+    }
+
+    public function setUserDeleted(bool $userDeleted): void
+    {
+        $this->userDeleted = $userDeleted;
+    }
 
     public function getUserByUserCredentials(
         $username, $password, $grantType, ClientEntityInterface $clientEntity): ?UserResponseInterface
@@ -19,6 +38,7 @@ class UserConnectorMock implements UserConnectorInterface
         if ($username === AppFixtures::USER_IDENTIFIER && $password === AppFixtures::USER_PASSWORD) {
             $user = new DbUserResponse();
             $user->setId(AppFixtures::USER_IDENTIFIER);
+            $user->setTwoFaEnabled($this->twoFaEnabled);
             $user->setClaims([
                 'name' => 'User Name',
                 'preferred_username' => 'username',
@@ -35,9 +55,10 @@ class UserConnectorMock implements UserConnectorInterface
 
     public function getUserById(string $id): ?UserResponseInterface
     {
-        if ($id === AppFixtures::USER_IDENTIFIER) {
+        if ($id === AppFixtures::USER_IDENTIFIER && !$this->userDeleted) {
             $user = new DbUserResponse();
             $user->setId(AppFixtures::USER_IDENTIFIER);
+            $user->setTwoFaEnabled($this->twoFaEnabled);
             $user->setClaims([
                 'name' => 'User Name',
                 'preferred_username' => 'username',
@@ -62,6 +83,6 @@ class UserConnectorMock implements UserConnectorInterface
 
     public function getScopes(string $id, string $audience): array
     {
-        return ['openid'];
+        return $this->scopes;
     }
 }

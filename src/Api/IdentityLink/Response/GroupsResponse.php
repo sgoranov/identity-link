@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Api\IdentityLink\Response;
 
 use App\Api\Contract\GroupsResponseInterface;
-use Symfony\Component\Serializer\Annotation\SerializedName;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 
 class GroupsResponse implements GroupsResponseInterface
 {

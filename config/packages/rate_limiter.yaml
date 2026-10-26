@@ -1,10 +1,12 @@
 framework:
   rate_limiter:
+    # Failed logins per client IP, across all usernames (see LoginController::login())
     login_ip:
       cache_pool: rate_limiter_redis
       policy: 'fixed_window'
-      limit: 3
+      limit: 20
       interval: '10 minute'
+    # Failed logins per username and client IP
     login_username:
       cache_pool: rate_limiter_redis
       policy: 'fixed_window'

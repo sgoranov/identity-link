@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
+use App\Security\Authorization\UnknownAudienceException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,11 +13,8 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class AuthorizationMetadataController extends AbstractController
 {
-    private readonly AuthorizationRegistry $authorizationRegistry;
-
-    public function __construct(AuthorizationLoaderInterface $authorizationLoader)
+    public function __construct(private readonly AuthorizationRegistry $authorizationRegistry)
     {
-        $this->authorizationRegistry = $authorizationLoader->load();
     }
 
     #[Route('/api/v1/authorization/audiences', name: 'authorization_audiences', methods: ['GET'])]
@@ -40,8 +37,11 @@ final class AuthorizationMetadataController extends AbstractController
         }
 
         try {
-            return new JsonResponse($this->authorizationRegistry->getScopesAndAliases($audience));
-        } catch (\InvalidArgumentException) {
+            return new JsonResponse([
+                ...$this->authorizationRegistry->getScopesAndAliases($audience),
+                'openid_connect_resources' => $this->authorizationRegistry->getOpenIdConnectResources(),
+            ]);
+        } catch (UnknownAudienceException) {
             return new JsonResponse(
                 ['error' => sprintf('Unknown audience "%s".', $audience)],
                 Response::HTTP_NOT_FOUND,

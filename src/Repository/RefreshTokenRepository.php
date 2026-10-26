@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\AccessToken;
 use App\Entity\RefreshToken;
 use App\Repository\Trait\RevocationTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -41,6 +42,24 @@ class RefreshTokenRepository extends ServiceEntityRepository
             ->setParameter('revoked', true)
             ->setParameter('userIdentifier', $userIdentifier)
             ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->execute();
+    }
+
+    public function revokeByAuthCodeIdentifier(string $authCodeIdentifier): void
+    {
+        $accessTokens = $this->getEntityManager()->createQueryBuilder()
+            ->select('a.id')
+            ->from(AccessToken::class, 'a')
+            ->where('a.authCodeIdentifier = :authCodeIdentifier');
+
+        $qb = $this->createQueryBuilder('r');
+        $qb->update()
+            ->set('r.isRevoked', ':revoked')
+            ->where($qb->expr()->in('r.accessToken', $accessTokens->getDQL()))
+            ->andWhere('r.isRevoked = false')
+            ->setParameter('revoked', true)
+            ->setParameter('authCodeIdentifier', $authCodeIdentifier)
             ->getQuery()
             ->execute();
     }

@@ -12,6 +12,25 @@ use App\LeagueOAuth2\Entity\GrantTypeEntity;
 
 class ClientConnectorMock implements ClientConnectorInterface
 {
+    private ?string $audienceOverride = null;
+    private array $scopes = ['openid'];
+    private bool $consentRequired = true;
+
+    public function setAudienceOverride(?string $audience): void
+    {
+        $this->audienceOverride = $audience;
+    }
+
+    public function setConsentRequired(bool $consentRequired): void
+    {
+        $this->consentRequired = $consentRequired;
+    }
+
+    /** @param list<string> $scopes */
+    public function setScopes(array $scopes): void
+    {
+        $this->scopes = $scopes;
+    }
 
     public function getClientByClientCredentials($clientIdentifier, $clientSecret, $grantType): ?ClientResponseInterface
     {
@@ -19,7 +38,7 @@ class ClientConnectorMock implements ClientConnectorInterface
 
             $response = new DbClientResponse();
             $response->setPublic(false);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI);
@@ -30,7 +49,7 @@ class ClientConnectorMock implements ClientConnectorInterface
                 GrantTypeEntity::REFRESH_TOKEN,
                 GrantTypeEntity::IMPLICIT,
             ]);
-            $response->setAudience('https://example.com/identity-link');
+            $response->setAudience($this->audienceOverride ?? 'https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -40,14 +59,14 @@ class ClientConnectorMock implements ClientConnectorInterface
 
             $response = new DbClientResponse();
             $response->setPublic(false);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS);
             $response->setGrantTypes([
                 GrantTypeEntity::AUTHORIZATION_CODE,
             ]);
-            $response->setAudience('https://example.com/identity-link');
+            $response->setAudience($this->audienceOverride ?? 'https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -63,7 +82,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         if ($id === AppFixtures::PRIVATE_CLIENT_IDENTIFIER) {
 
             $response->setPublic(false);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::PRIVATE_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI);
@@ -74,7 +93,7 @@ class ClientConnectorMock implements ClientConnectorInterface
                 GrantTypeEntity::REFRESH_TOKEN,
                 GrantTypeEntity::IMPLICIT,
             ]);
-            $response->setAudience('https://example.com/identity-link');
+            $response->setAudience($this->audienceOverride ?? 'https://example.com/identity-link');
             $response->setScopes([]);
 
             return $response;
@@ -82,7 +101,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         } elseif ($id === AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER) {
 
             $response->setPublic(false);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::MULTI_REDIRECT_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::MULTI_REDIRECT_CLIENT_REDIRECT_URIS);
@@ -97,7 +116,7 @@ class ClientConnectorMock implements ClientConnectorInterface
         } elseif ($id === AppFixtures::PUBLIC_CLIENT_IDENTIFIER) {
 
             $response->setPublic(true);
-            $response->setConsentRequired(true);
+            $response->setConsentRequired($this->consentRequired);
             $response->setId(AppFixtures::PUBLIC_CLIENT_IDENTIFIER);
             $response->setName(AppFixtures::PUBLIC_CLIENT_IDENTIFIER);
             $response->setRedirectUri(AppFixtures::PUBLIC_CLIENT_REDIRECT_URI);
@@ -123,6 +142,6 @@ class ClientConnectorMock implements ClientConnectorInterface
 
     public function getScopes(string $id, string $audience): array
     {
-        return ['openid'];
+        return $this->scopes;
     }
 }

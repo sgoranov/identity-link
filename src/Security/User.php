@@ -19,9 +19,11 @@ class User implements UserInterface
         return $this->roles;
     }
 
+    #[\Deprecated]
     public function eraseCredentials(): void
     {
-        // TODO: Implement eraseCredentials() method.
+        // there is no sensitive data to remove
+        // from the User object
     }
 
     public function getUserIdentifier(): string

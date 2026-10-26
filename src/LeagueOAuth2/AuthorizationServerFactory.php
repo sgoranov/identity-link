@@ -13,12 +13,12 @@ use App\Security\EncryptionKeyLoader;
 use App\Security\Jwt\JwtConfig;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\EventEmitting\EventEmitter;
-use League\OAuth2\Server\Grant\AuthCodeGrant;
 use League\OAuth2\Server\Grant\ClientCredentialsGrant;
 use League\OAuth2\Server\Grant\ImplicitGrant;
 use League\OAuth2\Server\Grant\PasswordGrant;
 use League\OAuth2\Server\Grant\RefreshTokenGrant;
 use League\OAuth2\Server\RequestEvent;
+use OpenIDConnectServer\Grant\AuthCodeGrant;
 use OpenIDConnectServer\IdTokenResponse;
 use Psr\EventDispatcher\EventDispatcherInterface;
 

@@ -2,9 +2,9 @@ name: PHPUnit Tests
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ main, develop ]
 
 permissions:
   contents: read
@@ -16,4 +16,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run local test runner script
-        run: bash bin/test-run
+        run: bin/test-run

@@ -9,22 +9,20 @@ use App\LeagueOAuth2\Entity\ClientEntityInterface as IdentityLinkClientEntityInt
 use App\LeagueOAuth2\Entity\ScopeEntity;
 use App\Repository\AuthCodeRepository;
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
+use App\Security\Authorization\UnknownAudienceException;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
 
 class ScopeRepository implements ScopeRepositoryInterface
 {
-    private readonly AuthorizationRegistry $authorizationRegistry;
-
     public function __construct(
         private readonly ClientConnectorInterface $clientConnector,
         private readonly UserConnectorInterface $userConnector,
         private readonly AuthCodeRepository $authCodeRepository,
-        AuthorizationLoaderInterface $authorizationLoader
+        private readonly AuthorizationRegistry $authorizationRegistry,
     ) {
-        $this->authorizationRegistry = $authorizationLoader->load();
     }
 
     public function getScopeEntityByIdentifier(string $identifier): ?ScopeEntityInterface
@@ -52,10 +50,7 @@ class ScopeRepository implements ScopeRepositoryInterface
         }
 
         $audience = $clientEntity->getAudience();
-        $availableScopes = $this->authorizationRegistry->expandScopes(
-            $audience,
-            array_map('strval', $scopes)
-        );
+        $availableScopes = $this->expandScopes($audience, array_map('strval', $scopes));
 
         if ($authCodeId !== null) {
             // Restrict token scopes to those granted by the authorization code. For example,
@@ -63,9 +58,9 @@ class ScopeRepository implements ScopeRepositoryInterface
             $authCode = $this->authCodeRepository->getByIdentifier($authCodeId);
             $availableScopes = $this->filterScopes(
                 $availableScopes,
-                $this->authorizationRegistry->expandScopes(
+                $this->expandScopes(
                     $audience,
-                    array_map('trim', json_decode($authCode->getScopes(), true))
+                    array_map('trim', json_decode($authCode->getScopes(), true)),
                 ),
             );
         }
@@ -73,21 +68,31 @@ class ScopeRepository implements ScopeRepositoryInterface
         // Restrict the remaining scopes to those assigned to the client.
         $availableScopes = $this->filterScopes(
             $availableScopes,
-            $this->authorizationRegistry->expandScopes(
+            $this->expandScopes(
                 $audience,
-                $this->clientConnector->getScopes($clientEntity->getIdentifier(), $audience)
+                $this->clientConnector->getScopes($clientEntity->getIdentifier(), $audience),
             ),
         );
 
         if ($userIdentifier !== null) {
-            // For non-client-credentials flows, restrict the remaining scopes to those assigned to the user.
-            $availableScopes = $this->filterScopes(
+            // For non-client-credentials flows, keep the remaining scopes that are assigned to the user.
+            $userScopes = $this->filterScopes(
                 $availableScopes,
-                $this->authorizationRegistry->expandScopes(
+                $this->expandScopes(
                     $audience,
-                    $this->userConnector->getScopes($userIdentifier, $audience)
+                    $this->userConnector->getScopes($userIdentifier, $audience),
                 ),
             );
+
+            // Also keep the remaining OpenID Connect scopes from openid_connect_resources. Every user holds them:
+            // they only describe the user to the client, so the client's assignment and the user's consent decide them.
+            $openIdConnectScopes = $this->filterScopes(
+                $availableScopes,
+                $this->authorizationRegistry->getOpenIdConnectResourcesScopes(),
+            );
+
+            // Combine both, listing a scope kept by both filters once.
+            $availableScopes = array_values(array_unique([...$userScopes, ...$openIdConnectScopes]));
         }
 
         return array_map(
@@ -102,5 +107,22 @@ class ScopeRepository implements ScopeRepositoryInterface
             $scopes,
             static fn (string $scope): bool => in_array($scope, $availableScopes, true),
         ));
+    }
+
+    private function expandScopes(string $audience, array $identifiers): array
+    {
+        try {
+            return $this->authorizationRegistry->expandScopes($audience, $identifiers);
+        } catch (UnknownAudienceException $exception) {
+            throw new OAuthServerException(
+                'The requested resource is invalid.',
+                12,
+                'invalid_target',
+                400,
+                'The requested audience is not supported.',
+                null,
+                $exception,
+            );
+        }
     }
 }

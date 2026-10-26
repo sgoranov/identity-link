@@ -52,6 +52,23 @@ class TokenRevokerTest extends TestCase
         $this->tokenRevoker->revokeAllTokensForUser('user-id');
     }
 
+    public function testRevokeTokensIssuedForAuthCodeRevokesRefreshAndAccessTokens(): void
+    {
+        $this->accessTokenRepository
+            ->expects($this->once())
+            ->method('revokeByAuthCodeIdentifier')
+            ->with('auth-code-id');
+
+        $this->refreshTokenRepository
+            ->expects($this->once())
+            ->method('revokeByAuthCodeIdentifier')
+            ->with('auth-code-id');
+
+        $this->expectTokenValidationNever();
+
+        $this->tokenRevoker->revokeTokensIssuedForAuthCode('auth-code-id');
+    }
+
     public function testRevokeTokenDoesNothingWhenTokenIsInvalid(): void
     {
         $this->tokenValidator

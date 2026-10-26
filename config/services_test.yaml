@@ -9,11 +9,6 @@ parameters:
     access_token_ttl: PT1H
     refresh_token_ttl: P1M
     auth_code_ttl: PT1M
-    enable_client_credentials_grant: true
-    enable_password_grant: true
-    enable_refresh_token_grant: true
-    enable_auth_code_grant: true
-    enable_implicit_grant: false
 
 services:
     _defaults:
@@ -25,11 +20,19 @@ services:
             - '@App\Api\Contract\UserConnectorInterface'
             - '@App\Service\JwtTokenGenerator'
 
-    App\Repository\ScopeRepository:
-        public: true
-
     App\Api\Contract\UserConnectorInterface:
         class: App\Tests\Helper\Mocks\UserConnectorMock
 
     App\Api\Contract\ClientConnectorInterface:
         class: App\Tests\Helper\Mocks\ClientConnectorMock
+
+    App\Api\Contract\TwoFaConnectorInterface:
+        class: App\Tests\Helper\Mocks\TwoFaConnectorMock
+
+    # Tests load their additional audiences from a tracked directory instead of config/authorization, which git
+    # ignores because it holds each installation's own audiences.
+    App\Security\Authorization\Loader\FileAuthorizationLoader:
+        autowire: true
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $configurationDirectory: '%kernel.project_dir%/tests/resources/authorization'

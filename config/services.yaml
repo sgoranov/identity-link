@@ -1,5 +1,8 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
 # This file is the entry point to configure your own services.
 # Files in the packages/ subdirectory configure your dependencies.
+# See also https://symfony.com/doc/current/service_container/import.html
 
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
@@ -39,7 +42,7 @@ services:
     sgoranov\IdentityLinkShared\Security\AccessTokenHandlerConfiguration:
         arguments:
             $issuer: '@=service("App\\Security\\Jwt\\JwtConfig").getIssuer()'
-            $audience: '@=service("App\\Security\\Jwt\\JwtConfig").getAudience()'
+            $audiences: '@=service("App\\Security\\Authorization\\AuthorizationRegistry").getAudiences()'
             $publicKeyPath: '@=service("App\\Security\\Jwt\\JwtConfig").getPublicKey()'
 
     sgoranov\IdentityLinkShared\Security\AccessTokenHandler: ~
@@ -56,10 +59,6 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
-        exclude:
-            - '../src/DependencyInjection/'
-            - '../src/Entity/'
-            - '../src/Kernel.php'
 
     App\Security\Jwt\JwtConfig:
         arguments:
@@ -68,15 +67,34 @@ services:
     App\Security\Authorization\Loader\AuthorizationLoaderInterface:
         alias: App\Security\Authorization\Loader\FileAuthorizationLoader
 
+    # Loaded once and shared, rather than parsing the configuration files for every service that needs it.
+    App\Security\Authorization\AuthorizationRegistry:
+        factory: ['@App\Security\Authorization\Loader\AuthorizationLoaderInterface', 'load']
+
     App\Security\EncryptionKeyLoader:
       class: App\Security\EncryptionKeyLoader
       calls:
         - setEncryptionKeyPath: [ '%encryption_key%' ]
 
-    App\Security\AuthorizationEndpointAuthenticator:
-        class: App\Security\AuthorizationEndpointAuthenticator
+    # Throttles failed logins with the limiter behind Symfony's login_throttling, wired by hand because
+    # LoginController checks the password itself instead of a Symfony authenticator, so login_throttling
+    # never runs. It combines two limiters from rate_limiter.yaml (limiter.<name> services):
+    #  - $globalFactory: per client IP, across all usernames
+    #  - $localFactory: per username and client IP; reset() after a successful login clears only this one
+    # The username is read from the SecurityRequestAttributes::LAST_USERNAME request attribute, which
+    # LoginController sets before using the limiter; without it this limit is per IP only.
+    # The IPs and usernames are stored as HMACs keyed with $secret, not in plain text.
+    app.login_rate_limiter:
+        class: Symfony\Component\Security\Http\RateLimiter\DefaultLoginRateLimiter
+        arguments:
+            $globalFactory: '@limiter.login_ip'
+            $localFactory: '@limiter.login_username'
+            $secret: '%kernel.secret%'
 
-    App\Security\LoginFlowConfig:
+    # Autowires app.login_rate_limiter into the constructor arguments with this type and name
+    Symfony\Component\HttpFoundation\RateLimiter\PeekableRequestRateLimiterInterface $loginRateLimiter: '@app.login_rate_limiter'
+
+    App\Security\AuthorizationFlowConfig:
         arguments:
             $twoFactorEnabled: '%login_two_fa_enabled%'
 
@@ -107,12 +125,16 @@ services:
 
     OpenIDConnectServer\ClaimExtractor: ~
 
+    OpenIDConnectServer\StaticIssuerResolver:
+        arguments:
+            - '@=service("App\\Security\\Jwt\\JwtConfig").getIssuer()'
+
     OpenIDConnectServer\IdTokenResponse:
-        class: App\LeagueOAuth2\ResponseType\IdTokenResponse
         arguments:
             - '@App\LeagueOAuth2\Repository\UserRepository'
             - '@OpenIDConnectServer\ClaimExtractor'
-            - '@App\Security\Jwt\JwtConfig'
+            - '@OpenIDConnectServer\StaticIssuerResolver'
+            - '@=service("App\\Security\\Jwt\\JwtConfig").getKid()'
 
     App\LeagueOAuth2\AuthorizationServerFactory:
         calls:
@@ -133,6 +155,5 @@ services:
     Psr\Http\Message\ResponseFactoryInterface:
         class: Nyholm\Psr7\Factory\Psr17Factory
 
-    sgoranov\IdentityLinkShared\EventListener\RequestResponseLogger:
-        arguments:
-            $logger: '@monolog.logger.rest'
+    # Adds the X-Request-Id header to every log record as extra.request_id
+    sgoranov\IdentityLinkShared\Monolog\RequestIdProcessor: ~

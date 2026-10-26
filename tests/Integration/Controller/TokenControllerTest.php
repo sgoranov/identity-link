@@ -28,13 +28,18 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Controller;
 
+use App\Api\Contract\ClientConnectorInterface;
 use App\DataFixtures\AppFixtures;
 use App\LeagueOAuth2\Entity\GrantTypeEntity;
+use App\Repository\AccessTokenRepository;
 use App\Repository\AuthCodeRepository;
 use App\Repository\RefreshTokenRepository;
 use App\Security\Jwt\JwtConfig;
-use App\Security\User;
+use App\Tests\Helper\AuthorizationFlowHelper;
 use App\Tests\Helper\TestHelper;
+use App\Tests\Helper\Mocks\ClientConnectorMock;
+use App\Tests\Helper\Mocks\UserConnectorMock;
+use App\Api\Contract\UserConnectorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -42,11 +47,14 @@ use League\OAuth2\Server\RequestAccessTokenEvent;
 use League\OAuth2\Server\RequestEvent;
 use League\OAuth2\Server\RequestRefreshTokenEvent;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Routing\RouterInterface;
 
 final class TokenControllerTest extends WebTestCase
 {
+    use AuthorizationFlowHelper;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -95,6 +103,29 @@ final class TokenControllerTest extends WebTestCase
 
         $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $accessToken->getClient()->getIdentifier());
         $this->assertNull($accessToken->getUserIdentifier());
+    }
+
+    public function testClientCredentialsRequestRejectsUnknownAudience(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setAudienceOverride('https://unknown.example');
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::CLIENT_CREDENTIALS,
+        ]);
+
+        $response = $client->getResponse();
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        self::assertSame(400, $response->getStatusCode());
+        self::assertSame('invalid_target', $jsonResponse['error']);
+        self::assertSame('The requested resource is invalid.', $jsonResponse['error_description']);
+        self::assertSame('The requested audience is not supported.', $jsonResponse['hint']);
     }
 
     public function testSuccessfulPasswordRequest(): void
@@ -240,6 +271,36 @@ final class TokenControllerTest extends WebTestCase
         $this->assertSame($accessToken->getIdentifier(), $refreshTokenEntity->getAccessToken()->getIdentifier());
     }
 
+    public function testRefreshTokenRequestRejectsDeletedUser(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $container = $client->getContainer();
+        /** @var TestHelper $testHelper */
+        $testHelper = $container->get(TestHelper::class);
+        $userConnector = $container->get(UserConnectorInterface::class);
+        self::assertInstanceOf(UserConnectorMock::class, $userConnector);
+        $userConnector->setUserDeleted(true);
+
+        list($refreshToken) = $container->get(RefreshTokenRepository::class)
+            ->findBy(['identifier' => AppFixtures::REFRESH_TOKEN_IDENTIFIER]);
+        // Without openid no ID token is issued, so nothing else on the refresh looks the user up.
+        $refreshToken->getAccessToken()->setScopes(json_encode(['offline_access']));
+
+        $client->request('POST', $container->get(RouterInterface::class)->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::REFRESH_TOKEN,
+            'refresh_token' => $testHelper->generateEncryptedRefreshTokenPayload($refreshToken),
+        ]);
+
+        $response = $client->getResponse();
+        self::assertSame(400, $response->getStatusCode());
+        $jsonResponse = json_decode($response->getContent(), true);
+        self::assertSame('invalid_grant', $jsonResponse['error']);
+        self::assertSame('Token has been revoked', $jsonResponse['hint']);
+        self::assertFalse($refreshToken->isRevoked());
+    }
+
     public function testSuccessfulAuthorizationCodeRequest(): void
     {
         $client = TokenControllerTest::createClient();
@@ -269,6 +330,126 @@ final class TokenControllerTest extends WebTestCase
         $this->assertLessThanOrEqual(3600, $jsonResponse['expires_in']);
         $this->assertGreaterThan(0, $jsonResponse['expires_in']);
         $this->assertNotEmpty($jsonResponse['access_token']);
+    }
+
+    public function testReusedAuthorizationCodeRevokesTokensIssuedForIt(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        [$authCode] = $client->getContainer()->get(AuthCodeRepository::class)->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        $code = $testHelper->generateEncryptedAuthCodePayload($authCode);
+
+        $tokens = $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+
+        $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(400, $client->getResponse()->getStatusCode());
+        self::assertSame('invalid_grant', $this->decodeResponse($client)['error']);
+
+        $this->assertTokensRevoked($client, $tokens);
+    }
+
+    public function testAuthorizationCodeExchangedConcurrentlyRevokesTokensOfBothExchanges(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $container = $client->getContainer();
+        $entityManager = $container->get(EntityManagerInterface::class);
+        $accessTokenRepository = $container->get(AccessTokenRepository::class);
+        [$authCode] = $container->get(AuthCodeRepository::class)->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        $code = $container->get(TestHelper::class)->generateEncryptedAuthCodePayload($authCode);
+
+        // The concurrent exchange has issued its token...
+        $accessTokenRepository->getByIdentifier(AppFixtures::ACCESS_TOKEN_IDENTIFIER)
+            ->setAuthCodeIdentifier(AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER);
+        $entityManager->flush();
+
+        // ...and revokes the code while this exchange issues its own tokens, after both passed the check.
+        $connection = $entityManager->getConnection();
+        $container->get(EventDispatcherInterface::class)->addListener(
+            RequestAccessTokenEvent::class,
+            static fn () => $connection->executeStatement(
+                'UPDATE auth_code SET is_revoked = true WHERE identifier = :identifier',
+                ['identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER],
+            ),
+        );
+
+        $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(400, $client->getResponse()->getStatusCode());
+        self::assertSame('invalid_grant', $this->decodeResponse($client)['error']);
+
+        $client->getContainer()->get(EntityManagerInterface::class)->clear();
+        $accessTokens = $client->getContainer()->get(AccessTokenRepository::class)->findBy([
+            'authCodeIdentifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        self::assertCount(2, $accessTokens, 'Both exchanges should have a token linked to the code.');
+
+        $refreshTokenRepository = $client->getContainer()->get(RefreshTokenRepository::class);
+        foreach ($accessTokens as $accessToken) {
+            self::assertTrue($accessToken->isRevoked(), 'The access token should be revoked.');
+            self::assertTrue(
+                $refreshTokenRepository->findOneBy(['accessToken' => $accessToken])->isRevoked(),
+                'The refresh token should be revoked.',
+            );
+        }
+    }
+
+    public function testReusedAuthorizationCodeRevokesTokensObtainedByRefreshing(): void
+    {
+        $client = TokenControllerTest::createClient();
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        [$authCode] = $client->getContainer()->get(AuthCodeRepository::class)->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        $code = $testHelper->generateEncryptedAuthCodePayload($authCode);
+
+        $tokens = $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+
+        $client->request('POST', $client->getContainer()->get(RouterInterface::class)->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::REFRESH_TOKEN,
+            'refresh_token' => $tokens['refresh_token'],
+        ]);
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+        $refreshedTokens = $this->decodeResponse($client);
+
+        $this->exchangeAuthorizationCode($client, $code);
+        self::assertSame(400, $client->getResponse()->getStatusCode());
+
+        $this->assertTokensRevoked($client, $refreshedTokens);
+    }
+
+    public function testAuthorizationCodeTokenRequestRejectsUnknownAudience(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setAudienceOverride('https://unknown.example');
+        $testHelper = $client->getContainer()->get(TestHelper::class);
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $authCodeRepository = $client->getContainer()->get(AuthCodeRepository::class);
+        list($authCode) = $authCodeRepository->findBy(['identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER]);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        $response = $client->getResponse();
+        $jsonResponse = json_decode($response->getContent(), true);
+
+        self::assertSame(400, $response->getStatusCode());
+        self::assertSame('invalid_target', $jsonResponse['error']);
+        self::assertSame('The requested resource is invalid.', $jsonResponse['error_description']);
+        self::assertSame('The requested audience is not supported.', $jsonResponse['hint']);
     }
 
     public function testSuccessfulAuthorizationCodeRequestWithPublicClient(): void
@@ -449,16 +630,103 @@ final class TokenControllerTest extends WebTestCase
         $this->assertSame(AppFixtures::PRIVATE_CLIENT_IDENTIFIER, $accessTokenPayload['client_id']);
     }
 
-    public function testAuthorizationCodeFlowIncludesNonceInIdToken(): void
+    /**
+     * @dataProvider nonceProvider
+     */
+    public function testAuthorizationCodeFlowIncludesNonceInIdToken(string $nonce): void
     {
-        $this->markTestSkipped('TODO: Include nonce in ID token for authorization code flow.');
+        $client = static::createClient();
+        $response = $this->requestTokenThroughAuthorizationFlow($client, ['nonce' => $nonce]);
+
+        $this->assertArrayHasKey('id_token', $response);
+        $payload = $this->decodeJwtPayload($response['id_token']);
+
+        // The nonce must be echoed exactly as sent (OIDC Core 3.1.3.7), without trimming or re-encoding.
+        $this->assertArrayHasKey('nonce', $payload);
+        $this->assertSame($nonce, $payload['nonce']);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function nonceProvider(): array
+    {
+        return [
+            'random' => [bin2hex(random_bytes(16))],
+            'reserved and whitespace characters' => [' a+b/c=d&e?f%20 '],
+            'unicode' => ['nonce-ünïcödé-✓'],
+            'maximum length' => [str_repeat('n', 255)],
+        ];
+    }
+
+    public function testIdTokenOmitsNonceWhenNotRequested(): void
+    {
+        $client = static::createClient();
+        $response = $this->requestTokenThroughAuthorizationFlow($client);
+
+        $this->assertArrayHasKey('id_token', $response);
+        $this->assertArrayNotHasKey('nonce', $this->decodeJwtPayload($response['id_token']));
+    }
+
+    public function testIdTokenOmitsEmptyNonce(): void
+    {
+        $client = static::createClient();
+        $response = $this->requestTokenThroughAuthorizationFlow($client, ['nonce' => '']);
+
+        $this->assertArrayHasKey('id_token', $response);
+        $this->assertArrayNotHasKey('nonce', $this->decodeJwtPayload($response['id_token']));
+    }
+
+    public function testNonceDoesNotCarryOverToNextAuthorization(): void
+    {
+        $client = static::createClient();
+        // Keep one kernel, and so the same service instances, across both flows, as a long-running worker would.
+        $client->disableReboot();
+
+        $first = $this->requestTokenThroughAuthorizationFlow($client, ['nonce' => 'first-nonce']);
+        $second = $this->requestTokenThroughAuthorizationFlow($client);
+
+        $this->assertSame('first-nonce', $this->decodeJwtPayload($first['id_token'])['nonce']);
+        $this->assertArrayNotHasKey('nonce', $this->decodeJwtPayload($second['id_token']));
+    }
+
+    public function testRefreshedIdTokenOmitsNonce(): void
+    {
         $client = static::createClient();
         $router = $client->getContainer()->get(RouterInterface::class);
+        $response = $this->requestTokenThroughAuthorizationFlow($client, ['nonce' => 'original-nonce']);
 
-        $user = new User(AppFixtures::USER_IDENTIFIER);
-        $client->loginUser($user, 'secured');
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::REFRESH_TOKEN,
+            'refresh_token' => $response['refresh_token'],
+        ]);
 
-        $nonce = bin2hex(random_bytes(16));
+        $this->assertSame(200, $client->getResponse()->getStatusCode());
+        $refreshed = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        // A refreshed ID token should not contain a nonce (OIDC Core 12.2).
+        $this->assertArrayHasKey('id_token', $refreshed);
+        $this->assertArrayNotHasKey('nonce', $this->decodeJwtPayload($refreshed['id_token']));
+    }
+
+    public function testNonceIsIgnoredWithoutOpenidScope(): void
+    {
+        $client = static::createClient();
+        $response = $this->requestTokenThroughAuthorizationFlow($client, [
+            'scope' => 'profile',
+            'nonce' => str_repeat('n', 256),
+        ]);
+
+        $this->assertArrayNotHasKey('id_token', $response);
+    }
+
+    /**
+     * @dataProvider invalidNonceProvider
+     */
+    public function testAuthorizationRejectsInvalidNonce(mixed $nonce): void
+    {
+        $client = static::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
 
         $client->request('GET', $router->generate('oauth2_auth'), [
             'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
@@ -469,42 +737,25 @@ final class TokenControllerTest extends WebTestCase
             'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
         ]);
 
-        $this->assertResponseRedirects();
-        $client->request('GET', $client->getResponse()->headers->get('Location'));
-        $crawler = $client->followRedirect();
+        // The client and redirect URI are valid, so the error goes back to the client (RFC 6749 4.1.2.1).
+        $this->assertSame(302, $client->getResponse()->getStatusCode());
+        $location = (string) $client->getResponse()->headers->get('Location');
+        $this->assertStringStartsWith(AppFixtures::PRIVATE_CLIENT_REDIRECT_URI, $location);
 
-        $form = $crawler->selectButton('consent[allow]')->form();
-        $client->submit($form);
+        parse_str((string) parse_url($location, \PHP_URL_QUERY), $query);
+        $this->assertSame('invalid_request', $query['error']);
+        $this->assertSame('foobar', $query['state']);
+        $this->assertArrayNotHasKey('code', $query);
+    }
 
-        $this->assertResponseRedirects();
-        $client->followRedirect();
-        $url = $client->getResponse()->headers->get('Location');
-
-        $query = [];
-        parse_str(parse_url($url, \PHP_URL_QUERY), $query);
-        $this->assertArrayHasKey('code', $query);
-
-        $client->request('POST', $router->generate('oauth2_token'), [
-            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
-            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
-            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
-            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
-            'code' => $query['code'],
-        ]);
-
-        $response = $client->getResponse();
-
-        $this->assertSame(200, $response->getStatusCode());
-        $jsonResponse = json_decode($response->getContent(), true);
-
-        $this->assertArrayHasKey('id_token', $jsonResponse);
-        $this->assertNotEmpty($jsonResponse['id_token']);
-
-        [$header, $payload, $signature] = explode('.', $jsonResponse['id_token']);
-        $decodedPayload = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
-
-        $this->assertArrayHasKey('nonce', $decodedPayload);
-        $this->assertSame($nonce, $decodedPayload['nonce']);
+    /** @return array<string, array{mixed}> */
+    public static function invalidNonceProvider(): array
+    {
+        return [
+            'longer than 255 bytes' => [str_repeat('n', 256)],
+            'multibyte longer than 255 bytes' => [str_repeat('✓', 86)],
+            'array' => [['a', 'b']],
+        ];
     }
 
     public function testNoIdTokenWithoutOpenidScope(): void
@@ -534,6 +785,228 @@ final class TokenControllerTest extends WebTestCase
 
         $jsonResponse = json_decode($response->getContent(), true);
         $this->assertArrayNotHasKey('id_token', $jsonResponse);
+    }
+
+    public function testNoIdTokenWhenClientHasNoOpenIdConnectScopes(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setScopes([]);
+
+        $this->requestAuthorizationCodeTokenWithScopes($client, [
+            'openid',
+            'profile',
+            'email',
+            'offline_access',
+        ], false, [], ['openid']);
+    }
+
+    public function testIdTokenWhenClientGroupGrantsOpenIdConnectScopes(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        // The connector represents scopes inherited from the client's group.
+        $clientConnector->setScopes([
+            'openid',
+            'profile',
+            'email',
+            'offline_access',
+        ]);
+
+        $this->requestAuthorizationCodeTokenWithScopes($client, [
+            'openid',
+            'profile',
+            'email',
+            'offline_access',
+        ], true);
+    }
+
+    /**
+     * @dataProvider missingClaimScopeProvider
+     * @param list<string> $clientScopes
+     * @param list<string> $userScopes
+     * @param list<string> $requestedScopes
+     */
+    public function testIdTokenClaimsAreOmittedWhenScopesAreMissing(
+        array $clientScopes,
+        array $userScopes,
+        array $requestedScopes,
+    ): void {
+        $client = static::createClient();
+        $response = $this->requestAuthorizationCodeTokenWithScopes(
+            $client,
+            ['openid', 'profile', 'email', 'offline_access'],
+            true,
+            $clientScopes,
+            $userScopes,
+            $requestedScopes,
+        );
+        $payload = $this->decodeJwtPayload($response['id_token']);
+
+        self::assertArrayNotHasKey('name', $payload);
+        self::assertArrayNotHasKey('email', $payload);
+    }
+
+    /** @return array<string, array{list<string>, list<string>, list<string>}> */
+    public static function missingClaimScopeProvider(): array
+    {
+        $all = ['openid', 'profile', 'email', 'offline_access'];
+        $withoutProfileAndEmail = ['openid', 'offline_access'];
+
+        return [
+            'client' => [$withoutProfileAndEmail, $all, $all],
+            'requested' => [$all, $all, $withoutProfileAndEmail],
+        ];
+    }
+
+    public function testIdTokenClaimsRequireClientAndRequestedScopesButNotUserScopes(): void
+    {
+        $client = static::createClient();
+        $scopes = ['openid', 'profile', 'email', 'offline_access'];
+        // The user has no scopes assigned: OpenID Connect default scopes are governed by the client assignment and consent.
+        $response = $this->requestAuthorizationCodeTokenWithScopes($client, $scopes, true, $scopes, [], $scopes);
+        $payload = $this->decodeJwtPayload($response['id_token']);
+
+        self::assertSame('openid profile email offline_access', $response['scope']);
+        self::assertSame('User Name', $payload['name']);
+        self::assertSame('username@email.com', $payload['email']);
+    }
+
+    public function testResourceScopesStillRequireUserScopeAssignment(): void
+    {
+        $client = static::createClient();
+        $scopes = ['openid', 'users.read'];
+        $response = $this->requestAuthorizationCodeTokenWithScopes($client, $scopes, true, $scopes, [], $scopes);
+
+        self::assertSame('openid', $response['scope']);
+    }
+
+    public function testLoginOnlyAudienceSignsUserIn(): void
+    {
+        $client = static::createClient();
+        $clientConnector = $client->getContainer()->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        // Declared in tests/resources/authorization without scopes of its own.
+        $clientConnector->setAudienceOverride('https://login-only.example');
+
+        // users.read is assigned to the client and the user, but belongs to another audience.
+        $scopes = ['openid', 'profile', 'email', 'users.read'];
+        $response = $this->requestAuthorizationCodeTokenWithScopes(
+            $client,
+            $scopes,
+            true,
+            $scopes,
+            ['users.read'],
+            $scopes,
+        );
+        $idTokenPayload = $this->decodeJwtPayload($response['id_token']);
+        $accessTokenPayload = $this->decodeJwtPayload($response['access_token']);
+
+        self::assertSame('openid profile email', $response['scope']);
+        self::assertSame('User Name', $idTokenPayload['name']);
+        self::assertSame('username@email.com', $idTokenPayload['email']);
+        self::assertSame('https://login-only.example', $accessTokenPayload['aud']);
+
+        // The login-only access token reads the user's claims from the userinfo endpoint.
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $client->request('GET', $router->generate('oidc_user_info'), [], [], [
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $response['access_token'],
+        ]);
+
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+        $userInfo = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame(AppFixtures::USER_IDENTIFIER, $userInfo['sub']);
+        self::assertSame('User Name', $userInfo['name']);
+        self::assertSame('username@email.com', $userInfo['email']);
+    }
+
+    /** @return array<string, mixed> */
+    private function requestAuthorizationCodeTokenWithScopes(
+        KernelBrowser $client,
+        array $scopes,
+        bool $expectIdToken,
+        ?array $clientScopes = null,
+        ?array $userScopes = null,
+        ?array $requestedScopes = null,
+    ): array {
+        $container = $client->getContainer();
+        $clientConnector = $container->get(ClientConnectorInterface::class);
+        self::assertInstanceOf(ClientConnectorMock::class, $clientConnector);
+        $clientConnector->setScopes($clientScopes ?? ['openid', 'profile', 'email', 'offline_access']);
+        $userConnector = $container->get(UserConnectorInterface::class);
+        self::assertInstanceOf(UserConnectorMock::class, $userConnector);
+        $userConnector->setScopes($userScopes ?? []);
+        $testHelper = $container->get(TestHelper::class);
+        $router = $container->get(RouterInterface::class);
+        $authCodeRepository = $container->get(AuthCodeRepository::class);
+        $entityManager = $container->get(EntityManagerInterface::class);
+
+        [$authCode] = $authCodeRepository->findBy([
+            'identifier' => AppFixtures::AUTH_CODE_PRIVATE_CLIENT_IDENTIFIER,
+        ]);
+        $authCode->setScopes(json_encode($requestedScopes ?? $scopes, JSON_THROW_ON_ERROR));
+        $entityManager->persist($authCode);
+        $entityManager->flush();
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $testHelper->generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+
+        $jsonResponse = json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        if ($expectIdToken) {
+            self::assertArrayHasKey('id_token', $jsonResponse);
+            self::assertNotEmpty($jsonResponse['id_token']);
+        } else {
+            self::assertArrayNotHasKey('id_token', $jsonResponse);
+        }
+
+        return $jsonResponse;
+    }
+
+    /**
+     * Runs the browser authorization flow (authorize, consent, redirect) and exchanges the code for tokens.
+     *
+     * @param array<string, mixed> $authorizationParams overrides for the authorization request
+     * @return array<string, mixed>
+     */
+    private function requestTokenThroughAuthorizationFlow(KernelBrowser $client, array $authorizationParams = []): array
+    {
+        $router = $client->getContainer()->get(RouterInterface::class);
+
+        $crawler = $this->authorizeWithLogin($client, $authorizationParams + [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'response_type' => 'code',
+            'scope' => 'openid',
+            'state' => 'foobar',
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+        ]);
+
+        $client->submit($crawler->selectButton('consent[allow]')->form());
+
+        $query = [];
+        parse_str((string) parse_url($this->followRedirectsToClient($client), \PHP_URL_QUERY), $query);
+        $this->assertArrayHasKey('code', $query);
+
+        $client->request('POST', $router->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $query['code'],
+        ]);
+
+        $this->assertSame(200, $client->getResponse()->getStatusCode());
+
+        return json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
     }
 
     /** @return array{string, JwtConfig, string} */
@@ -569,6 +1042,46 @@ final class TokenControllerTest extends WebTestCase
             $container->get(JwtConfig::class),
             $jsonResponse['access_token'],
         ];
+    }
+
+    /** @return array<string, mixed> the decoded response */
+    private function exchangeAuthorizationCode(KernelBrowser $client, string $code): array
+    {
+        $client->request('POST', $client->getContainer()->get(RouterInterface::class)->generate('oauth2_token'), [
+            'client_id' => AppFixtures::PRIVATE_CLIENT_IDENTIFIER,
+            'client_secret' => AppFixtures::PRIVATE_CLIENT_SECRET,
+            'grant_type' => GrantTypeEntity::AUTHORIZATION_CODE,
+            'redirect_uri' => AppFixtures::PRIVATE_CLIENT_REDIRECT_URI,
+            'code' => $code,
+        ]);
+
+        return $this->decodeResponse($client);
+    }
+
+    /** @return array<string, mixed> */
+    private function decodeResponse(KernelBrowser $client): array
+    {
+        return json_decode($client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+    }
+
+    /** @param array{access_token: string, refresh_token: string} $tokens a token response */
+    private function assertTokensRevoked(KernelBrowser $client, array $tokens): void
+    {
+        $container = $client->getContainer();
+        $container->get(EntityManagerInterface::class)->clear();
+
+        $accessToken = $container->get(AccessTokenRepository::class)
+            ->getByIdentifier($this->decodeJwtPayload($tokens['access_token'])['jti']);
+        self::assertTrue($accessToken->isRevoked(), 'The access token should be revoked.');
+
+        $refreshTokenPayload = json_decode(
+            $container->get(TestHelper::class)->decryptPayload($tokens['refresh_token']),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $refreshToken = $container->get(RefreshTokenRepository::class)
+            ->getByIdentifier($refreshTokenPayload['refresh_token_id']);
+        self::assertTrue($refreshToken->isRevoked(), 'The refresh token should be revoked.');
     }
 
     private function decodeJwtPayload(string $jwt): array

@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Controller;
 
 use App\DataFixtures\AppFixtures;
+use App\Repository\AccessTokenRepository;
 use App\Tests\Helper\BearerAuthorizationTrait;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -55,6 +57,15 @@ final class AuthorizationMetadataControllerTest extends WebTestCase
             $metadata['aliases']['identity-link.all']['description'],
         );
         self::assertContains('users.read', $metadata['aliases']['identity-link.all']['scopes']);
+
+        self::assertSame(
+            ['description' => 'Authenticate using OpenID Connect'],
+            $metadata['openid_connect_resources']['scopes']['openid'],
+        );
+        self::assertSame(
+            ['openid', 'profile', 'email', 'offline_access'],
+            $metadata['openid_connect_resources']['aliases']['oidc.default']['scopes'],
+        );
     }
 
     public function testRequiresAudience(): void
@@ -99,6 +110,28 @@ final class AuthorizationMetadataControllerTest extends WebTestCase
         $router = $client->getContainer()->get(RouterInterface::class);
 
         $client->request('GET', $router->generate('authorization_audiences'));
+
+        self::assertResponseStatusCodeSame(401);
+        self::assertResponseHeaderSame('WWW-Authenticate', 'Bearer');
+    }
+
+    public function testRejectsRevokedClientCredentialsAccessToken(): void
+    {
+        $client = self::createClient();
+        $router = $client->getContainer()->get(RouterInterface::class);
+        $entityManager = $client->getContainer()->get(EntityManagerInterface::class);
+
+        $accessToken = $client->getContainer()->get(AccessTokenRepository::class)->findOneBy([
+            'identifier' => AppFixtures::CLIENT_CREDENTIALS_ACCESS_TOKEN_IDENTIFIER,
+        ]);
+        $accessToken->setIsRevoked(true);
+        $entityManager->flush();
+
+        $client->request(
+            'GET',
+            $router->generate('authorization_audiences'),
+            server: $this->authorizationHeader($client, AppFixtures::CLIENT_CREDENTIALS_ACCESS_TOKEN_IDENTIFIER),
+        );
 
         self::assertResponseStatusCodeSame(401);
     }

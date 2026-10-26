@@ -11,8 +11,8 @@ use App\LeagueOAuth2\Entity\ScopeEntity;
 use App\LeagueOAuth2\Repository\ScopeRepository;
 use App\Repository\AuthCodeRepository;
 use App\Security\Authorization\AuthorizationRegistry;
-use App\Security\Authorization\Loader\AuthorizationLoaderInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use PHPUnit\Framework\TestCase;
 
 final class ScopeRepositoryTest extends TestCase
@@ -82,6 +82,54 @@ final class ScopeRepositoryTest extends TestCase
         );
     }
 
+    public function testOpenIdConnectResourcesScopesAreLimitedByClientButNotByUser(): void
+    {
+        $repository = $this->createRepository(
+            clientScopes: ['openid', 'scope.d'],
+            userScopes: [],
+        );
+
+        self::assertSame(
+            ['openid'],
+            $this->finalize(
+                $repository,
+                ['openid', 'email', 'scope.d'],
+                'password',
+                userIdentifier: self::USER_ID,
+            ),
+        );
+    }
+
+    public function testOpenIdConnectResourcesScopesAreLimitedByAuthorizationCode(): void
+    {
+        $repository = $this->createRepository(
+            clientScopes: ['oidc.default'],
+            userScopes: [],
+            authCodeScopes: ['email'],
+        );
+
+        self::assertSame(
+            ['email'],
+            $this->finalize(
+                $repository,
+                ['oidc.default'],
+                'authorization_code',
+                self::USER_ID,
+                self::AUTH_CODE_ID,
+            ),
+        );
+    }
+
+    public function testAuthorizationCodeFlowReturnsInvalidTargetForUnknownAudience(): void
+    {
+        $this->assertUnknownAudienceReturnsInvalidTarget('authorization_code');
+    }
+
+    public function testClientCredentialsFlowReturnsInvalidTargetForUnknownAudience(): void
+    {
+        $this->assertUnknownAudienceReturnsInvalidTarget('client_credentials');
+    }
+
     public function testReturnsNoScopesWhenClientHasNoAssignedScopes(): void
     {
         $repository = $this->createRepository(
@@ -139,9 +187,6 @@ final class ScopeRepositoryTest extends TestCase
         array $userScopes = [],
         ?array $authCodeScopes = null,
     ): ScopeRepository {
-        $loader = $this->createStub(AuthorizationLoaderInterface::class);
-        $loader->method('load')->willReturn($this->createRegistry());
-
         $clientConnector = $this->createStub(ClientConnectorInterface::class);
         $clientConnector
             ->method('getScopes')
@@ -179,7 +224,7 @@ final class ScopeRepositoryTest extends TestCase
             $clientConnector,
             $userConnector,
             $authCodeRepository,
-            $loader,
+            $this->createRegistry(),
         );
     }
 
@@ -193,10 +238,11 @@ final class ScopeRepositoryTest extends TestCase
         string $grantType,
         ?string $userIdentifier = null,
         ?string $authCodeId = null,
+        string $audience = self::AUDIENCE,
     ): array {
         $client = new ClientEntity();
         $client->setIdentifier(self::CLIENT_ID);
-        $client->setAudience(self::AUDIENCE);
+        $client->setAudience($audience);
 
         return array_map(
             'strval',
@@ -208,6 +254,23 @@ final class ScopeRepositoryTest extends TestCase
                 $authCodeId,
             ),
         );
+    }
+
+    private function assertUnknownAudienceReturnsInvalidTarget(string $grantType): void
+    {
+        try {
+            $this->finalize(
+                $this->createRepository(),
+                [],
+                $grantType,
+                audience: 'https://unknown.example',
+            );
+            self::fail('Expected unknown audience to be rejected.');
+        } catch (OAuthServerException $exception) {
+            self::assertSame('invalid_target', $exception->getErrorType());
+            self::assertSame(400, $exception->getHttpStatusCode());
+            self::assertSame('The requested audience is not supported.', $exception->getHint());
+        }
     }
 
     private function createRegistry(): AuthorizationRegistry
@@ -238,6 +301,17 @@ final class ScopeRepositoryTest extends TestCase
                         'description' => 'Scopes assigned to the user',
                         'scopes' => ['scope.d', 'scope.e'],
                     ],
+                ],
+            ],
+        ], [
+            'scopes' => [
+                'openid' => ['description' => 'Sign in'],
+                'email' => ['description' => 'Read the email address'],
+            ],
+            'aliases' => [
+                'oidc.default' => [
+                    'description' => 'Standard identity scopes',
+                    'scopes' => ['openid', 'email'],
                 ],
             ],
         ]);

@@ -30,8 +30,9 @@ class TokenIntrospector
         $accessToken = $result->getEntity();
         $decoded = $result->getDecoded();
 
+        // No nbf check here: JWT::decode() in TokenValidator already rejects a token used before its nbf. It checks nbf
+        // before exp, so this also holds for the expired tokens that TokenValidator still passes on.
         $isActive = $accessToken->getExpiryDateTime() > new \DateTimeImmutable()
-            && $decoded['nbf'] < (new \DateTimeImmutable())->getTimestamp()
             && $accessToken->isRevoked() === false;
 
         if (!$isActive) {

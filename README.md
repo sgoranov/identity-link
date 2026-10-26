@@ -1,10 +1,5 @@
 # Identity Link
 
-![License](https://img.shields.io/github/license/sgoranov/identity-link)
-![Issues](https://img.shields.io/github/issues/sgoranov/identity-link)
-[![PHPUnit Tests](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/phpunit.yml)
-[![Security Audit](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml/badge.svg)](https://github.com/sgoranov/identity-link/actions/workflows/vulnerability-scan.yml)
-
 Identity Link is a modular, extensible OAuth2 and OpenID Connect (OIDC) authorization
 server built with Symfony and PHP. It provides a complete 
 authentication and authorization solution designed for modern, 
